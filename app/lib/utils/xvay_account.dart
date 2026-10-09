@@ -83,7 +83,7 @@ class XvayAccount {
 Future<void> syncSubscription(Map<String, dynamic> user) async {
   final url = user['subscriptionUrl'] as String?;
   if (url == null || url.isEmpty) return;
-  final name = (user['email'] as String?) ?? 'xvay';
+  final name = (user['email'] as String?) ?? '飞连';
   final remotes = await db.select(db.profileGroupRemote).get();
   ProfileGroupData? existing;
   for (final remote in remotes) {

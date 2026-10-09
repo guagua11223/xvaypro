@@ -133,7 +133,7 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                 children: [
                   _DrawerItem(
                     icon: Icons.account_circle_outlined,
-                    label: 'XVAY 账户',
+                    label: '飞连 账户',
                     onTap: () => widget.onNavigate(const AccountScreen()),
                   ),
                   _DrawerItem(

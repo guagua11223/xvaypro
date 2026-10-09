@@ -55,7 +55,7 @@ func Build(db *store.Store, cfg config.Config, user store.User) (map[string]any,
 	}
 	name := settings["profile_name"]
 	if name == "" {
-		name = "xvay"
+		name = "飞连"
 	}
 	interval, _ := strconv.Atoi(settings["auto_update_interval"])
 	if interval == 0 {
@@ -91,7 +91,7 @@ func BuildV2ray(db *store.Store, user store.User) (string, error) {
 	}
 	name := settings["profile_name"]
 	if name == "" {
-		name = "xvay"
+		name = "飞连"
 	}
 	interval, _ := strconv.Atoi(settings["auto_update_interval"])
 	if interval == 0 {

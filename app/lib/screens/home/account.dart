@@ -74,7 +74,7 @@ class _AccountScreenState extends State<AccountScreen> {
     return Scaffold(
       backgroundColor: LetsColors.pageBg,
       appBar: AppBar(
-        title: const Text('XVAY 账户'),
+        title: const Text('飞连 账户'),
         backgroundColor: LetsColors.white,
         foregroundColor: LetsColors.textPrimary,
         elevation: 0,

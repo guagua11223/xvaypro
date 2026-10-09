@@ -247,7 +247,7 @@ async function remove(row) {
           </el-select>
         </el-form-item>
         <el-form-item label="邀请码" prop="inviteCode">
-          <el-input v-model="form.inviteCode" placeholder="例如 XVAY-SH" />
+          <el-input v-model="form.inviteCode" placeholder="例如 飞连-SH" />
         </el-form-item>
         <el-form-item label="上级">
           <el-select v-model="form.parentId" clearable placeholder="无上级" style="width: 100%">
