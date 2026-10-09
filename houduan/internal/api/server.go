@@ -27,6 +27,7 @@ func New(cfg config.Config, db *store.Store) *Server {
 		{http.MethodGet, "/api/app/nodes", s.appNodes},
 		{http.MethodGet, "/api/app/announcements", s.appAnnouncements},
 		{http.MethodGet, "/api/app/bootstrap", s.appBootstrap},
+		{http.MethodGet, "/api/app/keys", s.appKeys},
 		{http.MethodGet, "/api/app/profile", s.profile},
 		{http.MethodPost, "/api/app/connect", s.appConnect},
 		{http.MethodPost, "/api/app/disconnect", s.appDisconnect},

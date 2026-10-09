@@ -57,7 +57,7 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
     final apiPort = prefs.getInt('inject.api.port')!;
     final injectSocks = prefs.getBool('inject.socks')!;
     final socksPort = prefs.getInt('app.socks.port')!;
-    final injectHttp = prefs.getBool('inject.http')!;
+    final injectHttp = prefs.getBool('inject.http')! || RuntimePlatform.isIOS;
     final httpPort = prefs.getInt('app.http.port')!;
     final injectSendThrough = prefs.getBool('inject.sendThrough')!;
     final sendThroughBindingStratagy = SendThroughBindingStratagy
@@ -123,6 +123,8 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
           "destOverride": ["fakedns+others"],
           "enabled": true,
           "metadataOnly": false,
+          // Vision 只允许嗅探结果参与路由。改写目标地址会把连接直接掐断，浏览器就没有网。
+          "routeOnly": true,
         },
         "tag": "anyportal_in_http",
       });
@@ -138,6 +140,7 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
           "destOverride": ["fakedns+others"],
           "enabled": true,
           "metadataOnly": false,
+          "routeOnly": true,
         },
         "tag": "anyportal_in_socks",
       });
@@ -367,6 +370,32 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
           outbound["sendThrough"] = sendThrough;
         }
       }
+    }
+
+    if (prefs.getBool('tun.ipv6') != true) {
+      (cfg["dns"] as Map)["queryStrategy"] = "UseIPv4";
+    }
+
+    // 节点地址必须直连。否则隧道把连节点的流量又送回自己，浏览器会全部超时。
+    final serverIps = <String>[];
+    for (final outbound in outbounds) {
+      final settings = outbound["settings"];
+      if (settings is! Map || settings["vnext"] is! List) continue;
+      for (final node in settings["vnext"] as List) {
+        if (node is! Map) continue;
+        final address = node["address"];
+        if (address is String &&
+            RegExp(r'^(\d{1,3}\.){3}\d{1,3}$').hasMatch(address)) {
+          serverIps.add(address);
+        }
+      }
+    }
+    if (serverIps.isNotEmpty) {
+      routingRules.insert(0, {
+        "type": "field",
+        "outboundTag": "anyportal_ot_freedom",
+        "ip": serverIps,
+      });
     }
 
     /// tun settings (v2ray) not working

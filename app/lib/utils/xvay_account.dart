@@ -75,7 +75,36 @@ class XvayAccount {
     if (data is! Map || data['profile'] is! Map) {
       throw Exception('连接响应缺少节点配置');
     }
-    await applyConnectProfile(Map<String, dynamic>.from(data['profile'] as Map));
+    final profile = Map<String, dynamic>.from(data['profile'] as Map);
+    var keys = data['keys'];
+    if (keys is! Map) {
+      try {
+        keys = await vlessKeys();
+      } catch (error) {
+        logger.w('vless keys: $error');
+      }
+    }
+    if (keys is Map) {
+      applyVlessKeys(profile, Map<String, dynamic>.from(keys));
+    }
+    await applyConnectProfile(profile);
+    return Map<String, dynamic>.from(data);
+  }
+
+  Future<Map<String, dynamic>> vlessKeys() async {
+    final current = token;
+    if (current == null || current.isEmpty) {
+      throw Exception('尚未登录');
+    }
+    final response = await _client.get(
+      Uri.parse('$kBackendBase/api/app/keys'),
+      headers: {'Authorization': 'Bearer $current'},
+    );
+    final payload = _decode(response);
+    final data = payload['data'];
+    if (data is! Map) {
+      throw Exception('密钥响应缺少内容');
+    }
     return Map<String, dynamic>.from(data);
   }
 
@@ -273,6 +302,32 @@ int? nodeIdFromProfileKey(String? key) {
   final match = RegExp(r'^n(\d+)-(reality|hysteria2)$').firstMatch(key);
   if (match == null) return null;
   return int.tryParse(match.group(1)!);
+}
+
+void applyVlessKeys(Map<String, dynamic> profile, Map<String, dynamic> keys) {
+  final publicKey = keys['publicKey'] ?? keys['password'];
+  if (publicKey is! String || publicKey.isEmpty) return;
+  final raw = profile['coreConfig'];
+  if (raw is! Map) return;
+  final config = Map<String, dynamic>.from(raw);
+  final outbounds = config['outbounds'];
+  if (outbounds is! List) return;
+  for (final outbound in outbounds) {
+    if (outbound is! Map) continue;
+    final settings = outbound['settings'];
+    if (settings is! Map) continue;
+    final next = settings['vnext'];
+    if (next is! List) continue;
+    for (final node in next) {
+      if (node is! Map) continue;
+      final users = node['users'];
+      if (users is! List) continue;
+      for (final user in users) {
+        if (user is Map) user['encryption'] = publicKey;
+      }
+    }
+  }
+  profile['coreConfig'] = config;
 }
 
 Future<void> applyConnectProfile(Map<String, dynamic> profile) async {

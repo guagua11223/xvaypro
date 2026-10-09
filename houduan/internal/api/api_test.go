@@ -244,8 +244,18 @@ func TestConnectButtonPicksNode(t *testing.T) {
 	if outbound["protocol"] != "vless" {
 		t.Fatalf("outbound: %v", outbound["protocol"])
 	}
-	if strings.Contains(auto.Raw, "privateKey") {
+	realityPrivate := tokyo.Data["xray"].(map[string]any)["privateKey"].(string)
+	if strings.Contains(auto.Raw, realityPrivate) {
 		t.Fatal("connect response leaked the reality private key")
+	}
+	keys := auto.Data["keys"].(map[string]any)
+	if keys["publicKey"] == "" || keys["hash32"] == "" || keys["privateKey"] == "" {
+		t.Fatalf("vless keys: %v", keys)
+	}
+	vnext := outbound["settings"].(map[string]any)["vnext"].([]any)[0].(map[string]any)
+	account := vnext["users"].([]any)[0].(map[string]any)
+	if account["encryption"] != keys["publicKey"] {
+		t.Fatalf("encryption: %v", account["encryption"])
 	}
 
 	byRegion := call(t, handler, http.MethodPost, "/api/app/connect", token, map[string]any{

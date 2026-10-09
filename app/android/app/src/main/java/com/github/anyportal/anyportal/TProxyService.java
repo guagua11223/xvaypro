@@ -482,7 +482,7 @@ public class TProxyService extends VpnService {
             }
             session += "IPv4";
         }
-        if (prefs.getBoolean("flutter.tun.ipv6", true)) {
+        if (prefs.getBoolean("flutter.tun.ipv6", false)) {
             String addr = "fdfe:dcba:9876::1";
             int prefix = 126;
             String dns = prefs.getString("flutter.tun.dns.ipv6", "fdfe:dcba:9876::2");

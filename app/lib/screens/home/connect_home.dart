@@ -10,6 +10,7 @@ import '../../utils/profile_selection.dart';
 import '../../utils/xvay_account.dart';
 import '../../utils/show_snack_bar_now.dart';
 import '../../utils/vpn_manager.dart';
+import 'settings/tun.dart';
 import '../../widgets/connect_orb.dart';
 import '../../widgets/lets_app_bar.dart';
 import 'profiles.dart';
@@ -109,6 +110,7 @@ class _ConnectHomeState extends State<ConnectHome> {
     }
     if (!mounted) return;
     setState(() => _preparing = false);
+    await tunHevSocks5TunnelConfInit();
     await toggleVpnConnection(context);
   }
 
