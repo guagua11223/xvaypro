@@ -273,16 +273,16 @@ class AppLocalizationsZh extends AppLocalizations {
   String get enable_tun => '启用Tun';
 
   @override
-  String get enable_tun2socks => '启用Tun2socks';
+  String get enable_tun2socks => '启用虚拟网卡';
 
   @override
   String get enable_tun2socks_so_a_socks_proxy_works_like_a_vpn =>
-      '启用 Tun2socks，使 socks 代理像 VPN 一样工作';
+      '启用虚拟网卡，使代理像 VPN 一样工作';
 
   @override
   String
   get enable_tun2socks_so_a_socks_proxy_works_like_a_vpn_requires_elevation_ =>
-      '启用 Tun2socks，使 socks 代理像 VPN 一样工作\n需要提升权限';
+      '启用虚拟网卡，使代理像 VPN 一样工作\n需要提升权限';
 
   @override
   String get enable_tun_via_platform_api_ => '通过平台 API 启用 TUN';
@@ -641,7 +641,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get traffic => '流量';
 
   @override
-  String get tun2socks_settings => 'Tun2socks设置';
+  String get tun2socks_settings => '虚拟网卡设置';
 
   @override
   String get tun_needs_additionally_a_sing_box_core => 'Tun额外需要一个Sing-Box核心';
@@ -686,7 +686,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get view_core_log => '查看核心日志';
 
   @override
-  String get view_tun2socks_log => '查看Tun2socks日志';
+  String get view_tun2socks_log => '查看虚拟网卡日志';
 
   @override
   String get vitual_network_adaptor => '虚拟网络适配器';
@@ -800,6 +800,21 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get guide_desc_3 => '切换线路、管理配置，继续使用你现有的节点和设置。';
+
+  @override
+  String get save => '保存';
+
+  @override
+  String get create_new => '新建';
+
+  @override
+  String get tun2socks => '虚拟网卡';
+
+  @override
+  String get invalid_core_type => '核心类型无效';
+
+  @override
+  String get invalid_profile => '配置无效';
 }
 
 /// The translations for Chinese, as used in China (`zh_CN`).

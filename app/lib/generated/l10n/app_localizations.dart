@@ -1618,6 +1618,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Switch regions, manage profiles, and keep your current configuration.'**
   String get guide_desc_3;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @create_new.
+  ///
+  /// In en, this message translates to:
+  /// **'New'**
+  String get create_new;
+
+  /// No description provided for @tun2socks.
+  ///
+  /// In en, this message translates to:
+  /// **'Virtual adapter'**
+  String get tun2socks;
+
+  /// No description provided for @invalid_core_type.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid core type'**
+  String get invalid_core_type;
+
+  /// No description provided for @invalid_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid profile'**
+  String get invalid_profile;
 }
 
 class _AppLocalizationsDelegate

@@ -824,4 +824,19 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get guide_desc_3 =>
       'Switch regions, manage profiles, and keep your current configuration.';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get create_new => 'New';
+
+  @override
+  String get tun2socks => 'Virtual adapter';
+
+  @override
+  String get invalid_core_type => 'Invalid core type';
+
+  @override
+  String get invalid_profile => 'Invalid profile';
 }
