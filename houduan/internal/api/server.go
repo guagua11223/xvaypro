@@ -27,6 +27,7 @@ func New(cfg config.Config, db *store.Store) *Server {
 		{http.MethodGet, "/api/app/nodes", s.appNodes},
 		{http.MethodGet, "/api/app/announcements", s.appAnnouncements},
 		{http.MethodGet, "/api/app/bootstrap", s.appBootstrap},
+		{http.MethodGet, "/api/app/keys", s.appKeys},
 		{http.MethodGet, "/api/app/profile", s.profile},
 		{http.MethodPost, "/api/app/connect", s.appConnect},
 		{http.MethodPost, "/api/app/disconnect", s.appDisconnect},
@@ -38,6 +39,13 @@ func New(cfg config.Config, db *store.Store) *Server {
 		{http.MethodGet, "/api/node/:id/xray", s.nodeXray},
 		{http.MethodGet, "/api/node/:id/hysteria2", s.nodeHysteria},
 		{http.MethodGet, "/api/node/:id/bundle", s.nodeBundleRoute},
+
+		{http.MethodPost, "/api/agent/register", s.agentRegister},
+		{http.MethodPost, "/api/agent/login", s.agentLogin},
+		{http.MethodPost, "/api/agent/logout", s.agentLogout},
+		{http.MethodGet, "/api/agent/me", s.agentMe},
+		{http.MethodGet, "/api/agent/team", s.agentTeam},
+		{http.MethodGet, "/api/agent/commissions", s.agentCommissions},
 
 		{http.MethodPost, "/api/admin/login", s.adminLogin},
 		{http.MethodPost, "/api/admin/register", s.adminRegister},

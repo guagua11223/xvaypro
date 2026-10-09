@@ -34,9 +34,6 @@ func main() {
 	if err := db.KeepDemoOnline(); err != nil {
 		log.Printf("demo nodes: %v", err)
 	}
-	if _, err := db.SettleDue(time.Now()); err != nil {
-		log.Printf("settle commissions: %v", err)
-	}
 	go nodeproc.Run(context.Background(), db)
 
 	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))

@@ -90,7 +90,7 @@ class _SettingListState extends State<SettingList> {
                 },
               ),
             ListTile(
-              title: Text("Tun2socks"),
+              title: Text(context.loc.tun2socks),
               subtitle: Text(context.loc.vitual_network_adaptor),
               onTap: () {
                 Navigator.push(
@@ -168,7 +168,7 @@ class _SettingListState extends State<SettingList> {
             ),
             ListTile(
               title: Text(context.loc.about),
-              subtitle: const Text("AnyPortal"),
+              subtitle: const Text("飞连"),
               onTap: () {
                 Navigator.push(
                   context,

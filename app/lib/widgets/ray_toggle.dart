@@ -42,7 +42,7 @@ class RayToggleState extends State<RayToggle> {
     } finally {
       if (err != null) {
         vPNMan.setisTogglingAll(false);
-        if (mounted) showSnackBarNow(context, Text("toggle: $err"));
+        if (mounted) showSnackBarNow(context, Text("切换失败：$err"));
       }
     }
   }

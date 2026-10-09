@@ -244,8 +244,18 @@ func TestConnectButtonPicksNode(t *testing.T) {
 	if outbound["protocol"] != "vless" {
 		t.Fatalf("outbound: %v", outbound["protocol"])
 	}
-	if strings.Contains(auto.Raw, "privateKey") {
+	realityPrivate := tokyo.Data["xray"].(map[string]any)["privateKey"].(string)
+	if strings.Contains(auto.Raw, realityPrivate) {
 		t.Fatal("connect response leaked the reality private key")
+	}
+	keys := auto.Data["keys"].(map[string]any)
+	if keys["publicKey"] == "" || keys["hash32"] == "" || keys["privateKey"] == "" {
+		t.Fatalf("vless keys: %v", keys)
+	}
+	vnext := outbound["settings"].(map[string]any)["vnext"].([]any)[0].(map[string]any)
+	account := vnext["users"].([]any)[0].(map[string]any)
+	if account["encryption"] != "none" {
+		t.Fatalf("encryption: %v", account["encryption"])
 	}
 
 	byRegion := call(t, handler, http.MethodPost, "/api/app/connect", token, map[string]any{
@@ -293,6 +303,126 @@ func TestConnectButtonPicksNode(t *testing.T) {
 	})
 	if again.Status != http.StatusOK {
 		t.Fatalf("connect after disconnect %d %s", again.Status, again.Raw)
+	}
+}
+
+func TestAgentPortal(t *testing.T) {
+	cfg := config.Config{
+		DataDir:      t.TempDir(),
+		DatabasePath: ":memory:",
+		AdminToken:   "admin-token",
+		SessionTTLMs: 3_600_000,
+	}
+	db, err := store.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	handler := api.New(cfg, db)
+
+	parent := call(t, handler, http.MethodPost, "/api/agent/register", "", map[string]any{
+		"username": "agent-a", "password": "123456", "name": "华东代理", "phone": "13800000001",
+	})
+	if parent.Status != http.StatusCreated {
+		t.Fatalf("register parent %d %s", parent.Status, parent.Raw)
+	}
+	parentUser := parent.Data["user"].(map[string]any)
+	if _, leaked := parentUser["passwordHash"]; leaked {
+		t.Fatal("password hash leaked")
+	}
+	parentToken, _ := parent.Data["token"].(string)
+	invite, _ := parentUser["inviteCode"].(string)
+	if parentToken == "" || invite == "" {
+		t.Fatalf("parent session %s", parent.Raw)
+	}
+
+	child := call(t, handler, http.MethodPost, "/api/agent/register", "", map[string]any{
+		"username": "agent-b", "password": "123456", "name": "苏州代理", "inviteCode": invite,
+	})
+	if child.Status != http.StatusCreated {
+		t.Fatalf("register child %d %s", child.Status, child.Raw)
+	}
+	childUser := child.Data["user"].(map[string]any)
+	childToken, _ := child.Data["token"].(string)
+	childInvite, _ := childUser["inviteCode"].(string)
+
+	grand := call(t, handler, http.MethodPost, "/api/agent/register", "", map[string]any{
+		"username": "agent-c", "password": "123456", "name": "园区代理", "inviteCode": strings.ToLower(childInvite),
+	})
+	if grand.Status != http.StatusCreated {
+		t.Fatalf("register grandchild %d %s", grand.Status, grand.Raw)
+	}
+
+	other := call(t, handler, http.MethodPost, "/api/agent/register", "", map[string]any{
+		"username": "agent-d", "password": "123456", "name": "独立代理",
+	})
+	if other.Status != http.StatusCreated {
+		t.Fatalf("register other %d %s", other.Status, other.Raw)
+	}
+
+	team := call(t, handler, http.MethodGet, "/api/agent/team", parentToken, nil)
+	if team.Status != http.StatusOK {
+		t.Fatalf("team %d %s", team.Status, team.Raw)
+	}
+	direct, _ := team.Data["direct"].([]any)
+	if len(direct) != 1 {
+		t.Fatalf("direct agents %s", team.Raw)
+	}
+	first := direct[0].(map[string]any)
+	if first["username"] != "agent-b" {
+		t.Fatalf("direct username %v", first["username"])
+	}
+	if _, leaked := first["passwordHash"]; leaked {
+		t.Fatal("child hash leaked")
+	}
+	nested, _ := first["agents"].([]any)
+	if len(nested) != 1 || nested[0].(map[string]any)["username"] != "agent-c" {
+		t.Fatalf("grandchild %s", team.Raw)
+	}
+
+	childTeam := call(t, handler, http.MethodGet, "/api/agent/team", childToken, nil)
+	childDirect, _ := childTeam.Data["direct"].([]any)
+	if len(childDirect) != 1 || childDirect[0].(map[string]any)["username"] != "agent-c" {
+		t.Fatalf("child team %s", childTeam.Raw)
+	}
+
+	parentID := int64(parentUser["id"].(float64))
+	childID := int64(childUser["id"].(float64))
+	if _, err := db.InsertCatalog("commissions", map[string]any{
+		"agentId": parentID, "userId": int64(1), "orderNo": "XV-PARENT",
+		"orderAmount": 100, "rate": 0.3, "commission": 30, "status": "pending",
+		"createdAt": "2026-10-09T01:00:00Z", "remark": "上级订单",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.InsertCatalog("commissions", map[string]any{
+		"agentId": childID, "userId": int64(1), "orderNo": "XV-CHILD",
+		"orderAmount": 80, "rate": 0.2, "commission": 16, "status": "settled",
+		"createdAt": "2026-10-09T02:00:00Z", "remark": "下级订单",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	mine := call(t, handler, http.MethodGet, "/api/agent/commissions", parentToken, nil)
+	orders, _ := mine.Data["orders"].([]any)
+	if mine.Status != http.StatusOK || len(orders) != 1 || orders[0].(map[string]any)["orderNo"] != "XV-PARENT" {
+		t.Fatalf("parent commissions %s", mine.Raw)
+	}
+	theirs := call(t, handler, http.MethodGet, "/api/agent/commissions", childToken, nil)
+	childOrders, _ := theirs.Data["orders"].([]any)
+	if len(childOrders) != 1 || childOrders[0].(map[string]any)["orderNo"] != "XV-CHILD" {
+		t.Fatalf("child commissions %s", theirs.Raw)
+	}
+
+	bad := call(t, handler, http.MethodPost, "/api/agent/login", "", map[string]any{
+		"username": "agent-a", "password": "wrong",
+	})
+	if bad.Status != http.StatusUnauthorized {
+		t.Fatalf("bad password %d %s", bad.Status, bad.Raw)
+	}
+	missing := call(t, handler, http.MethodGet, "/api/agent/me", "", nil)
+	if missing.Status != http.StatusUnauthorized {
+		t.Fatalf("missing token %d", missing.Status)
 	}
 }
 

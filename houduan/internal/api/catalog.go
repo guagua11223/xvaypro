@@ -111,6 +111,14 @@ func (s *Server) adminCatalog(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
+		if kind == "agents" {
+			public := make([]map[string]any, 0, len(rows))
+			for _, row := range rows {
+				public = append(public, store.PublicAgent(row))
+			}
+			payload[kind] = public
+			continue
+		}
 		payload[kind] = rows
 	}
 	admins, err := s.db.ListCatalog("admins")
@@ -226,20 +234,6 @@ func (s *Server) adminPutAppSettings(w http.ResponseWriter, r *http.Request) err
 	}
 	if support, ok := body["supportUrl"]; ok {
 		patch["support_url"] = strings.TrimSpace(store.AsString(support))
-	}
-	for _, item := range []struct {
-		jsonKey string
-		setting string
-	}{
-		{"supportWechat", "support_wechat"},
-		{"supportQq", "support_qq"},
-		{"supportTelegram", "support_telegram"},
-		{"supportOnline", "support_online"},
-		{"supportQrcode", "support_qrcode"},
-	} {
-		if value, ok := body[item.jsonKey]; ok {
-			patch[item.setting] = strings.TrimSpace(store.AsString(value))
-		}
 	}
 	if len(patch) > 0 {
 		if _, err := s.db.SetSettings(patch); err != nil {

@@ -101,7 +101,7 @@ class _TunScreenState extends State<TunScreen> {
     );
   }
 
-  void writeTProxyConf() async {
+  Future<void> writeTProxyConf() async {
     if (RuntimePlatform.isWeb) return;
     final folder = global.applicationSupportDirectory;
     final file = File(
@@ -138,7 +138,7 @@ class _TunScreenState extends State<TunScreen> {
     }
 
     await file.writeAsString("""tunnel:
-  mtu: 8500
+  mtu: 1500
   # multi-queue: true
   
 socks5:
@@ -157,7 +157,7 @@ misc:
 
   void handleError(Object e) {
     logger.e("tun: $e");
-    if (mounted) showSnackBarNow(context, Text("tun: $e"));
+    if (mounted) showSnackBarNow(context, Text("虚拟网卡：$e"));
   }
 
   Future<void> copyTextThenNotify(String text) async {
@@ -553,8 +553,8 @@ Future<void> tunHevSocks5TunnelConfInit() async {
   final file = File(
     p.join(folder.path, 'conf', 'tun2socks.hev_socks5_tunnel.gen.yaml'),
   );
-  if (!await file.exists()) {
+  if (!await file.exists() || await file.length() == 0) {
     await file.create(recursive: true);
-    _TunScreenState().writeTProxyConf();
+    await _TunScreenState().writeTProxyConf();
   }
 }

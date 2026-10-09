@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import '../../../../models/profile.dart';
 import '../../../../utils/db.dart';
+import '../../extensions/localization.dart';
 import '../show_snack_bar_now.dart';
 import '../with_context.dart';
 
@@ -75,7 +76,7 @@ Future<bool> updateProfile({
               coreCfg = response.body;
             } else {
               withContext((context) {
-                showSnackBarNow(context, Text("failed to fetch: $url"));
+                showSnackBarNow(context, Text(context.loc.failed_to_fetch_url(url ?? '')));
               });
               throw Exception("failed to fetch: $url");
             }
@@ -86,7 +87,7 @@ Future<bool> updateProfile({
               updatedAt = (await f.stat()).modified;
             } catch (e) {
               withContext((context) {
-                showSnackBarNow(context, Text("failed to read file: $e"));
+                showSnackBarNow(context, Text("无法读取文件：$e"));
               });
               throw Exception("failed to read file: $e");
             }
@@ -94,7 +95,7 @@ Future<bool> updateProfile({
             withContext((context) {
               showSnackBarNow(
                 context,
-                Text("unsupported scheme: ${uri.scheme}"),
+                Text("不支持的协议：${uri.scheme}"),
               );
             });
             throw Exception("unsupported scheme: ${uri.scheme}");

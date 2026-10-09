@@ -50,14 +50,13 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
 
     final injectLog = prefs.getBool('inject.log')!;
     final injectApi = prefs.getBool('inject.api')!;
-    final injectFakeDns = prefs.getBool('inject.dns.fakedns')!;
     final injectDnsLocal = prefs.getBool('inject.dns.local')!;
     final logLevel = LogLevel.values[prefs.getInt('inject.log.level')!];
     final serverAddress = prefs.getString('app.server.address')!;
     final apiPort = prefs.getInt('inject.api.port')!;
     final injectSocks = prefs.getBool('inject.socks')!;
     final socksPort = prefs.getInt('app.socks.port')!;
-    final injectHttp = prefs.getBool('inject.http')!;
+    final injectHttp = prefs.getBool('inject.http')! || RuntimePlatform.isIOS;
     final httpPort = prefs.getInt('app.http.port')!;
     final injectSendThrough = prefs.getBool('inject.sendThrough')!;
     final sendThroughBindingStratagy = SendThroughBindingStratagy
@@ -123,6 +122,8 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
           "destOverride": ["fakedns+others"],
           "enabled": true,
           "metadataOnly": false,
+          // Vision 只允许嗅探结果参与路由。改写目标地址会把连接直接掐断，浏览器就没有网。
+          "routeOnly": true,
         },
         "tag": "anyportal_in_http",
       });
@@ -138,6 +139,7 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
           "destOverride": ["fakedns+others"],
           "enabled": true,
           "metadataOnly": false,
+          "routeOnly": true,
         },
         "tag": "anyportal_in_socks",
       });
@@ -197,8 +199,25 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
     ///   - this will block dns fallback!
     /// - if original config does not have a proper dns config
     ///   - this is a proper one and thus necessary
-    if (injectFakeDns) {
-      dnsServers.add("fakedns");
+    // routeOnly 打开时嗅探结果不能改写目标。fakedns 给出的 198.18.0.0/15
+    // 会原样送出去，浏览器就没有网。没有真实 DNS 时补上公网解析。
+    final hasRealDns = dnsServers.any((server) {
+      if (server is String) {
+        return server != "fakedns" && server != "localhost";
+      }
+      if (server is Map) {
+        final address = server["address"];
+        return address is String &&
+            address != "fakedns" &&
+            address != "localhost";
+      }
+      return false;
+    });
+    if (!hasRealDns) {
+      dnsServers
+        ..removeWhere((server) => server == "fakedns")
+        ..insert(0, "1.1.1.1")
+        ..insert(0, "8.8.8.8");
     }
 
     /// bind proxy server domain to local dns server
@@ -367,6 +386,32 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
           outbound["sendThrough"] = sendThrough;
         }
       }
+    }
+
+    if (prefs.getBool('tun.ipv6') != true) {
+      (cfg["dns"] as Map)["queryStrategy"] = "UseIPv4";
+    }
+
+    // 节点地址必须直连。否则隧道把连节点的流量又送回自己，浏览器会全部超时。
+    final serverIps = <String>[];
+    for (final outbound in outbounds) {
+      final settings = outbound["settings"];
+      if (settings is! Map || settings["vnext"] is! List) continue;
+      for (final node in settings["vnext"] as List) {
+        if (node is! Map) continue;
+        final address = node["address"];
+        if (address is String &&
+            RegExp(r'^(\d{1,3}\.){3}\d{1,3}$').hasMatch(address)) {
+          serverIps.add(address);
+        }
+      }
+    }
+    if (serverIps.isNotEmpty) {
+      routingRules.insert(0, {
+        "type": "field",
+        "outboundTag": "anyportal_ot_freedom",
+        "ip": serverIps,
+      });
     }
 
     /// tun settings (v2ray) not working

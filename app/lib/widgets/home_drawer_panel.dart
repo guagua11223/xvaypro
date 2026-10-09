@@ -86,7 +86,7 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "AnyPortal",
+                              "飞连",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(

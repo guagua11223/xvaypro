@@ -60,43 +60,9 @@ func (s *Server) adminCreateUser(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	email := ""
-	if raw := strings.TrimSpace(store.AsString(body["email"])); raw != "" {
-		email, err = validate.ParseEmail(body["email"])
-		if err != nil {
-			return err
-		}
-	}
-	username := ""
-	if raw := strings.TrimSpace(store.AsString(body["username"])); raw != "" {
-		username, err = validate.ParseUsername(raw)
-		if err != nil {
-			return err
-		}
-	}
-	if username == "" {
-		username = email
-	}
-	if username == "" {
-		return badRequest("请输入用户名或邮箱")
-	}
-	nickname, err := validate.ParseNickname(body["nickname"], username)
+	email, err := validate.ParseEmail(body["email"])
 	if err != nil {
 		return err
-	}
-	userType := "member"
-	if raw := strings.TrimSpace(store.AsString(body["userType"])); raw != "" {
-		userType, err = validate.ParseUserType(raw)
-		if err != nil {
-			return err
-		}
-	}
-	avatar := ""
-	if _, ok := body["avatar"]; ok {
-		avatar, err = validate.ParseAvatar(body["avatar"])
-		if err != nil {
-			return err
-		}
 	}
 	password, err := validate.ParsePassword(body["password"])
 	if err != nil {
@@ -126,8 +92,7 @@ func (s *Server) adminCreateUser(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 	user, err := s.db.CreateUser(store.UserInput{
-		Username: username, Email: email, Nickname: nickname, Avatar: avatar, UserType: userType,
-		Password: password, Total: total, ExpireAt: expireAt, Status: status, DeviceLimit: deviceLimit,
+		Email: email, Password: password, Total: total, ExpireAt: expireAt, Status: status, DeviceLimit: deviceLimit,
 	})
 	if err != nil {
 		return err
@@ -187,37 +152,6 @@ func (s *Server) adminPatchUser(w http.ResponseWriter, r *http.Request) error {
 		}
 		patch.Email = &email
 	}
-	if value, ok := body["username"]; ok && value != nil {
-		username, err := validate.ParseUsername(value)
-		if err != nil {
-			return err
-		}
-		patch.Username = &username
-	}
-	if value, ok := body["nickname"]; ok && value != nil {
-		nickname, err := validate.ParseNickname(value, "")
-		if err != nil {
-			return err
-		}
-		if nickname == "" {
-			return badRequest("昵称不能为空")
-		}
-		patch.Nickname = &nickname
-	}
-	if value, ok := body["avatar"]; ok && value != nil {
-		avatar, err := validate.ParseAvatar(value)
-		if err != nil {
-			return err
-		}
-		patch.Avatar = &avatar
-	}
-	if value, ok := body["userType"]; ok && value != nil {
-		userType, err := validate.ParseUserType(value)
-		if err != nil {
-			return err
-		}
-		patch.UserType = &userType
-	}
 	if value, ok := body["password"]; ok && value != nil {
 		password, err := validate.ParsePassword(value)
 		if err != nil {
@@ -273,17 +207,6 @@ func (s *Server) adminPatchUser(w http.ResponseWriter, r *http.Request) error {
 	}
 	if err := s.saveUserProfile(id, body); err != nil {
 		return err
-	}
-	if patch.Nickname != nil {
-		if err := s.syncDisplayName(user); err != nil {
-			return err
-		}
-	}
-	if patch.UserType != nil {
-		user, err = s.db.ApplyUserType(user.ID, *patch.UserType)
-		if err != nil {
-			return err
-		}
 	}
 	s.syncNodes()
 	view, err := s.oneUser(user)
@@ -566,56 +489,6 @@ func (s *Server) adminPutSettings(w http.ResponseWriter, r *http.Request) error 
 			return err
 		}
 		patch["trial_days"] = strconv.FormatInt(n, 10)
-	}
-	for _, item := range []struct {
-		key, label string
-		min, max   int64
-	}{
-		{"commissionPoolPercent", "分佣池比例", 0, 100},
-		{"commissionSettleDay", "结算日", 1, 28},
-		{"withdrawFeePercent", "提现手续费比例", 0, 100},
-		{"withdrawMinCents", "最低提现金额", 0, 1_000_000_000},
-		{"expireRemindDays", "到期提醒天数", 1, 30},
-	} {
-		value, ok := body[item.key]
-		if !ok || value == nil {
-			continue
-		}
-		n, err := validate.NonNegative(value, item.label)
-		if err != nil {
-			return err
-		}
-		if n < item.min || n > item.max {
-			return badRequest(item.label + "超出范围")
-		}
-		settingKey := map[string]string{
-			"commissionPoolPercent": "commission_pool_percent",
-			"commissionSettleDay":   "commission_settle_day",
-			"withdrawFeePercent":    "withdraw_fee_percent",
-			"withdrawMinCents":      "withdraw_min_cents",
-			"expireRemindDays":      "expire_remind_days",
-		}[item.key]
-		patch[settingKey] = strconv.FormatInt(n, 10)
-	}
-	for _, item := range []struct {
-		jsonKey string
-		setting string
-	}{
-		{"supportWechat", "support_wechat"},
-		{"supportQq", "support_qq"},
-		{"supportTelegram", "support_telegram"},
-		{"supportOnline", "support_online"},
-		{"supportQrcode", "support_qrcode"},
-	} {
-		value, ok := body[item.jsonKey]
-		if !ok || value == nil {
-			continue
-		}
-		text := asTrimmed(value)
-		if len(text) > 512 {
-			return badRequest("客服信息过长")
-		}
-		patch[item.setting] = text
 	}
 	settings, err := s.db.SetSettings(patch)
 	if err != nil {

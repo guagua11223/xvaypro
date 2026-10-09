@@ -316,5 +316,10 @@
   "guide_title_2": "Safe by default",
   "guide_desc_2": "Full Mask uses TUN globally. Full Speed keeps the proxy path only.",
   "guide_title_3": "Always ready",
-  "guide_desc_3": "Switch regions, manage profiles, and keep your current configuration."
+  "guide_desc_3": "Switch regions, manage profiles, and keep your current configuration.",
+  "save": "Save",
+  "create_new": "New",
+  "tun2socks": "Virtual adapter",
+  "invalid_core_type": "Invalid core type",
+  "invalid_profile": "Invalid profile"
 }

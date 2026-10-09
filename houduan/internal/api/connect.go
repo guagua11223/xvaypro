@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"xvay/houduan/internal/errs"
+	"xvay/houduan/internal/protocol"
 	"xvay/houduan/internal/store"
 	"xvay/houduan/internal/subscription"
 )
@@ -62,6 +63,7 @@ func (s *Server) appConnect(w http.ResponseWriter, r *http.Request) error {
 		"node":        publicNode(node, now, s.cfg.NodeOfflineMs),
 		"protocol":    protocolName,
 		"profile":     profile,
+		"keys":        protocol.VLESSKeys(),
 		"connectedAt": now,
 	})
 	return nil

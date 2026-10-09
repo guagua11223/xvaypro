@@ -50,7 +50,7 @@ class AssetRemoteProtocolGithub implements AssetRemoteProtocol {
     } else {
       logger.w("match failed: $url");
       withContext((context) {
-        showSnackBarNow(context, Text("match failed: $url"));
+        showSnackBarNow(context, Text("未能匹配地址：$url"));
       });
       throw Exception("match failed: $url");
     }

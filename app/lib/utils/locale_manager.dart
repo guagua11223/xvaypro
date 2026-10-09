@@ -26,32 +26,37 @@ class LocaleManager with ChangeNotifier {
     logger.d("finished: LocaleManager.init");
   }
 
+  static const Locale chinese = Locale('zh', 'CN');
+
   Locale fromString(String localeString) {
+    return locale = parse(localeString);
+  }
+
+  Locale parse(String localeString) {
     final localeParts = localeString.split("_");
     if (localeParts.length == 1) {
-      locale = Locale(localeParts[0]); // e.g., "zh"
-    } else if (localeParts.length == 2) {
-      locale = Locale(localeParts[0], localeParts[1]); // e.g., "zh_CN"
-    } else if (localeParts.length == 3) {
-      locale = Locale.fromSubtags(
+      return Locale(localeParts[0]); // e.g., "zh"
+    }
+    if (localeParts.length == 2) {
+      return Locale(localeParts[0], localeParts[1]); // e.g., "zh_CN"
+    }
+    if (localeParts.length == 3) {
+      return Locale.fromSubtags(
         languageCode: localeParts[0],
         scriptCode: localeParts[1],
         countryCode: localeParts[2],
       ); // e.g., "zh_Hans_CN"
-    } else {
-      logger.w("failed to parse locale $localeString");
-      return Locale('en', 'US');
     }
-    return locale;
+    logger.w("failed to parse locale $localeString");
+    return chinese;
   }
 
   void update({bool notify = false}) {
     if (prefs.getBool('app.locale.followSystem')!) {
-      var dispatcher = SchedulerBinding.instance.platformDispatcher;
-      locale = dispatcher.locale;
+      final system = SchedulerBinding.instance.platformDispatcher.locale;
+      locale = system.languageCode == 'zh' ? system : chinese;
     } else {
-      final localeString = prefs.getString('app.locale')!;
-      locale = fromString(localeString);
+      locale = parse(prefs.getString('app.locale')!);
     }
 
     if (notify) {

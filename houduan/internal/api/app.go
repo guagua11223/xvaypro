@@ -7,6 +7,7 @@ import (
 
 	"xvay/houduan/internal/auth"
 	"xvay/houduan/internal/errs"
+	"xvay/houduan/internal/protocol"
 	"xvay/houduan/internal/store"
 	"xvay/houduan/internal/subscription"
 	"xvay/houduan/internal/validate"
@@ -72,6 +73,14 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	writeOK(w, http.StatusOK, map[string]any{"token": token, "user": appUser(user, s.cfg)})
+	return nil
+}
+
+func (s *Server) appKeys(w http.ResponseWriter, r *http.Request) error {
+	if _, err := s.requireUser(r); err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, protocol.VLESSKeys())
 	return nil
 }
 

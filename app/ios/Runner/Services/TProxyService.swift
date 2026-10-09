@@ -1,5 +1,5 @@
 import Foundation
-// import NetworkExtension
+import NetworkExtension
 import Libv2raymobile
 
 
@@ -55,7 +55,7 @@ class TProxyService {
         Libv2raymobileSetEnv("v2ray.location.asset", assetPath)
         Libv2raymobileSetEnv("xray.location.asset", assetPath)
         coreManager!.runConfig(configFilePath)
-    
+
         isCoreActive = true
         notifyAppDelegateCoreStatusChange()
     }
@@ -73,12 +73,61 @@ class TProxyService {
     }
 
     func startTun(){
-        isTunActive = false
+        let bundleId = (Bundle.main.bundleIdentifier ?? "") + ".PacketTunnel"
+        let coreConfig = (try? String(contentsOfFile: getConfigFilePath(), encoding: .utf8)) ?? ""
+        let tunConfig = (try? String(contentsOfFile: tunConfigFilePath(), encoding: .utf8)) ?? ""
+        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, _ in
+            guard let self else { return }
+            let manager = managers?.first ?? NETunnelProviderManager()
+            let proto = NETunnelProviderProtocol()
+            proto.providerBundleIdentifier = bundleId
+            proto.serverAddress = "飞连"
+            let storedPort = preferences.integer(forKey: "flutter.app.http.port")
+            let httpPort = storedPort > 0 ? storedPort : 15492
+            proto.providerConfiguration = [
+                "coreConfig": coreConfig,
+                "tunConfig": tunConfig,
+                "httpPort": httpPort,
+            ]
+            manager.protocolConfiguration = proto
+            manager.localizedDescription = "飞连"
+            manager.isEnabled = true
+            manager.saveToPreferences { error in
+                if error != nil {
+                    self.finishTunStart(false)
+                    return
+                }
+                manager.loadFromPreferences { error in
+                    if error != nil {
+                        self.finishTunStart(false)
+                        return
+                    }
+                    do {
+                        try manager.connection.startVPNTunnel()
+                        self.finishTunStart(true)
+                    } catch {
+                        self.finishTunStart(false)
+                    }
+                }
+            }
+        }
+    }
+
+    private func finishTunStart(_ started: Bool) {
+        isTunActive = started
         notifyAppDelegateTunStatusChange()
     }
     
     func stopTun(){
-        isTunActive = false
-        notifyAppDelegateTunStatusChange()
+        NETunnelProviderManager.loadAllFromPreferences { [weak self] managers, _ in
+            managers?.first?.connection.stopVPNTunnel()
+            self?.isTunActive = false
+            self?.notifyAppDelegateTunStatusChange()
+        }
+    }
+
+    private func tunConfigFilePath() -> String {
+        let appPath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return appPath.appendingPathComponent("conf/tun2socks.hev_socks5_tunnel.gen.yaml").path
     }
 }

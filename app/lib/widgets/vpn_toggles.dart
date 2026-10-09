@@ -29,7 +29,7 @@ class VPNTogglesState extends State<VPNToggles> {
 
   void handleError(Object e) {
     logger.e("tun: $e");
-    if (mounted) showSnackBarNow(context, Text("tun: $e"));
+    if (mounted) showSnackBarNow(context, Text("虚拟网卡：$e"));
   }
 
   void toggleAll(bool shouldEnable) async {
@@ -46,7 +46,7 @@ class VPNTogglesState extends State<VPNToggles> {
     } finally {
       if (err != null) {
         vPNMan.setisTogglingAll(false);
-        if (mounted) showSnackBarNow(context, Text("toggle: $err"));
+        if (mounted) showSnackBarNow(context, Text("切换失败：$err"));
       }
     }
   }
@@ -162,7 +162,7 @@ class VPNTogglesState extends State<VPNToggles> {
           ),
         ListTile(
           dense: widget.isDense,
-          title: Text("Tun2socks"),
+          title: Text(context.loc.tun2socks),
           trailing: Transform.scale(
             scale: switchScale,
             origin: const Offset(32, 0),

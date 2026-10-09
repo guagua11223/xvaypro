@@ -79,7 +79,7 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
 
   void _handleTunError(Object e) {
     logger.e("tun: $e");
-    if (mounted) showSnackBarNow(context, Text("tun: $e"));
+    if (mounted) showSnackBarNow(context, Text("虚拟网卡：$e"));
   }
 
   Future<void> _setFullMask(bool enable) async {

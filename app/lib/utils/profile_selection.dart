@@ -51,7 +51,7 @@ Future<void> toggleVpnConnection(BuildContext context) async {
     if (err != null) {
       vPNMan.setisTogglingAll(false);
       if (context.mounted) {
-        showSnackBarNow(context, Text("toggle: $err"));
+        showSnackBarNow(context, Text("切换失败：$err"));
       }
     }
   }

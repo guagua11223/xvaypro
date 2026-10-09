@@ -100,7 +100,7 @@ We hope you choose well between your home world and Wonderlands.""",
         ),
       ),
       ListTile(
-        title: const Text("AnyPortal"),
+        title: const Text("飞连"),
         subtitle: Text(version),
       ),
       ListTile(

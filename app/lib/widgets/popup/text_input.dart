@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../extensions/localization.dart';
+
 class TextInputPopup extends StatefulWidget {
   final String title;
   final String initialValue;
@@ -52,14 +54,14 @@ class TextInputPopupState extends State<TextInputPopup> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.loc.cancel),
         ),
         TextButton(
           onPressed: () {
             widget.onSaved(_textController.text);
             Navigator.pop(context);
           },
-          child: const Text('Save'),
+          child: Text(context.loc.save),
         ),
       ],
     );

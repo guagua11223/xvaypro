@@ -1,7 +1,6 @@
 package api
 
 import (
-	"strconv"
 	"time"
 
 	"xvay/houduan/internal/access"
@@ -18,35 +17,18 @@ type AccessView struct {
 }
 
 type AppUser struct {
-	ID                   int64        `json:"id"`
-	IDText               string       `json:"idText"`
-	Username             string       `json:"username"`
-	Nickname             string       `json:"nickname"`
-	Avatar               string       `json:"avatar"`
-	UserType             string       `json:"userType"`
-	UserTypeLabel        string       `json:"userTypeLabel"`
-	Email                string       `json:"email"`
-	EmailBound           bool         `json:"emailBound"`
-	BindEmailReminder    bool         `json:"bindEmailReminder"`
-	BindEmailMessage     string       `json:"bindEmailMessage,omitempty"`
-	IsDistributor        int          `json:"isDistributor"`
-	IsAgent              int          `json:"isAgent"`
-	CommissionMode       int          `json:"commissionMode"`
-	WalletEnabled        int          `json:"walletEnabled"`
-	CanAuthorizeAgent    int          `json:"canAuthorizeAgent"`
-	EmailStatus          int          `json:"emailStatus"`
-	InviteCode           string       `json:"inviteCode,omitempty"`
-	Service              *ServiceView `json:"service,omitempty"`
-	UUID                 string       `json:"uuid"`
-	Status               string       `json:"status"`
-	Upload               int64        `json:"upload"`
-	Download             int64        `json:"download"`
-	Total                int64        `json:"total"`
-	ExpireAt             int64        `json:"expireAt"`
-	DeviceLimit          int64        `json:"deviceLimit"`
-	SubscriptionURL      string       `json:"subscriptionUrl"`
-	SubscriptionProtocol string       `json:"subscriptionProtocol"`
-	Access               AccessView   `json:"access"`
+	ID                   int64      `json:"id"`
+	Email                string     `json:"email"`
+	UUID                 string     `json:"uuid"`
+	Status               string     `json:"status"`
+	Upload               int64      `json:"upload"`
+	Download             int64      `json:"download"`
+	Total                int64      `json:"total"`
+	ExpireAt             int64      `json:"expireAt"`
+	DeviceLimit          int64      `json:"deviceLimit"`
+	SubscriptionURL      string     `json:"subscriptionUrl"`
+	SubscriptionProtocol string     `json:"subscriptionProtocol"`
+	Access               AccessView `json:"access"`
 }
 
 type AdminUser struct {
@@ -120,75 +102,30 @@ type AdminNode struct {
 	URL        string   `json:"url,omitempty"`
 }
 
-type ServiceView struct {
-	TotalBytes     int64  `json:"totalBytes"`
-	UsedBytes      int64  `json:"usedBytes"`
-	RemainingBytes int64  `json:"remainingBytes"`
-	ExpireAt       int64  `json:"expireAt"`
-	RemainingMs    int64  `json:"remainingMs"`
-	ExpiringSoon   bool   `json:"expiringSoon"`
-	Expired        bool   `json:"expired"`
-	RemindMessage  string `json:"remindMessage,omitempty"`
-}
-
 type PublicAnnouncement struct {
-	ID         int64  `json:"id"`
-	Title      string `json:"title"`
-	Body       string `json:"body"`
-	CreatedAt  int64  `json:"createdAt"`
-	Historical bool   `json:"historical"`
+	ID        int64  `json:"id"`
+	Title     string `json:"title"`
+	Body      string `json:"body"`
+	CreatedAt int64  `json:"createdAt"`
 }
 
 type SettingsView struct {
-	ProfileName           string `json:"profileName"`
-	SupportURL            string `json:"supportUrl"`
-	ProfileWebPageURL     string `json:"profileWebPageUrl"`
-	AutoUpdateInterval    int64  `json:"autoUpdateInterval"`
-	TrialBytes            int64  `json:"trialBytes"`
-	TrialDays             int64  `json:"trialDays"`
-	SupportWechat         string `json:"supportWechat"`
-	SupportQQ             string `json:"supportQq"`
-	SupportTelegram       string `json:"supportTelegram"`
-	SupportOnline         string `json:"supportOnline"`
-	SupportQrcode         string `json:"supportQrcode"`
-	CommissionPoolPercent int64  `json:"commissionPoolPercent"`
-	CommissionSettleDay   int64  `json:"commissionSettleDay"`
-	WithdrawFeePercent    int64  `json:"withdrawFeePercent"`
-	WithdrawMinCents      int64  `json:"withdrawMinCents"`
-	ExpireRemindDays      int64  `json:"expireRemindDays"`
+	ProfileName        string `json:"profileName"`
+	SupportURL         string `json:"supportUrl"`
+	ProfileWebPageURL  string `json:"profileWebPageUrl"`
+	AutoUpdateInterval int64  `json:"autoUpdateInterval"`
+	TrialBytes         int64  `json:"trialBytes"`
+	TrialDays          int64  `json:"trialDays"`
 }
 
 func appUser(user store.User, cfg config.Config) AppUser {
 	state := access.StateOf(user.Status, user.ExpireAt, user.Upload, user.Download, user.Total, time.Now())
-	bound := user.Email != ""
-	message := ""
-	if !bound {
-		message = "当前账号未绑定邮箱，账号丢失后将无法找回。请前往账号安全完成绑定。"
-	}
 	return AppUser{
-		ID: user.ID, IDText: strconv.FormatInt(user.ID, 10),
-		Username: user.Username, Nickname: user.Nickname, Avatar: user.Avatar,
-		UserType: user.UserType, UserTypeLabel: userTypeLabel(user.UserType),
-		Email: user.Email, EmailBound: bound, BindEmailReminder: !bound, BindEmailMessage: message,
-		IsDistributor: user.IsDistributor, IsAgent: user.IsAgent, CommissionMode: user.CommissionMode,
-		WalletEnabled: user.WalletEnabled, CanAuthorizeAgent: user.CanAuthorizeAgent,
-		EmailStatus: user.EmailStatus, InviteCode: user.InviteCode,
-		UUID: user.UUID, Status: user.Status,
+		ID: user.ID, Email: user.Email, UUID: user.UUID, Status: user.Status,
 		Upload: user.Upload, Download: user.Download, Total: user.Total,
 		ExpireAt: user.ExpireAt, DeviceLimit: user.DeviceLimit,
 		SubscriptionURL: subscription.URL(cfg, user), SubscriptionProtocol: "anyportal-rest",
 		Access: AccessView{OK: state.OK, Code: state.Code, Message: state.Message},
-	}
-}
-
-func userTypeLabel(userType string) string {
-	switch userType {
-	case "agent":
-		return "代理"
-	case "dealer":
-		return "经销商"
-	default:
-		return "普通会员"
 	}
 }
 
@@ -241,10 +178,7 @@ func adminNode(node store.Node, now, offlineMs int64) AdminNode {
 }
 
 func publicAnnouncement(row store.Announcement) PublicAnnouncement {
-	return PublicAnnouncement{
-		ID: row.ID, Title: row.Title, Body: row.Body, CreatedAt: row.CreatedAt,
-		Historical: row.Enabled == 0,
-	}
+	return PublicAnnouncement{ID: row.ID, Title: row.Title, Body: row.Body, CreatedAt: row.CreatedAt}
 }
 
 func settingsView(settings map[string]string) SettingsView {
@@ -255,26 +189,7 @@ func settingsView(settings map[string]string) SettingsView {
 		ProfileName: settings["profile_name"], SupportURL: settings["support_url"],
 		ProfileWebPageURL:  settings["profile_web_page_url"],
 		AutoUpdateInterval: interval, TrialBytes: trialBytes, TrialDays: trialDays,
-		SupportWechat: settings["support_wechat"], SupportQQ: settings["support_qq"],
-		SupportTelegram: settings["support_telegram"], SupportOnline: settings["support_online"],
-		SupportQrcode:         settings["support_qrcode"],
-		CommissionPoolPercent: settingOr(settings["commission_pool_percent"], 50),
-		CommissionSettleDay:   settingOr(settings["commission_settle_day"], 1),
-		WithdrawFeePercent:    settingOr(settings["withdraw_fee_percent"], 0),
-		WithdrawMinCents:      settingOr(settings["withdraw_min_cents"], 10000),
-		ExpireRemindDays:      settingOr(settings["expire_remind_days"], 3),
 	}
-}
-
-func settingOr(raw string, fallback int64) int64 {
-	if raw == "" {
-		return fallback
-	}
-	n, err := strconv.ParseInt(raw, 10, 64)
-	if err != nil {
-		return fallback
-	}
-	return n
 }
 
 func parseSetting(value string) (int64, error) {

@@ -1,22 +1,12 @@
-import 'dart:io';
+const String kBackendBase = 'http://47.84.63.205';
 
-const _backendOverride = String.fromEnvironment('BACKEND_BASE');
+const _localHosts = {'127.0.0.1', 'localhost', '10.0.2.2'};
 
-/// Android 模拟器里的 127.0.0.1 是模拟器自己，10.0.2.2 才是本机上的 houduan。
-String resolveBackendBase() {
-  if (_backendOverride.isNotEmpty) return _backendOverride;
-  if (Platform.isAndroid) return 'http://10.0.2.2:8787';
-  return 'http://127.0.0.1:8787';
-}
-
-final String kBackendBase = resolveBackendBase();
-
-/// 80 端口在云安全组里没放行，订阅地址如果还写着 80，改走已经开放的 888。
+/// 订阅地址如果指到本机，改写到线上接口。
 String reachableBackendUrl(String url) {
   final uri = Uri.tryParse(url);
-  if (uri == null || uri.host != '47.84.63.205') return url;
-  if (uri.scheme == 'http' && (uri.port == 80 || uri.hasPort == false)) {
-    return uri.replace(port: 888).toString();
-  }
-  return url;
+  if (uri == null || !_localHosts.contains(uri.host)) return url;
+  return uri
+      .replace(scheme: 'http', host: '47.84.63.205', port: 80)
+      .toString();
 }
