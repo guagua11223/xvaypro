@@ -46,13 +46,15 @@ class _ConnectOrbState extends State<ConnectOrb>
   }
 
   void _syncAnimation() {
-    if (widget.isActive || widget.isToggling) {
-      _controller.repeat();
-    } else {
+    final reduce = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures
+        .disableAnimations;
+    if (reduce || (!widget.isActive && !widget.isToggling)) {
       _controller
         ..stop()
         ..value = 0;
+      return;
     }
+    _controller.repeat();
   }
 
   @override
@@ -63,10 +65,9 @@ class _ConnectOrbState extends State<ConnectOrb>
 
   @override
   Widget build(BuildContext context) {
-    final accent = widget.isActive
-        ? LetsColors.orbCyan
-        : LetsColors.orbPinkDeep;
-    final fill = widget.isActive ? LetsColors.accent : LetsColors.orbPink;
+    final palette = LetsColors.of(context);
+    final accent = widget.isActive ? LetsColors.onAccent : LetsColors.accent;
+    final fill = widget.isActive ? LetsColors.accent : palette.surface;
 
     return Semantics(
       button: true,
@@ -76,7 +77,11 @@ class _ConnectOrbState extends State<ConnectOrb>
         child: SizedBox(
           width: 250,
           height: 250,
-          child: AnimatedBuilder(
+          child: AnimatedScale(
+            scale: widget.isToggling ? 0.98 : 1,
+            duration: const Duration(milliseconds: 160),
+            curve: Curves.easeOut,
+            child: AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
               return CustomPaint(
@@ -116,6 +121,7 @@ class _ConnectOrbState extends State<ConnectOrb>
                 ],
               ),
             ),
+          ),
           ),
         ),
       ),
@@ -163,8 +169,8 @@ class _OrbPainter extends CustomPainter {
       Paint()
         ..shader = RadialGradient(
           colors: [
-            LetsColors.white,
-            fill.withValues(alpha: 0.35),
+            fill,
+            fill.withValues(alpha: active ? 1 : 0.92),
           ],
         ).createShader(Rect.fromCircle(center: center, radius: base * 0.58)),
     );

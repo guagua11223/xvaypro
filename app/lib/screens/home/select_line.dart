@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:drift/drift.dart' hide Column;
 
 import '../../extensions/localization.dart';
-import '../../models/profile_group.dart';
 import '../../theme/lets_colors.dart';
 import '../../utils/db.dart';
 import '../../utils/logger.dart';
@@ -99,14 +98,15 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = LetsColors.of(context);
     return Scaffold(
-      backgroundColor: LetsColors.pageBg,
+      backgroundColor: palette.page,
       appBar: LetsAppBar(
         title: context.loc.switch_region,
         actions: [
           IconButton(
             tooltip: context.loc.profiles,
-            color: LetsColors.white,
+            color: palette.onBar,
             icon: const Icon(Icons.edit_note),
             onPressed: () async {
               await Navigator.of(context).push(
@@ -120,8 +120,8 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
       body: Column(
         children: [
           Material(
-            color: LetsColors.white,
-            elevation: 2,
+            color: palette.surface,
+            elevation: 0,
             child: SizedBox(
               height: 50,
               child: Row(
@@ -136,7 +136,7 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                     child: Center(
                       child: Switch(
                         value: !_fullMask,
-                        activeColor: LetsColors.accent,
+                        activeThumbColor: LetsColors.accent,
                         onChanged: (smart) => _setFullMask(!smart),
                       ),
                     ),
@@ -164,17 +164,13 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                               Icon(
                                 Icons.public_off,
                                 size: 48,
-                                color: LetsColors.textSecondary.withValues(
-                                  alpha: 0.5,
-                                ),
+                                color: palette.muted.withValues(alpha: 0.5),
                               ),
                               const SizedBox(height: 16),
                               Text(
                                 context.loc.no_profile_yet_create_one_first,
                                 textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  color: LetsColors.textSecondary,
-                                ),
+                                style: TextStyle(color: palette.muted),
                               ),
                               const SizedBox(height: 16),
                               Center(
@@ -207,8 +203,10 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                               return Padding(
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: Material(
-                                  color: LetsColors.white,
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: palette.surface,
+                                  borderRadius: BorderRadius.circular(
+                                    LetsColors.radiusCard,
+                                  ),
                                   child: Column(
                                     crossAxisAlignment:
                                         CrossAxisAlignment.stretch,
@@ -222,9 +220,9 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                                         ),
                                         child: Text(
                                           _groupTitle(group),
-                                          style: const TextStyle(
+                                          style: TextStyle(
                                             fontSize: 13,
-                                            color: LetsColors.textSecondary,
+                                            color: palette.muted,
                                             fontWeight: FontWeight.w600,
                                           ),
                                         ),
@@ -246,7 +244,7 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                                                   radius: 16,
                                                   backgroundColor: selected
                                                       ? LetsColors.accent
-                                                      : LetsColors.pageBg,
+                                                      : palette.page,
                                                   child: Text(
                                                     profile.name.isEmpty
                                                         ? "?"
@@ -257,9 +255,8 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                                                     style: TextStyle(
                                                       fontSize: 13,
                                                       color: selected
-                                                          ? LetsColors.white
-                                                          : LetsColors
-                                                                .textPrimary,
+                                                          ? LetsColors.onAccent
+                                                          : palette.text,
                                                     ),
                                                   ),
                                                 ),
@@ -272,8 +269,7 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                                                       fontWeight: selected
                                                           ? FontWeight.w600
                                                           : FontWeight.w400,
-                                                      color: LetsColors
-                                                          .textPrimary,
+                                                      color: palette.text,
                                                     ),
                                                   ),
                                                 ),
@@ -340,7 +336,9 @@ class _ModeLabel extends StatelessWidget {
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 14,
-            color: selected ? LetsColors.textPrimary : const Color(0xFF20A1FF),
+            color: selected
+                ? LetsColors.of(context).text
+                : LetsColors.accent,
             fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
           ),
         ),

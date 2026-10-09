@@ -130,17 +130,18 @@ class _ConnectHomeState extends State<ConnectHome> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = LetsColors.of(context);
     return ColoredBox(
-      color: LetsColors.pageBg,
+      color: palette.page,
       child: Column(
         children: [
           LetsAppBar(
-            title: "AnyPortal",
+            title: "飞连",
             automaticallyImplyLeading: widget.showMenuButton,
             onLeadingTap: widget.showMenuButton ? widget.onOpenDrawer : null,
           ),
           Material(
-            color: LetsColors.pageBg,
+            color: palette.page,
             child: InkWell(
               onTap: () {
                 Navigator.of(context).push(
@@ -163,15 +164,15 @@ class _ConnectHomeState extends State<ConnectHome> {
                           Expanded(
                             child: Text(
                               context.loc.region_label(name),
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
-                                color: LetsColors.textPrimary,
+                                color: palette.text,
                               ),
                             ),
                           ),
-                          const Icon(
+                          Icon(
                             Icons.chevron_right,
-                            color: LetsColors.textSecondary,
+                            color: palette.muted,
                           ),
                         ],
                       );
@@ -196,9 +197,9 @@ class _ConnectHomeState extends State<ConnectHome> {
                           child: Text(
                             notice,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
-                              color: LetsColors.textSecondary,
+                              color: palette.muted,
                             ),
                           ),
                         ),
@@ -215,9 +216,9 @@ class _ConnectHomeState extends State<ConnectHome> {
                         const SizedBox(height: 8),
                         Text(
                           _formatElapsed(_elapsed),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 16,
-                            color: LetsColors.textSecondary,
+                            color: palette.muted,
                           ),
                         ),
                       ],
@@ -228,8 +229,8 @@ class _ConnectHomeState extends State<ConnectHome> {
             ),
           ),
           Material(
-            elevation: 10,
-            color: LetsColors.white,
+            elevation: 0,
+            color: palette.surface,
             child: SafeArea(
               top: false,
               child: SizedBox(
@@ -259,18 +260,18 @@ class _ConnectHomeState extends State<ConnectHome> {
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 15,
-                                    color: LetsColors.textPrimary,
+                                    color: palette.text,
                                   ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   status,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
-                                    color: LetsColors.textSecondary,
+                                    color: palette.muted,
                                   ),
                                 ),
                               ],
@@ -296,15 +297,16 @@ class _ConnectHomeState extends State<ConnectHome> {
                               children: [
                                 const Icon(
                                   Icons.list_alt,
-                                  color: LetsColors.white,
+                                  color: LetsColors.onAccent,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(
                                   context.loc.manage_profiles,
+                                  maxLines: 1,
                                   style: const TextStyle(
                                     fontSize: 16,
-                                    color: LetsColors.white,
+                                    color: LetsColors.onAccent,
                                   ),
                                 ),
                               ],

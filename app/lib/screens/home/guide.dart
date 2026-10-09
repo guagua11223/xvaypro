@@ -65,7 +65,7 @@ class _GuidePageState extends State<GuidePage> {
                   onPressed: _finish,
                   child: Text(
                     context.loc.guide_skip,
-                    style: const TextStyle(color: Color(0xFF20A1FF)),
+                    style: const TextStyle(color: LetsColors.onAccent),
                   ),
                 ),
               ),
@@ -88,8 +88,8 @@ class _GuidePageState extends State<GuidePage> {
                     height: 8,
                     decoration: BoxDecoration(
                       color: active
-                          ? const Color(0xFF20A1FF)
-                          : LetsColors.white.withValues(alpha: 0.3),
+                          ? LetsColors.accent
+                          : LetsColors.onAccent.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   );
@@ -104,7 +104,10 @@ class _GuidePageState extends State<GuidePage> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: LetsColors.accent,
-                      foregroundColor: LetsColors.white,
+                      foregroundColor: LetsColors.onAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+                      ),
                       elevation: 0,
                     ),
                     onPressed: () {
@@ -151,7 +154,7 @@ class _GuideSlide extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 96, color: const Color(0xFF20A1FF)),
+          Icon(icon, size: 96, color: LetsColors.accent),
           const SizedBox(height: 32),
           Text(
             title,

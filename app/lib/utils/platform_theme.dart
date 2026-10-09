@@ -60,12 +60,12 @@ ThemeData getPlatformThemeData() {
   } else {
     return ThemeData(
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF2686EA),
+        seedColor: const Color(0xFF2457D6),
         brightness: Brightness.light,
-        surface: const Color(0xFFF7F7F7),
+        surface: const Color(0xFFF4F5F7),
       ),
       useMaterial3: true,
-      scaffoldBackgroundColor: const Color(0xFFF7F7F7),
+      scaffoldBackgroundColor: const Color(0xFFF4F5F7),
       appBarTheme: const AppBarTheme(
         foregroundColor: Colors.white,
       ),
@@ -118,9 +118,15 @@ ThemeData getPlatformDarkThemeData() {
   } else {
     return ThemeData(
       brightness: Brightness.dark,
-      colorSchemeSeed: getColorSchemeSeed(),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: const Color(0xFF2457D6),
+        brightness: Brightness.dark,
+        surface: const Color(0xFF12141A),
+      ),
       useMaterial3: true,
-      scaffoldBackgroundColor: isBlackDark ? Colors.black : null,
+      scaffoldBackgroundColor: isBlackDark
+          ? const Color(0xFF0E1014)
+          : const Color(0xFF12141A),
       appBarTheme: AppBarTheme(
         backgroundColor: isBlackDark ? Colors.black : null,
       ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../config/backend.dart';
 import '../../theme/lets_colors.dart';
 import '../../utils/xvay_account.dart';
 
@@ -97,30 +96,29 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = LetsColors.of(context);
     return Scaffold(
-      backgroundColor: LetsColors.pageBg,
+      backgroundColor: palette.page,
       appBar: AppBar(
-        title: const Text('飞连 账户'),
-        backgroundColor: LetsColors.white,
-        foregroundColor: LetsColors.textPrimary,
+        title: const Text('飞连账户'),
+        backgroundColor: palette.bar,
+        foregroundColor: palette.onBar,
         elevation: 0,
       ),
       body: ListView(
         padding: const EdgeInsets.all(20),
         children: [
           Text(
-            kBackendBase,
-            style: const TextStyle(color: LetsColors.textSecondary),
+            '登录后会把订阅写入线路，套餐和公告从后端读取。',
+            style: TextStyle(color: palette.text, height: 1.4),
           ),
-          const SizedBox(height: 8),
-          const Text('登录后会把你的订阅写入线路配置，套餐和公告从后端读取。'),
           if (_notice.isNotEmpty) ...[
             const SizedBox(height: 12),
             Text(_notice),
           ],
           if (_plans.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text('可开通套餐'),
+            Text('可开通套餐', style: TextStyle(color: palette.text)),
             const SizedBox(height: 8),
             for (final plan in _plans)
               ListTile(
@@ -132,19 +130,35 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
           ],
           const SizedBox(height: 20),
+          Text('邮箱', style: TextStyle(color: palette.text, fontSize: 14)),
+          const SizedBox(height: 8),
           TextField(
             controller: _email,
             keyboardType: TextInputType.emailAddress,
-            decoration: const InputDecoration(labelText: '邮箱'),
+            style: TextStyle(color: palette.text),
+            decoration: _fieldDecoration(palette, 'name@example.com'),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
+          Text('密码', style: TextStyle(color: palette.text, fontSize: 14)),
+          const SizedBox(height: 8),
           TextField(
             controller: _password,
             obscureText: true,
-            decoration: const InputDecoration(labelText: '密码'),
+            style: TextStyle(color: palette.text),
+            decoration: _fieldDecoration(palette, '至少 8 位'),
           ),
           const SizedBox(height: 16),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: LetsColors.accent,
+              foregroundColor: LetsColors.onAccent,
+              disabledBackgroundColor: palette.line,
+              disabledForegroundColor: palette.muted,
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+              ),
+            ),
             onPressed: _busy ? null : _submit,
             child: Text(_busy ? '请稍候' : (_register ? '注册并同步' : '登录并同步')),
           ),
@@ -158,9 +172,27 @@ class _AccountScreenState extends State<AccountScreen> {
             TextButton(onPressed: _busy ? null : _logout, child: const Text('退出登录')),
           if (_message != null) ...[
             const SizedBox(height: 12),
-            Text(_message!),
+            Text(_message!, style: TextStyle(color: palette.text)),
           ],
         ],
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration(LetsPalette palette, String hint) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(LetsColors.radiusInput),
+      borderSide: BorderSide(color: palette.line),
+    );
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: palette.muted),
+      filled: true,
+      fillColor: palette.surface,
+      border: border,
+      enabledBorder: border,
+      focusedBorder: border.copyWith(
+        borderSide: const BorderSide(color: LetsColors.accent, width: 1.5),
       ),
     );
   }
