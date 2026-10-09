@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../extensions/localization.dart';
+
 class RadioListSelectionPopup<T> extends StatefulWidget {
   final String title;
   final List<T> items;
@@ -58,18 +60,18 @@ class RadioListSelectionPopupState<T>
         if (widget.onNew != null)
           TextButton(
             onPressed: widget.onNew,
-            child: const Text('New'),
+            child: Text(context.loc.create_new),
           ),
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: Text(context.loc.cancel),
         ),
         TextButton(
           onPressed: () {
             widget.onSaved(_selectedValue as T);
             Navigator.pop(context);
           },
-          child: const Text('Save'),
+          child: Text(context.loc.save),
         ),
       ],
     );

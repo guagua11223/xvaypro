@@ -53,9 +53,13 @@ Future<bool> updateProfileGroup({
     profileGroupId = oldProfileGroup.id;
     switch (profileGroupType) {
       case ProfileGroupType.remote:
-        final profileGroupRemote = await (db.select(
+        final profileGroupRemotes = await (db.select(
           db.profileGroupRemote,
-        )..where((p) => p.profileGroupId.equals(profileGroupId!))).getSingle();
+        )..where((p) => p.profileGroupId.equals(profileGroupId!))).get();
+        if (profileGroupRemotes.isEmpty) {
+          throw Exception('订阅记录不存在');
+        }
+        final profileGroupRemote = profileGroupRemotes.first;
         url ??= profileGroupRemote.url;
         autoUpdateInterval ??= profileGroupRemote.autoUpdateInterval;
         profileGroupRemoteProtocol ??= profileGroupRemote.protocol;
@@ -109,7 +113,7 @@ Future<bool> updateProfileGroup({
           }
         } catch (e) {
           withContext((context) {
-            showSnackBarNow(context, Text("failed to process $url: $e"));
+            showSnackBarNow(context, Text("处理失败 $url：$e"));
           });
           throw Exception("failed to process $url: $e");
         }
@@ -137,7 +141,7 @@ Future<bool> updateProfileGroup({
         break;
       case _:
         withContext((context) {
-          showSnackBarNow(context, Text("scheme not supported: $scheme"));
+          showSnackBarNow(context, Text("不支持的协议：$scheme"));
         });
         throw Exception("scheme not supported: $scheme");
     }
@@ -262,6 +266,7 @@ Future<bool> updateProfileGroup({
                         coreTypeId: drift.Value(coreType2Id[profile.coreType]),
                       ),
                     );
+                oldKeySet.add(profile.key);
               }
             }
             for (var profile in oldProfileList) {
@@ -278,7 +283,7 @@ Future<bool> updateProfileGroup({
             withContext((context) {
               showSnackBarNow(
                 context,
-                Text("protocol not supported: $profileGroupRemoteProtocol"),
+                Text("不支持的协议：$profileGroupRemoteProtocol"),
               );
             });
             throw Exception(

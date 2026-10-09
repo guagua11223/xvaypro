@@ -18,8 +18,8 @@ class PrefsManager {
     'app.brightness.dark.black': false,
     'app.brightness.followSystem': true,
     'app.dashboard.floatingActionButton': true,
-    'app.locale.followSystem': true,
-    'app.locale': "en_US",
+    'app.locale.followSystem': false,
+    'app.locale': "zh_CN",
     'app.connectAtLaunch':
         RuntimePlatform.isWindows ||
         RuntimePlatform.isLinux ||

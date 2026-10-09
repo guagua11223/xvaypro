@@ -1,6 +1,6 @@
 {
-    "name": "anyportal",
-    "short_name": "anyportal",
+    "name": "飞连",
+    "short_name": "飞连",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#ffffff",

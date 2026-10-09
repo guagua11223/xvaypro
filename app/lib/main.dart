@@ -177,14 +177,30 @@ class AnyPortal extends StatelessWidget {
       listenable: Listenable.merge([themeManager, localeManager]),
       builder: (BuildContext context, Widget? child) {
         return MaterialApp(
-          title: 'AnyPortal',
+          title: '飞连',
           navigatorKey: global.navigatorKey,
           theme: getPlatformThemeData(),
           locale: localeManager.locale,
+          localeResolutionCallback: (locale, supported) {
+            if (locale != null) {
+              for (final item in supported) {
+                if (item.languageCode == locale.languageCode &&
+                    item.countryCode == locale.countryCode) {
+                  return item;
+                }
+              }
+              for (final item in supported) {
+                if (item.languageCode == locale.languageCode) {
+                  return item;
+                }
+              }
+            }
+            return const Locale('zh', 'CN');
+          },
           darkTheme: getPlatformDarkThemeData(),
           themeMode: themeManager.isDark ? ThemeMode.dark : ThemeMode.light,
           home: HomePage(
-            title: 'AnyPortal',
+            title: '飞连',
           ),
           localizationsDelegates: [
             LocaleNamesLocalizationsDelegate(),

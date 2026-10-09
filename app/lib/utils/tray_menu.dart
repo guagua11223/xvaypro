@@ -37,7 +37,7 @@ class TrayMenuManager {
       ),
     );
 
-    trayManager.setToolTip("AnyPortal");
+    trayManager.setToolTip("飞连");
 
     vPNMan.addListener(updateContextMenu);
     prefs.addListener(updateContextMenu);

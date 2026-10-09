@@ -536,7 +536,7 @@ abstract class VPNManager with ChangeNotifier {
           builder: (context) => ProfileScreen(profile: _selectedProfile),
         ),
       );
-      showSnackBarNow(context, Text("Inbalid core type"));
+      showSnackBarNow(context, Text(context.loc.invalid_core_type));
     });
   }
 
@@ -548,7 +548,7 @@ abstract class VPNManager with ChangeNotifier {
           builder: (context) => ProfileScreen(profile: _selectedProfile),
         ),
       );
-      showSnackBarNow(context, Text("Inbalid profile"));
+      showSnackBarNow(context, Text(context.loc.invalid_profile));
     });
   }
 

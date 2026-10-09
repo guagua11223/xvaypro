@@ -157,7 +157,7 @@ misc:
 
   void handleError(Object e) {
     logger.e("tun: $e");
-    if (mounted) showSnackBarNow(context, Text("tun: $e"));
+    if (mounted) showSnackBarNow(context, Text("虚拟网卡：$e"));
   }
 
   Future<void> copyTextThenNotify(String text) async {

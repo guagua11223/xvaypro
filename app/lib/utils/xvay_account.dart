@@ -337,15 +337,19 @@ Future<void> applyConnectProfile(Map<String, dynamic> profile) async {
   final format = profile['format'] as String? ?? 'json';
   final rawConfig = profile['coreConfig'];
   final coreCfg = rawConfig is Map ? jsonEncode(rawConfig) : rawConfig?.toString() ?? '{}';
-  final coreType = await (db.select(
+  final coreTypes = await (db.select(
     db.coreType,
-  )..where((row) => row.name.equals(coreTypeName))).getSingleOrNull();
-  if (coreType == null) {
+  )..where((row) => row.name.equals(coreTypeName))).get();
+  if (coreTypes.isEmpty) {
     throw Exception('当前客户端不能启动 $coreTypeName');
   }
-  final existing = await (db.select(
+  final coreType = coreTypes.first;
+  final matches = await (db.select(
     db.profile,
-  )..where((row) => row.key.equals(key))).getSingleOrNull();
+  )..where((row) => row.key.equals(key))).get();
+  final selectedId = prefs.getInt('app.selectedProfileId');
+  final existing = matches.where((row) => row.id == selectedId).firstOrNull ??
+      matches.firstOrNull;
   final companion = ProfileCompanion(
     name: drift.Value(name),
     key: drift.Value(key),

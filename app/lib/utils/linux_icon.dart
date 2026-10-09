@@ -14,7 +14,7 @@ Future<void> updateLinuxIcon() async {
       """[Desktop Entry]
 Version=1.0
 Type=Application
-Name=anyportal
+Name=飞连
 Exec=$execPath
 Icon=$iconPath
 Terminal=false
