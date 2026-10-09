@@ -1,0 +1,15 @@
+.DS_Store
+.apk-extract/
+lets-latest.apk
+
+app/.dart_tool/
+app/.idea/
+app/android/.idea/
+app/build/
+app/.flutter-plugins-dependencies
+
+.env
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm

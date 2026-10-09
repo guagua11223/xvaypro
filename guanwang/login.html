@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#5b46f5" />
+  <title>登录 - Xvay VPN</title>
+  <link rel="icon" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/site.css" />
+</head>
+<body data-page="login" data-title-zh="登录 - Xvay VPN" data-title-en="Sign in - Xvay VPN">
+  <div id="site-header"></div>
+  <main id="main">
+    <section class="auth">
+      <aside class="auth-aside">
+        <h1 data-zh="回来就能连" data-en="Sign in and connect">回来就能连</h1>
+        <p class="lede" data-zh="一个账号，手机和电脑一起用。试用 72 小时，会员到期即停。" data-en="One account for phone and computer. A 72-hour trial. Plans stop when they end.">一个账号，手机和电脑一起用。试用 72 小时，会员到期即停。</p>
+        <ul>
+          <li data-zh="注册完成后，试用自动开始" data-en="The trial starts as soon as you register">注册完成后，试用自动开始</li>
+          <li data-zh="最多 5 台设备同时在线" data-en="Up to five devices online">最多 5 台设备同时在线</li>
+          <li data-zh="账户只存在这台浏览器里" data-en="The account stays in this browser">账户只存在这台浏览器里</li>
+        </ul>
+      </aside>
+      <div class="auth-main">
+        <div class="auth-card">
+          <div class="tabs">
+            <button type="button" data-action="auth-tab" data-tab="login" class="is-active" data-zh="登录" data-en="Sign in">登录</button>
+            <button type="button" data-action="auth-tab" data-tab="register" data-zh="注册" data-en="Register">注册</button>
+          </div>
+          <form class="form" id="form-login">
+            <div id="panel-login">
+              <div id="login-alert" class="form-alert" hidden></div>
+              <label class="field"><span data-zh="邮箱" data-en="Email">邮箱</span><input name="email" type="email" autocomplete="username" required /></label>
+              <div class="field">
+                <span data-zh="密码" data-en="Password">密码</span>
+                <div class="pw">
+                  <input id="login-password" name="password" type="password" autocomplete="current-password" required />
+                  <button type="button" data-action="toggle-password" data-target="login-password" data-zh="显示" data-en="Show">显示</button>
+                </div>
+              </div>
+              <button class="btn btn-primary btn-block" type="submit" data-zh="登录" data-en="Sign in">登录</button>
+              <p class="fine-note" data-zh="演示账户保存在本机，清除站点数据就会消失。" data-en="Demo accounts live on this device. Clearing site data removes them.">演示账户保存在本机，清除站点数据就会消失。</p>
+            </div>
+          </form>
+          <form class="form" id="form-register">
+            <div id="panel-register" hidden>
+              <div id="reg-alert" class="form-alert" hidden></div>
+              <label class="field"><span data-zh="名字" data-en="Name">名字</span><input name="name" autocomplete="name" required /></label>
+              <label class="field"><span data-zh="邮箱" data-en="Email">邮箱</span><input name="email" type="email" autocomplete="email" required /></label>
+              <div class="field">
+                <span data-zh="密码" data-en="Password">密码</span>
+                <div class="pw">
+                  <input id="reg-password" name="password" type="password" autocomplete="new-password" required />
+                  <button type="button" data-action="toggle-password" data-target="reg-password" data-zh="显示" data-en="Show">显示</button>
+                </div>
+              </div>
+              <label class="field"><span data-zh="再输入一次" data-en="Repeat password">再输入一次</span><input name="confirm" type="password" autocomplete="new-password" required /></label>
+              <label class="check"><input name="agree" type="checkbox" /> <span><span data-zh="我已阅读并同意" data-en="I have read and agree to the">我已阅读并同意</span> <a href="legal.html?doc=agreement" data-zh="注册协议" data-en="registration agreement">注册协议</a></span></label>
+              <button class="btn btn-primary btn-block" type="submit" data-zh="注册并开始试用" data-en="Register and start the trial">注册并开始试用</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/content.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

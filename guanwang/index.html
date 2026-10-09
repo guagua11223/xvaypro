@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#5b46f5" />
+  <meta name="description" content="Xvay VPN：一点连接，稳稳在线。72 小时试用，到期即停。" />
+  <title>Xvay VPN</title>
+  <link rel="icon" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/site.css" />
+</head>
+<body data-page="home" data-title-zh="Xvay VPN - 一点连接，稳稳在线" data-title-en="Xvay VPN - Tap once, stay online">
+  <div id="site-header"></div>
+  <main id="main">
+    <section class="hero">
+      <div class="wrap hero-grid">
+        <div>
+          <h1><span data-zh="一点连接" data-en="Tap once">一点连接</span><br><span data-zh="稳稳在线" data-en="stay online">稳稳在线</span></h1>
+          <p class="lede" data-zh="打开 Xvay，点一次就好。客户端会自己挑一条当前更快的线路。新账号可以免费体验 72 小时。" data-en="Open Xvay and tap once. The app picks a faster line for you. New accounts get 72 hours free.">打开 Xvay，点一次就好。客户端会自己挑一条当前更快的线路。新账号可以免费体验 72 小时。</p>
+          <p class="hero-badge"><i>✓</i> <span data-zh="macOS、Windows、iOS、Android 与 Linux" data-en="macOS, Windows, iOS, Android, and Linux">macOS、Windows、iOS、Android 与 Linux</span></p>
+          <div class="stats">
+            <div class="stat"><b>3s</b><span data-zh="极速连接" data-en="To connect">极速连接</span></div>
+            <div class="stat"><b>72h</b><span data-zh="免费试用" data-en="Free trial">免费试用</span></div>
+            <div class="stat"><b>5</b><span data-zh="同时在线" data-en="Devices on">同时在线</span></div>
+          </div>
+          <div class="hero-actions">
+            <button class="btn btn-light" id="primary-download" type="button" data-action="download" data-platform="mac">
+              <span class="btn-icon"></span>
+              <span class="btn-label" data-zh="下载 macOS 版" data-en="Download for Mac">下载 macOS 版</span>
+            </button>
+            <div class="pop">
+              <button class="btn btn-glass" type="button" data-action="toggle-platforms" aria-expanded="false">
+                <span data-zh="其他平台" data-en="Other platforms">其他平台</span>
+              </button>
+              <div class="pop-menu" hidden>
+                <a href="download.html?os=mac">macOS</a>
+                <a href="download.html?os=windows">Windows</a>
+                <a href="download.html?os=ios">iOS</a>
+                <a href="download.html?os=android">Android</a>
+                <a href="download.html?os=linux">Linux</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="hero-stage" aria-hidden="true">
+          <div class="latency-card"><span data-zh="当前线路" data-en="Current line">当前线路</span><b data-zh="东京 · 42 ms" data-en="Tokyo · 42 ms">东京 · 42 ms</b></div>
+          <div class="laptop">
+            <div class="laptop-screen">
+              <div class="laptop-bar"><i></i><i></i><i></i></div>
+              <h3 data-zh="线路" data-en="Lines">线路</h3>
+              <div class="line-row is-on"><span class="dot"></span><span data-zh="东京" data-en="Tokyo">东京</span><em>42 ms</em></div>
+              <div class="line-row"><span class="dot"></span><span data-zh="新加坡" data-en="Singapore">新加坡</span><em>58 ms</em></div>
+              <div class="line-row"><span class="dot"></span><span data-zh="洛杉矶" data-en="Los Angeles">洛杉矶</span><em>120 ms</em></div>
+              <div class="line-row"><span class="dot"></span><span data-zh="法兰克福" data-en="Frankfurt">法兰克福</span><em>168 ms</em></div>
+            </div>
+            <div class="laptop-base"></div>
+          </div>
+          <div class="phone">
+            <div class="phone-screen">
+              <div class="phone-top"><span>9:41</span><span>5G</span></div>
+              <strong>Xvay</strong>
+              <div class="orb" id="connect-orb">连接</div>
+              <div class="caption" id="orb-caption">点击连接</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-wave" aria-hidden="true">
+        <svg viewBox="0 0 1440 90" preserveAspectRatio="none"><path fill="#fff" d="M0 48c180 40 320-36 520-20s300 52 480 24 250-28 440-8v46H0Z"/></svg>
+      </div>
+    </section>
+
+    <section class="section apps" id="apps">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 data-zh="连上之后，照常使用" data-en="Stay with the apps you already use">连上之后，照常使用</h2>
+          <p data-zh="视频、邮件、网盘、会议和游戏，不用为每个应用再做一套设置。" data-en="Video, mail, drives, meetings, and games. No extra setup for each app.">视频、邮件、网盘、会议和游戏，不用为每个应用再做一套设置。</p>
+        </div>
+        <div class="orbit-wrap">
+          <div class="ring a"></div>
+          <div class="ring b"></div>
+          <div class="core-app">
+            <svg viewBox="0 0 32 32" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round"><path d="M6 23c4-6.5 6-6.5 10 0s6 6.5 10 0"/><path d="M6 17.5c4-6.5 6-6.5 10 0s6 6.5 10 0" opacity=".75"/><path d="M6 12c4-6.5 6-6.5 10 0s6 6.5 10 0" opacity=".45"/></svg>
+          </div>
+          <div class="sat" style="--x:8%;--y:40%"><svg viewBox="0 0 32 32" fill="none" stroke="#5b46f5" stroke-width="1.8"><path d="M12 8l12 8-12 8V8z"/></svg><em data-zh="视频" data-en="Video">视频</em></div>
+          <div class="sat" style="--x:22%;--y:14%"><svg viewBox="0 0 32 32" fill="none" stroke="#5b46f5" stroke-width="1.8"><path d="M12 22V10l4 3 6-5v14l-6-3-4 3z"/></svg><em data-zh="音乐" data-en="Music">音乐</em></div>
+          <div class="sat" style="--x:48%;--y:6%"><svg viewBox="0 0 32 32" fill="none" stroke="#5b46f5" stroke-width="1.8"><rect x="5" y="8" width="22" height="16" rx="2"/><path d="M5 12l11 7 11-7"/></svg><em data-zh="邮件" data-en="Mail">邮件</em></div>
+          <div class="sat" style="--x:74%;--y:16%"><svg viewBox="0 0 32 32" fill="none" stroke="#5b46f5" stroke-width="1.8"><path d="M8 20h16v6H8zM10 20v-4a6 6 0 0 1 12 0v4"/></svg><em data-zh="网盘" data-en="Drive">网盘</em></div>
+          <div class="sat" style="--x:82%;--y:46%"><svg viewBox="0 0 32 32" fill="none" stroke="#5b46f5" stroke-width="1.8"><rect x="4" y="8" width="16" height="12" rx="2"/><path d="M20 13l8-3v12l-8-3z"/></svg><em data-zh="会议" data-en="Meet">会议</em></div>
+          <div class="sat" style="--x:68%;--y:74%"><svg viewBox="0 0 32 32" fill="none" stroke="#5b46f5" stroke-width="1.8"><rect x="6" y="10" width="20" height="12" rx="6"/><path d="M10 10V8h4M18 10V8h4"/></svg><em data-zh="游戏" data-en="Games">游戏</em></div>
+          <div class="sat" style="--x:36%;--y:78%"><svg viewBox="0 0 32 32" fill="none" stroke="#5b46f5" stroke-width="1.8"><path d="M7 8h12l6 6v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z"/><path d="M19 8v6h6"/></svg><em data-zh="文档" data-en="Docs">文档</em></div>
+          <div class="sat" style="--x:12%;--y:70%"><svg viewBox="0 0 32 32" fill="none" stroke="#5b46f5" stroke-width="1.8"><circle cx="12" cy="13" r="3"/><circle cx="20" cy="14" r="2.5"/><path d="M6 23c1-3 3-4 6-4s5 1 6 4M18 23c.6-2 2-3 4-3 1.6 0 3 .8 4 3"/></svg><em data-zh="社交" data-en="Social">社交</em></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tight" id="features">
+      <div class="wrap feature">
+        <div class="feature-grid">
+          <div class="feature-copy">
+            <div class="kicker" data-zh="连接" data-en="Connect">连接</div>
+            <h2 data-zh="点一次就够" data-en="One tap is enough">点一次就够</h2>
+            <p data-zh="不用先研究一长串节点。Xvay 会按你现在的网络挑一条更快的线路，通常几秒内就能用。觉得慢，再换一条延迟更低的。" data-en="You don't study a long node list first. Xvay picks a faster line for the network you're on, usually within a few seconds. If it feels slow, switch to a lower latency.">不用先研究一长串节点。Xvay 会按你现在的网络挑一条更快的线路，通常几秒内就能用。觉得慢，再换一条延迟更低的。</p>
+          </div>
+          <div class="scene">
+            <div class="chip" style="left:18%;top:22%"><i></i><span>42 ms</span></div>
+            <div class="chip" style="right:14%;bottom:24%"><i></i><span data-zh="已接通" data-en="Connected">已接通</span></div>
+            <svg class="illu" viewBox="0 0 420 360" fill="none">
+              <circle cx="210" cy="180" r="108" stroke="#d9d0ff" stroke-width="1"/>
+              <circle cx="210" cy="180" r="74" stroke="#c4b5fd" stroke-width="1"/>
+              <circle cx="210" cy="180" r="46" fill="url(#g1)"/>
+              <path d="M196 180l10 10 20-22" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+              <defs><radialGradient id="g1" cx="0.35" cy="0.3" r="0.8"><stop stop-color="#ff9aab"/><stop offset="1" stop-color="#ff4d6d"/></radialGradient></defs>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="wrap feature reverse">
+        <div class="feature-grid">
+          <div class="feature-copy">
+            <div class="kicker" data-zh="随行" data-en="Travel">随行</div>
+            <h2 data-zh="换个地方也能用" data-en="It travels with you">换个地方也能用</h2>
+            <p data-zh="家里、酒店、咖啡馆，用同一个账号。到了新网络，让客户端重新选一次线路，比死守上次那条更稳。" data-en="Home, hotel, café: same account. On a new network, let the app choose again. That's steadier than clinging to yesterday's line.">家里、酒店、咖啡馆，用同一个账号。到了新网络，让客户端重新选一次线路，比死守上次那条更稳。</p>
+          </div>
+          <div class="scene">
+            <div class="chip" style="left:12%;top:18%">东京</div>
+            <div class="chip" style="right:12%;top:28%">新加坡</div>
+            <div class="chip" style="left:20%;bottom:18%">法兰克福</div>
+            <svg class="illu" viewBox="0 0 420 360" fill="none">
+              <circle cx="210" cy="180" r="92" fill="#efeaff" stroke="#7c6bff" stroke-width="3"/>
+              <ellipse cx="210" cy="180" rx="40" ry="92" stroke="#8b7cff" stroke-width="1.5"/>
+              <ellipse cx="210" cy="180" rx="92" ry="34" stroke="#8b7cff" stroke-width="1.5"/>
+              <path d="M150 150c30-20 70-18 110 8" stroke="#5b46f5" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="168" cy="148" r="6" fill="#ff5d7a"/>
+              <circle cx="250" cy="164" r="6" fill="#5b46f5"/>
+              <circle cx="214" cy="214" r="6" fill="#22c55e"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="wrap feature">
+        <div class="feature-grid">
+          <div class="feature-copy">
+            <div class="kicker" data-zh="隐私" data-en="Privacy">隐私</div>
+            <h2 data-zh="少记一点" data-en="We keep less">少记一点</h2>
+            <p data-zh="连接用来保护路上的流量，不拿来做浏览档案。账户只留登录和会员需要的信息。这个官网演示也不会把数据上传到服务器。" data-en="The connection protects traffic in transit. It is not a browsing archive. The account keeps only what sign-in and the plan need. This demo site doesn't upload that data.">连接用来保护路上的流量，不拿来做浏览档案。账户只留登录和会员需要的信息。这个官网演示也不会把数据上传到服务器。</p>
+          </div>
+          <div class="scene">
+            <div class="chip" style="left:14%;bottom:22%"><i></i><span data-zh="不记录访问站点" data-en="No site history">不记录访问站点</span></div>
+            <svg class="illu" viewBox="0 0 420 360">
+              <path d="M210 78l78 32v62c0 48-32 86-78 100-46-14-78-52-78-100v-62l78-32z" fill="#fff" stroke="#5b46f5" stroke-width="3"/>
+              <path d="M186 176l16 16 34-38" fill="none" stroke="#5b46f5" stroke-width="4" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="wrap feature reverse">
+        <div class="feature-grid">
+          <div class="feature-copy">
+            <div class="kicker" data-zh="会员" data-en="Plans">会员</div>
+            <h2 data-zh="周期你来定" data-en="You pick the term">周期你来定</h2>
+            <p data-zh="7 天、1 个月、3 个月或 12 个月。到期就停，不会自动再扣一期。只出国两周的话，不必为了用上而买一年。" data-en="7 days, 1 month, 3 months, or 12 months. It stops when the term ends and does not bill another period. Two weeks away shouldn't require a year.">7 天、1 个月、3 个月或 12 个月。到期就停，不会自动再扣一期。只出国两周的话，不必为了用上而买一年。</p>
+            <p style="margin-top:14px"><a class="btn btn-line" href="#pricing" data-zh="查看时长和价格" data-en="See terms and prices">查看时长和价格</a></p>
+          </div>
+          <div class="scene">
+            <div class="chip" style="left:16%;top:24%">7 天</div>
+            <div class="chip" style="right:18%;top:36%">30 天</div>
+            <div class="chip" style="left:28%;bottom:22%" data-zh="不会自动续费" data-en="No auto-renewal">不会自动续费</div>
+            <svg class="illu" viewBox="0 0 420 360" fill="none">
+              <rect x="120" y="90" width="180" height="180" rx="28" fill="#fff" stroke="#ddd6fe" stroke-width="2"/>
+              <path d="M150 150h120M150 180h80M150 210h96" stroke="#c4b5fd" stroke-width="8" stroke-linecap="round"/>
+              <circle cx="286" cy="118" r="22" fill="#5b46f5"/>
+              <path d="M278 118l6 6 12-14" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="wrap feature">
+        <div class="feature-grid">
+          <div class="feature-copy">
+            <div class="kicker" data-zh="设备" data-en="Devices">设备</div>
+            <h2 data-zh="手机和电脑一起" data-en="Phone and computer, together">手机和电脑一起</h2>
+            <p data-zh="一个会员最多 5 台设备同时在线。平板、手机和两台电脑可以一起挂着，不用来回退出。旧设备在账户页移除就行。" data-en="One plan keeps up to five devices online. A tablet, a phone, and two computers can stay on together. Remove old devices from the account page.">一个会员最多 5 台设备同时在线。平板、手机和两台电脑可以一起挂着，不用来回退出。旧设备在账户页移除就行。</p>
+          </div>
+          <div class="scene">
+            <svg class="illu" viewBox="0 0 420 360" fill="none">
+              <rect x="70" y="96" width="200" height="130" rx="12" fill="#fff" stroke="#5b46f5" stroke-width="3"/>
+              <path d="M90 214h250" stroke="#ddd6fe" stroke-width="8" stroke-linecap="round"/>
+              <rect x="250" y="78" width="78" height="150" rx="16" fill="#fff" stroke="#ff5d7a" stroke-width="3"/>
+              <circle cx="289" cy="206" r="4" fill="#ff5d7a"/>
+              <rect x="300" y="150" width="70" height="96" rx="10" fill="#f6f4fb" stroke="#8b7cff" stroke-width="3"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <div class="wrap feature reverse">
+        <div class="feature-grid">
+          <div class="feature-copy">
+            <div class="kicker" data-zh="支持" data-en="Support">支持</div>
+            <h2 data-zh="遇到问题找得到人" data-en="A person will answer">遇到问题找得到人</h2>
+            <p data-zh="帮助中心可以先自己查。还不行，就在页面里留言，或打开右下角的助手。正式环境里，复杂问题会交给人工客服。" data-en="Search the help center first. If that's not enough, leave a note on the page or open the assistant at the bottom right. In production, harder cases go to a person.">帮助中心可以先自己查。还不行，就在页面里留言，或打开右下角的助手。正式环境里，复杂问题会交给人工客服。</p>
+          </div>
+          <div class="scene">
+            <div class="chip" style="left:14%;top:22%" data-zh="换一条线路试试" data-en="Try another line">换一条线路试试</div>
+            <div class="chip" style="right:12%;bottom:28%" data-zh="已经好了" data-en="That fixed it">已经好了</div>
+            <svg class="illu" viewBox="0 0 420 360" fill="none">
+              <rect x="86" y="110" width="160" height="72" rx="18" fill="#fff" stroke="#ddd6fe"/>
+              <rect x="180" y="176" width="160" height="64" rx="18" fill="#5b46f5"/>
+              <circle cx="210" cy="208" r="4" fill="#fff"/><circle cx="226" cy="208" r="4" fill="#fff"/><circle cx="242" cy="208" r="4" fill="#fff"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section tint" id="pricing">
+      <div class="wrap">
+        <div class="section-head">
+          <h2 data-zh="按时长开通" data-en="Pay for the time you need">按时长开通</h2>
+          <p data-zh="价格写在这里。当前网站是演示，确认开通不会扣款，只会在浏览器里记下到期时间。" data-en="Prices are listed here. This site is a demo: confirming a plan does not charge you. It only saves the expiry in your browser.">价格写在这里。当前网站是演示，确认开通不会扣款，只会在浏览器里记下到期时间。</p>
+        </div>
+        <div class="plan-grid" id="plan-grid"></div>
+        <div class="trial-row">
+          <div>
+            <strong data-zh="还没决定，就先试用 72 小时" data-en="Not sure yet? Take 72 hours">还没决定，就先试用 72 小时</strong>
+            <p data-zh="注册即可开始，不必先绑定支付方式。" data-en="It starts when you register. No payment method first.">注册即可开始，不必先绑定支付方式。</p>
+          </div>
+          <a class="btn btn-light" href="login.html?mode=register&next=account.html%3Ftrial%3D1" data-zh="领取试用" data-en="Start the trial">领取试用</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="reviews">
+      <div class="wrap section-head">
+        <h2 data-zh="用过的人这样说" data-en="What people notice">用过的人这样说</h2>
+        <p data-zh="下面是界面里的示例评价，用来展示版式。" data-en="Sample notes below, here to show the layout.">下面是界面里的示例评价，用来展示版式。</p>
+      </div>
+      <div class="marquee" id="review-marquee"></div>
+    </section>
+
+    <section class="cta">
+      <div>
+        <h2 data-zh="现在就可以试" data-en="Try it now">现在就可以试</h2>
+        <p data-zh="下载对应的系统，或先注册把 72 小时用起来。" data-en="Download for your system, or register and use the 72 hours.">下载对应的系统，或先注册把 72 小时用起来。</p>
+      </div>
+      <div class="cta-actions">
+        <a class="btn btn-light" href="download.html?os=mac">macOS</a>
+        <a class="btn btn-glass" href="download.html?os=windows">Windows</a>
+        <a class="btn btn-glass" href="download.html?os=ios">iOS</a>
+        <a class="btn btn-glass" href="download.html?os=android">Android</a>
+      </div>
+    </section>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/content.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

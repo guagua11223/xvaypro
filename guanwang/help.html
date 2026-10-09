@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#5b46f5" />
+  <title>帮助中心 - Xvay VPN</title>
+  <link rel="icon" href="favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/site.css" />
+</head>
+<body data-page="help" data-title-zh="帮助中心 - Xvay VPN" data-title-en="Help center - Xvay VPN">
+  <div id="site-header"></div>
+  <main id="main">
+    <section class="page-hero">
+      <div class="wrap">
+        <h1 data-zh="帮助中心" data-en="Help center">帮助中心</h1>
+        <p data-zh="先搜一下。没有答案的话，把问题留在这台浏览器里。" data-en="Search first. If nothing matches, leave the question in this browser.">先搜一下。没有答案的话，把问题留在这台浏览器里。</p>
+        <form class="searchbar" role="search" onsubmit="return false">
+          <input id="help-search" type="search" data-placeholder-zh="搜索问题，例如：试用、设备、续费" data-placeholder-en="Search, for example: trial, devices, renew" placeholder="搜索问题，例如：试用、设备、续费" />
+        </form>
+      </div>
+    </section>
+    <section class="section">
+      <div class="wrap help-layout">
+        <aside class="side-nav card" id="help-cats"></aside>
+        <div>
+          <div id="help-list"></div>
+          <form class="card form" id="form-contact" style="margin-top:18px">
+            <h2 data-zh="还是没解决" data-en="Still stuck">还是没解决</h2>
+            <p class="fine-note" data-zh="留言只保存在本机，演示环境不会发给真人客服。" data-en="Notes stay on this device. The demo does not send them to an agent.">留言只保存在本机，演示环境不会发给真人客服。</p>
+            <div id="contact-alert" class="form-alert" hidden></div>
+            <label class="field"><span data-zh="邮箱" data-en="Email">邮箱</span><input name="email" type="email" autocomplete="email" required /></label>
+            <label class="field">
+              <span data-zh="类型" data-en="Topic">类型</span>
+              <select name="topic">
+                <option value="连接" data-zh="连接" data-en="Connection">连接</option>
+                <option value="账户" data-zh="账户" data-en="Account">账户</option>
+                <option value="会员" data-zh="会员" data-en="Plan">会员</option>
+              </select>
+            </label>
+            <label class="field"><span data-zh="描述" data-en="What happened">描述</span><textarea name="message" required></textarea></label>
+            <button class="btn btn-primary" type="submit" data-zh="留下问题" data-en="Save the note">留下问题</button>
+          </form>
+          <div class="tickets" id="ticket-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <div id="site-footer"></div>
+  <script src="js/content.js"></script>
+  <script src="js/site.js"></script>
+</body>
+</html>

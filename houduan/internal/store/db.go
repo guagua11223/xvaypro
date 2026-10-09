@@ -1,0 +1,191 @@
+package store
+
+import (
+	"database/sql"
+	"fmt"
+	"net/url"
+	"os"
+	"path/filepath"
+	"sync/atomic"
+
+	"xvay/houduan/internal/config"
+
+	_ "modernc.org/sqlite"
+)
+
+var memorySeq atomic.Int64
+
+const schema = `
+PRAGMA foreign_keys = ON;
+PRAGMA busy_timeout = 5000;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  uuid TEXT NOT NULL UNIQUE,
+  hy2_password TEXT NOT NULL,
+  sub_token TEXT NOT NULL UNIQUE,
+  upload INTEGER NOT NULL DEFAULT 0,
+  download INTEGER NOT NULL DEFAULT 0,
+  total INTEGER NOT NULL DEFAULT 0,
+  expire_at INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  device_limit INTEGER NOT NULL DEFAULT 3,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
+CREATE TABLE IF NOT EXISTS nodes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  region TEXT NOT NULL DEFAULT '',
+  country_code TEXT NOT NULL DEFAULT '',
+  host TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  remark TEXT NOT NULL DEFAULT '',
+  secret TEXT NOT NULL,
+  xray_enabled INTEGER NOT NULL DEFAULT 1,
+  xray_port INTEGER NOT NULL DEFAULT 443,
+  xray_api_port INTEGER NOT NULL DEFAULT 10085,
+  reality_private_key TEXT NOT NULL,
+  reality_public_key TEXT NOT NULL,
+  reality_short_ids TEXT NOT NULL,
+  reality_sni TEXT NOT NULL,
+  reality_dest TEXT NOT NULL,
+  reality_spider_x TEXT NOT NULL DEFAULT '/',
+  reality_fingerprint TEXT NOT NULL DEFAULT 'chrome',
+  reality_flow TEXT NOT NULL DEFAULT 'xtls-rprx-vision',
+  hy2_enabled INTEGER NOT NULL DEFAULT 1,
+  hy2_port INTEGER NOT NULL DEFAULT 8443,
+  hy2_sni TEXT NOT NULL,
+  hy2_insecure INTEGER NOT NULL DEFAULT 0,
+  hy2_obfs_password TEXT NOT NULL DEFAULT '',
+  hy2_up_mbps INTEGER NOT NULL DEFAULT 100,
+  hy2_down_mbps INTEGER NOT NULL DEFAULT 100,
+  hy2_cert_path TEXT NOT NULL DEFAULT '',
+  hy2_key_path TEXT NOT NULL DEFAULT '',
+  hy2_masquerade TEXT NOT NULL DEFAULT '',
+  hy2_stats_secret TEXT NOT NULL DEFAULT '',
+  last_seen_at INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS node_counters (
+  node_id INTEGER NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  last_upload INTEGER NOT NULL DEFAULT 0,
+  last_download INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (node_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS announcements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+`
+
+type Store struct {
+	db *sql.DB
+}
+
+func Open(cfg config.Config) (*Store, error) {
+	dsn, err := sqliteDSN(cfg.DatabasePath)
+	if err != nil {
+		return nil, err
+	}
+	db, err := sql.Open("sqlite", dsn)
+	if err != nil {
+		return nil, err
+	}
+	db.SetMaxOpenConns(1)
+	if _, err := db.Exec(schema); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if cfg.DatabasePath != ":memory:" {
+		_, _ = db.Exec(`PRAGMA journal_mode = WAL`)
+	}
+	store := &Store{db: db}
+	if err := store.seedSettings(cfg); err != nil {
+		db.Close()
+		return nil, err
+	}
+	return store, nil
+}
+
+func (s *Store) Close() error { return s.db.Close() }
+
+func sqliteDSN(path string) (string, error) {
+	query := "_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
+	if path == ":memory:" {
+		name := fmt.Sprintf("mem%d", memorySeq.Add(1))
+		return "file:" + name + "?mode=memory&cache=shared&" + query, nil
+	}
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		return "", err
+	}
+	abs, err := filepath.Abs(path)
+	if err != nil {
+		return "", err
+	}
+	u := url.URL{Scheme: "file", Path: abs, RawQuery: query}
+	return u.String(), nil
+}
+
+func (s *Store) seedSettings(cfg config.Config) error {
+	defaults := map[string]string{
+		"profile_name":         "xvay",
+		"support_url":          "",
+		"profile_web_page_url": "",
+		"auto_update_interval": "86400",
+		"trial_bytes":          fmt.Sprintf("%d", cfg.TrialBytes),
+		"trial_days":           fmt.Sprintf("%d", cfg.TrialDays),
+	}
+	stmt, err := s.db.Prepare(`INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for key, value := range defaults {
+		if _, err := stmt.Exec(key, value); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *Store) tx(fn func(*sql.Tx) error) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	if err := fn(tx); err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+	return tx.Commit()
+}
+
+func bit(v bool) int {
+	if v {
+		return 1
+	}
+	return 0
+}
