@@ -63,28 +63,36 @@ android {
 
     def keystorePropertiesFile = rootProject.file('key.properties')
     def keystoreProperties = new Properties()
+    def hasReleaseKeystore = false
 
     if (keystorePropertiesFile.exists()) {
         keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+        hasReleaseKeystore = keystoreProperties['storeFile'] != null
     } else {
-        println "No key.properties file found."
+        println "No key.properties file found. Debug builds will use the default debug keystore."
     }
 
     signingConfigs {
         release {
-            keyAlias keystoreProperties['keyAlias']
-            keyPassword keystoreProperties['keyPassword']
-            storeFile file(keystoreProperties['storeFile'])
-            storePassword keystoreProperties['storePassword']
+            if (hasReleaseKeystore) {
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+            }
         }
     }
 
     buildTypes {
         debug {
-            signingConfig signingConfigs.release
+            if (hasReleaseKeystore) {
+                signingConfig signingConfigs.release
+            }
         }
         release {
-            signingConfig signingConfigs.release
+            if (hasReleaseKeystore) {
+                signingConfig signingConfigs.release
+            }
             // minifyEnabled false
             // shrinkResources false
             // Specify the ProGuard rules file
