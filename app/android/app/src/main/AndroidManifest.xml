@@ -3,7 +3,8 @@
     <application
         android:label="AnyPortal"
         android:name="${applicationName}"
-        android:icon="@mipmap/launcher_icon">
+        android:icon="@mipmap/launcher_icon"
+        android:usesCleartextTraffic="true">
         <service android:name=".TProxyService"
             android:exported="true"
             android:foregroundServiceType="specialUse"

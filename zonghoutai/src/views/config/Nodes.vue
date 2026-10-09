@@ -1,7 +1,8 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { addItem, CORE_TYPES, db, groupName, labelOf, NODE_STATUS, removeItem, updateItem } from '@/stores/db'
+import { request } from '@/api'
+import { adminToken, CORE_TYPES, db, groupName, labelOf, NODE_STATUS, refreshBackend } from '@/stores/db'
 import { formatTime } from '@/utils/format'
 
 const keyword = ref('')
@@ -71,29 +72,48 @@ function openEdit(row) {
 
 async function submit() {
   await formRef.value.validate()
-  const duplicated = db.nodes.some((item) => item.key === form.key.trim() && item.id !== editingId.value)
-  if (duplicated) {
-    ElMessage.warning('线路标识已存在')
-    return
-  }
-  const payload = {
-    ...form,
+  const body = {
     name: form.name.trim(),
-    key: form.key.trim(),
-    url: form.type === 'local' ? '' : form.url.trim(),
-    latency: Number(form.latency) || 0,
+    host: form.url.trim(),
+    region: form.region.trim(),
+    enabled: form.status !== 'offline',
   }
-  if (editingId.value) updateItem('nodes', editingId.value, payload)
-  else addItem('nodes', payload)
-  dialogVisible.value = false
-  ElMessage.success(editingId.value ? '线路已更新' : '线路已添加')
+  try {
+    if (editingId.value) {
+      await request(`/api/admin/nodes/${editingId.value}`, {
+        method: 'PATCH',
+        token: adminToken(),
+        body,
+      })
+    } else {
+      await request('/api/admin/nodes', {
+        method: 'POST',
+        token: adminToken(),
+        body,
+      })
+    }
+    await refreshBackend()
+    dialogVisible.value = false
+    ElMessage.success(editingId.value ? '线路已更新' : '线路已添加')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  }
 }
 
 async function remove(row) {
   await ElMessageBox.confirm(`删除线路「${row.name}」后，App 选线列表将不再包含它。`, '删除线路', { type: 'warning' })
-  removeItem('nodes', row.id)
-  ElMessage.success('已删除')
+  try {
+    await request(`/api/admin/nodes/${row.id}`, { method: 'DELETE', token: adminToken() })
+    await refreshBackend()
+    ElMessage.success('已删除')
+  } catch (error) {
+    ElMessage.error(error.message || '删除失败')
+  }
 }
+
+onMounted(() => {
+  refreshBackend().catch((error) => ElMessage.error(error.message || '加载线路失败'))
+})
 </script>
 
 <template>
@@ -180,7 +200,7 @@ async function remove(row) {
           </el-radio-group>
         </el-form-item>
         <el-form-item v-if="form.type === 'remote'" label="地址" prop="url">
-          <el-input v-model="form.url" placeholder="节点链接或订阅地址" />
+          <el-input v-model="form.url" placeholder="节点域名或 IP，例如 1.2.3.4" />
         </el-form-item>
         <el-form-item label="地区" prop="region">
           <el-input v-model="form.region" placeholder="展示在 App 选线页" />

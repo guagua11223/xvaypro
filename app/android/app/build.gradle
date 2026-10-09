@@ -134,6 +134,12 @@ task runNdkBuild(type: Exec) {
     def os = System.getProperty("os.name").toLowerCase()
     def ndkBuildExec = os.contains("win") ? "ndk-build.cmd" : "ndk-build"
     def ndkDir = android.ndkDirectory
+    def tunnelMakefile = file("src/main/jni/hev-socks5-tunnel/Android.mk")
+    doFirst {
+        if (!tunnelMakefile.exists()) {
+            throw new GradleException("缺少 hev-socks5-tunnel 源码，无法生成 libhev-socks5-tunnel.so。请把 https://github.com/heiher/hev-socks5-tunnel 检出到 app/third_party/hev-socks5-tunnel（提交 8faa126，并初始化子模块）。")
+        }
+    }
     executable = "$ndkDir/$ndkBuildExec"
     args = [
         'NDK_PROJECT_PATH=build/intermediates/ndk',

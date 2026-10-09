@@ -41,7 +41,7 @@ const router = createRouter({
 })
 
 router.beforeEach((to) => {
-  const loggedIn = Boolean(session.user)
+  const loggedIn = Boolean(session.user?.token)
   if (!to.meta.public && !loggedIn) return '/login'
   if (loggedIn && (to.path === '/login' || to.path === '/register')) return '/dashboard'
   return true

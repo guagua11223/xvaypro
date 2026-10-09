@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../extensions/localization.dart';
+import '../screens/home/account.dart';
 import '../screens/home/dashboard.dart';
 import '../screens/home/logs.dart';
 import '../screens/home/profiles.dart';
@@ -130,6 +131,11 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 children: [
+                  _DrawerItem(
+                    icon: Icons.account_circle_outlined,
+                    label: 'XVAY 账户',
+                    onTap: () => widget.onNavigate(const AccountScreen()),
+                  ),
                   _DrawerItem(
                     icon: Icons.public,
                     label: context.loc.switch_region,

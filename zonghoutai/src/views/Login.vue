@@ -2,7 +2,9 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { login } from '@/stores/db'
+import { request } from '@/api'
+import { API_BASE } from '@/config'
+import { refreshBackend, session } from '@/stores/db'
 
 const router = useRouter()
 const formRef = ref()
@@ -13,21 +15,30 @@ const form = reactive({
 })
 
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入管理令牌', trigger: 'blur' }],
 }
 
 async function submit() {
   await formRef.value.validate()
   loading.value = true
-  const result = login(form.username.trim(), form.password)
-  loading.value = false
-  if (!result.ok) {
-    ElMessage.error(result.message)
-    return
+  const token = form.password.trim()
+  try {
+    await request('/api/admin/overview', { token })
+    session.user = {
+      id: 1,
+      username: form.username.trim() || 'admin',
+      nickname: '管理员',
+      role: 'super',
+      token,
+    }
+    await refreshBackend()
+    ElMessage.success('已连接后端')
+    router.push('/dashboard')
+  } catch (error) {
+    ElMessage.error(error.message || '无法连接后端')
+  } finally {
+    loading.value = false
   }
-  ElMessage.success('登录成功')
-  router.push('/dashboard')
 }
 </script>
 
@@ -49,13 +60,13 @@ async function submit() {
     <section class="auth-panel">
       <div class="auth-card">
         <h2>登录</h2>
-        <p class="hint">使用总后台账号进入运营工作台。</p>
+        <p class="hint">管理接口：{{ API_BASE }}/api/</p>
         <el-form ref="formRef" :model="form" :rules="rules" label-position="top" @submit.prevent="submit">
-          <el-form-item label="用户名" prop="username">
-            <el-input v-model="form.username" placeholder="请输入用户名" />
+          <el-form-item label="显示名称">
+            <el-input v-model="form.username" placeholder="可选，仅显示在后台" />
           </el-form-item>
-          <el-form-item label="密码" prop="password">
-            <el-input v-model="form.password" type="password" show-password placeholder="请输入密码" />
+          <el-form-item label="管理令牌" prop="password">
+            <el-input v-model="form.password" type="password" show-password placeholder="服务器 ADMIN_TOKEN" />
           </el-form-item>
           <el-button native-type="submit" type="primary" style="width: 100%" :loading="loading">登录</el-button>
         </el-form>
@@ -63,7 +74,7 @@ async function submit() {
           还没有账号？
           <router-link to="/register">注册运营账号</router-link>
         </p>
-        <div class="demo-box">演示账号 admin / admin123。数据保存在本机浏览器，可在右上角重置。</div>
+        <div class="demo-box">登录后，用户、线路和 App 配置从 {{ API_BASE }}/api/ 读取。</div>
       </div>
     </section>
   </div>

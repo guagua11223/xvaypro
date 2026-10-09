@@ -1,7 +1,8 @@
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { addItem, agentName, db, labelOf, planName, tagOf, updateItem, USER_STATUS } from '@/stores/db'
+import { request } from '@/api'
+import { adminToken, agentName, db, labelOf, planName, refreshBackend, tagOf, USER_STATUS } from '@/stores/db'
 import { formatTime } from '@/utils/format'
 
 const keyword = ref('')
@@ -20,6 +21,7 @@ function emptyForm() {
   return {
     username: '',
     email: '',
+    password: '',
     phone: '',
     status: 'active',
     planId: db.plans[0]?.id ?? null,
@@ -34,9 +36,14 @@ function emptyForm() {
 }
 
 const rules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  phone: [{ pattern: /^$|^1\d{10}$/, message: '手机号格式不正确', trigger: 'blur' }],
-  planId: [{ required: true, message: '请选择套餐', trigger: 'change' }],
+  email: [{ required: true, type: 'email', message: '请输入邮箱', trigger: 'blur' }],
+  password: [{
+    validator: (_rule, value, callback) => {
+      if (!editingId.value && !value) callback(new Error('请设置登录密码'))
+      else callback()
+    },
+    trigger: 'blur',
+  }],
 }
 
 const filtered = computed(() => {
@@ -77,43 +84,66 @@ function openEdit(row) {
   editingId.value = row.id
   Object.assign(form, {
     ...row,
+    password: '',
     expireAt: row.expireAt ? row.expireAt.slice(0, 19) : '',
   })
   dialogVisible.value = true
 }
 
-async function submit() {
-  await formRef.value.validate()
-  const payload = {
-    ...form,
-    username: form.username.trim(),
+function userPayload() {
+  const body = {
     email: form.email.trim(),
-    phone: form.phone.trim(),
-    device: form.device.trim(),
-    region: form.region.trim(),
-    agentId: form.agentId || null,
-    trafficUsedGB: Number(form.trafficUsedGB) || 0,
-    trafficTotalGB: Number(form.trafficTotalGB) || 0,
-    expireAt: form.expireAt ? new Date(form.expireAt).toISOString() : '',
+    status: form.status,
+    total: Math.round((Number(form.trafficTotalGB) || 0) * 1024 * 1024 * 1024),
+    deviceLimit: 3,
   }
-  if (editingId.value) {
-    updateItem('users', editingId.value, payload)
-  } else {
-    addItem('users', {
-      ...payload,
-      registeredAt: new Date().toISOString(),
-      lastLoginAt: '',
-    })
-  }
-  dialogVisible.value = false
-  ElMessage.success('用户资料已保存')
+  if (form.password) body.password = form.password
+  if (form.expireAt) body.expireAt = new Date(form.expireAt).getTime()
+  return body
 }
 
-function toggleStatus(row) {
-  const next = row.status === 'disabled' ? 'active' : 'disabled'
-  updateItem('users', row.id, { status: next })
-  ElMessage.success(next === 'active' ? '已启用' : '已停用')
+async function submit() {
+  await formRef.value.validate()
+  try {
+    if (editingId.value) {
+      await request(`/api/admin/users/${editingId.value}`, {
+        method: 'PATCH',
+        token: adminToken(),
+        body: userPayload(),
+      })
+    } else {
+      await request('/api/admin/users', {
+        method: 'POST',
+        token: adminToken(),
+        body: userPayload(),
+      })
+    }
+    await refreshBackend()
+    dialogVisible.value = false
+    ElMessage.success('用户资料已保存')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  }
 }
+
+async function toggleStatus(row) {
+  const next = row.status === 'disabled' ? 'active' : 'disabled'
+  try {
+    await request(`/api/admin/users/${row.id}`, {
+      method: 'PATCH',
+      token: adminToken(),
+      body: { status: next },
+    })
+    await refreshBackend()
+    ElMessage.success(next === 'active' ? '已启用' : '已停用')
+  } catch (error) {
+    ElMessage.error(error.message || '更新失败')
+  }
+}
+
+onMounted(() => {
+  refreshBackend().catch((error) => ElMessage.error(error.message || '加载用户失败'))
+})
 </script>
 
 <template>
@@ -193,6 +223,7 @@ function toggleStatus(row) {
         <span>注册</span><div>{{ formatTime(current.registeredAt) }}</div>
         <span>最近登录</span><div>{{ formatTime(current.lastLoginAt) }}</div>
         <span>到期</span><div>{{ formatTime(current.expireAt) }}</div>
+        <span>订阅</span><div>{{ current.subscriptionUrl || '—' }}</div>
       </div>
     </el-drawer>
 
@@ -201,8 +232,11 @@ function toggleStatus(row) {
         <el-form-item label="用户名" prop="username">
           <el-input v-model="form.username" />
         </el-form-item>
-        <el-form-item label="邮箱">
+        <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" />
+        </el-form-item>
+        <el-form-item label="密码" prop="password">
+          <el-input v-model="form.password" type="password" show-password placeholder="新建时必填，编辑时留空则不修改" />
         </el-form-item>
         <el-form-item label="手机" prop="phone">
           <el-input v-model="form.phone" maxlength="11" />

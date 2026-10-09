@@ -1,4 +1,6 @@
 import { reactive, watch } from 'vue'
+import { request } from '@/api'
+import { API_BASE } from '@/config'
 import { daysFromNow } from '@/utils/format'
 
 const STORAGE_KEY = 'xvay-zonghoutai-db-v1'
@@ -230,6 +232,7 @@ function seed() {
       brightnessFollowSystem: true,
       brightnessDark: false,
       serverAddress: '127.0.0.1',
+      apiBase: API_BASE,
       socksPort: 15491,
       httpPort: 15492,
       defaultMode: 'fullSpeed',
@@ -694,6 +697,82 @@ export function removeItem(key, id) {
 
 export function saveAppSettings(patch) {
   Object.assign(db.appSettings, patch)
+}
+
+function gb(bytes) {
+  return Math.round(((Number(bytes) || 0) / 1024 / 1024 / 1024) * 10) / 10
+}
+
+export function adminToken() {
+  return session.user?.token || ''
+}
+
+export function mapRemoteUser(user) {
+  return {
+    id: user.id,
+    username: user.email,
+    email: user.email,
+    phone: '',
+    status: user.status,
+    planId: null,
+    agentId: null,
+    trafficUsedGB: gb((user.upload || 0) + (user.download || 0)),
+    trafficTotalGB: gb(user.total),
+    device: '',
+    platform: '',
+    region: '',
+    expireAt: user.expireAt ? new Date(user.expireAt).toISOString() : '',
+    registeredAt: user.createdAt ? new Date(user.createdAt).toISOString() : '',
+    lastLoginAt: '',
+    subscriptionUrl: user.subscriptionUrl || '',
+    deviceLimit: user.deviceLimit,
+  }
+}
+
+export function mapRemoteNode(node) {
+  const protocols = node.protocols || []
+  return {
+    id: node.id,
+    name: node.name,
+    key: `n-${node.id}`,
+    groupId: db.groups[0]?.id ?? 1,
+    coreType: protocols.includes('hysteria2') && !protocols.includes('reality') ? 'hysteria2' : 'xray',
+    type: 'remote',
+    url: node.host,
+    host: node.host,
+    region: node.region || '',
+    status: node.online ? 'online' : 'offline',
+    latency: 0,
+    enabled: node.enabled,
+    updatedAt: node.lastSeenAt ? new Date(node.lastSeenAt).toISOString() : '',
+  }
+}
+
+export async function refreshBackend() {
+  const token = adminToken()
+  if (!token) return
+  const [users, nodes, announcements, settings] = await Promise.all([
+    request('/api/admin/users', { token }),
+    request('/api/admin/nodes', { token }),
+    request('/api/admin/announcements', { token }),
+    request('/api/admin/settings', { token }),
+  ])
+  db.users = (users.users || []).map(mapRemoteUser)
+  db.nodes = (nodes.nodes || []).map(mapRemoteNode)
+  const notice = (announcements.announcements || [])[0]
+  if (notice) db.appSettings.announcement = `${notice.title}\n${notice.body}`
+  db.appSettings.apiBase = API_BASE
+  if (settings) {
+    db.appSettings.supportUrl = settings.supportUrl || ''
+    db.appSettings.profileName = settings.profileName || db.appSettings.profileName
+  }
+}
+
+export async function saveBackendSettings(patch) {
+  const token = adminToken()
+  if (!token) return
+  await request('/api/admin/settings', { method: 'PUT', token, body: patch })
+  await refreshBackend()
 }
 
 export function settleCommission(id) {

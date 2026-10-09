@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "app (apilatest)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "app",
+      "program": "lib/main.dart",
+      "args": ["--flavor", "apilatest"]
+    },
+    {
+      "name": "app (api28)",
+      "request": "launch",
+      "type": "dart",
+      "cwd": "app",
+      "program": "lib/main.dart",
+      "args": ["--flavor", "api28"]
+    }
+  ]
+}
