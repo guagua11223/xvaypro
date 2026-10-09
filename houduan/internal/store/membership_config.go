@@ -86,7 +86,7 @@ func (s *Store) CommissionSettings() (map[string]any, error) {
 		Level2: parseFloat(cfg["level2_rate"], 30), Level3: parseFloat(cfg["level3_rate"], 10),
 		ThreeLevel: cfg["three_level_enabled"] != "0", Cap: parseFloat(cfg["commission_cap"], 0),
 	}
-	lines := SplitCommission(100, []CommissionParty{{ID: 3}, {ID: 2}, {ID: 1}}, plan)
+	lines := SplitMemberCommission(100, []CommissionParty{{ID: 3}, {ID: 2}, {ID: 1}}, plan)
 	example := map[string]any{"base": 100, "fee": 0, "pool": roundMoney(100 * plan.Pool / 100)}
 	names := []string{"level1", "level2", "level3"}
 	for i, line := range lines {
@@ -305,6 +305,14 @@ func (s *Store) DistributorRate(userID int64) (float64, int, error) {
 	var status int
 	err := s.db.QueryRow(`SELECT commission_rate, status FROM distributors WHERE user_id = ?`, userID).Scan(&rate, &status)
 	if err == sql.ErrNoRows {
+		var flag, userRate int
+		err = s.db.QueryRow(`SELECT is_distributor, distributor_rate FROM users WHERE id = ?`, userID).Scan(&flag, &userRate)
+		if err != nil {
+			return 0, 1, err
+		}
+		if flag == 1 {
+			return float64(userRate), 0, nil
+		}
 		return 0, 1, nil
 	}
 	return rate, status, err

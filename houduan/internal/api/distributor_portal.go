@@ -77,7 +77,7 @@ func (s *Server) distributorDashboard(w http.ResponseWriter, r *http.Request) er
 	if err != nil {
 		return err
 	}
-	_, _ = s.db.SettleDue(time.Now())
+	_, _ = s.db.SettleMemberDue(time.Now())
 	members, err := s.db.MembersOfDistributor(member.ID)
 	if err != nil {
 		return err
@@ -114,7 +114,7 @@ func (s *Server) distributorDashboard(w http.ResponseWriter, r *http.Request) er
 			todayCommission += row.Amount
 		}
 	}
-	wallet, err := s.db.Wallet(member.ID)
+	wallet, err := s.db.MemberWallet(member.ID)
 	if err != nil {
 		return err
 	}
@@ -157,10 +157,10 @@ func (s *Server) distributorSetRate(w http.ResponseWriter, r *http.Request) erro
 	if err != nil {
 		return err
 	}
-	if err := s.db.SetMemberRate(member.ID, id, store.AsFloat(body["rate"]), member.ID, time.Now().UnixMilli()); err != nil {
+	if err := s.db.SetCustomRate(member.ID, id, store.AsFloat(body["rate"]), member.ID, time.Now().UnixMilli()); err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, map[string]any{"id": id, "rate": store.AsFloat(body["rate"])})
+	writeOK(w, http.StatusOK, map[string]any{"id": id, "rate": store.AsFloat(body["rate"]), "memberRate": store.AsFloat(body["rate"])})
 	return nil
 }
 
@@ -176,7 +176,7 @@ func (s *Server) distributorSetAgent(w http.ResponseWriter, r *http.Request) err
 	if err := s.db.AuthorizeAgent(member.ID, id, false); err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, map[string]any{"id": id, "isAgent": 1})
+	writeOK(w, http.StatusOK, map[string]any{"id": id, "isAgent": 1, "walletEnabled": 1})
 	return nil
 }
 
@@ -224,18 +224,18 @@ func (s *Server) distributorWithdrawals(w http.ResponseWriter, r *http.Request) 
 		if err != nil {
 			return err
 		}
-		id, err := s.db.RequestWithdraw(member.ID, store.AsFloat(body["amount"]), time.Now().UnixMilli())
+		id, err := s.db.RequestMemberWithdraw(member.ID, store.AsFloat(body["amount"]), time.Now().UnixMilli())
 		if err != nil {
 			return err
 		}
 		writeOK(w, http.StatusCreated, map[string]any{"id": id})
 		return nil
 	}
-	list, err := s.db.ListWithdrawals(member.ID, 100)
+	list, err := s.db.ListMemberWithdrawals(member.ID, 100)
 	if err != nil {
 		return err
 	}
-	wallet, err := s.db.Wallet(member.ID)
+	wallet, err := s.db.MemberWallet(member.ID)
 	if err != nil {
 		return err
 	}
@@ -298,11 +298,13 @@ func (s *Server) distributorBanRequest(w http.ResponseWriter, r *http.Request) e
 	if reason == "" {
 		reason = "申请平台处理"
 	}
-	ticket, err := s.db.CreateTicket(member.ID, "申请处理会员 "+target.Username, reason, time.Now().UnixMilli())
+	now := time.Now().UnixMilli()
+	item, err := s.db.CreatePlatformRequest(member.ID, target.ID, "ban", reason, now)
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusCreated, map[string]any{"ticketId": ticket})
+	_, _ = s.db.CreateMemberTicket(member.ID, "申请处理会员 "+target.Username, reason, now)
+	writeOK(w, http.StatusCreated, map[string]any{"id": item.ID, "ticketId": item.ID})
 	return nil
 }
 

@@ -101,14 +101,14 @@ func (s *Store) SaveNotice(id int64, title, body, kind string, enabled int, star
 	return id, err
 }
 
-func (s *Store) CreateTicket(userID int64, title, body string, now int64) (int64, error) {
+func (s *Store) CreateMemberTicket(userID int64, title, body string, now int64) (int64, error) {
 	var id int64
 	err := s.db.QueryRow(`INSERT INTO support_tickets (user_id, title, body, status, reply, created_at, updated_at) VALUES (?, ?, ?, 0, '', ?, ?) RETURNING id`,
 		userID, title, body, now, now).Scan(&id)
 	return id, err
 }
 
-func (s *Store) ListTickets(userID int64) ([]map[string]any, error) {
+func (s *Store) ListMemberTickets(userID int64) ([]map[string]any, error) {
 	query := `SELECT t.id, t.user_id, u.username, t.title, t.body, t.status, t.reply, t.created_at, t.updated_at
 		FROM support_tickets t JOIN users u ON u.id = t.user_id`
 	var args []any

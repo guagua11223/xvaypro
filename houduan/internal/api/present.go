@@ -16,19 +16,41 @@ type AccessView struct {
 	Message string `json:"message"`
 }
 
+type ServiceView struct {
+	TotalBytes     int64  `json:"totalBytes"`
+	UsedBytes      int64  `json:"usedBytes"`
+	RemainingBytes int64  `json:"remainingBytes"`
+	ExpireAt       int64  `json:"expireAt"`
+	RemainingMs    int64  `json:"remainingMs"`
+	Expired        bool   `json:"expired"`
+	ExpiringSoon   bool   `json:"expiringSoon"`
+	RemindMessage  string `json:"remindMessage,omitempty"`
+}
+
 type AppUser struct {
-	ID                   int64      `json:"id"`
-	Email                string     `json:"email"`
-	UUID                 string     `json:"uuid"`
-	Status               string     `json:"status"`
-	Upload               int64      `json:"upload"`
-	Download             int64      `json:"download"`
-	Total                int64      `json:"total"`
-	ExpireAt             int64      `json:"expireAt"`
-	DeviceLimit          int64      `json:"deviceLimit"`
-	SubscriptionURL      string     `json:"subscriptionUrl"`
-	SubscriptionProtocol string     `json:"subscriptionProtocol"`
-	Access               AccessView `json:"access"`
+	ID                   int64        `json:"id"`
+	Email                string       `json:"email"`
+	UUID                 string       `json:"uuid"`
+	Status               string       `json:"status"`
+	Upload               int64        `json:"upload"`
+	Download             int64        `json:"download"`
+	Total                int64        `json:"total"`
+	ExpireAt             int64        `json:"expireAt"`
+	DeviceLimit          int64        `json:"deviceLimit"`
+	SubscriptionURL      string       `json:"subscriptionUrl"`
+	SubscriptionProtocol string       `json:"subscriptionProtocol"`
+	InviteCode           string       `json:"inviteCode,omitempty"`
+	UserType             string       `json:"userType,omitempty"`
+	CanAuthorizeAgent    int          `json:"canAuthorizeAgent"`
+	WalletEnabled        int          `json:"walletEnabled"`
+	IsAgent              int          `json:"isAgent"`
+	IsDistributor        int          `json:"isDistributor"`
+	MemberRate           int          `json:"memberRate"`
+	Access               AccessView   `json:"access"`
+	Service              *ServiceView `json:"service,omitempty"`
+	EmailBound           bool         `json:"emailBound"`
+	BindEmailReminder    bool         `json:"bindEmailReminder"`
+	BindEmailMessage     string       `json:"bindEmailMessage,omitempty"`
 }
 
 type AdminUser struct {
@@ -116,6 +138,8 @@ type SettingsView struct {
 	AutoUpdateInterval int64  `json:"autoUpdateInterval"`
 	TrialBytes         int64  `json:"trialBytes"`
 	TrialDays          int64  `json:"trialDays"`
+	WithdrawFeePercent int64  `json:"withdrawFeePercent"`
+	WithdrawMinCents   int64  `json:"withdrawMinCents"`
 }
 
 func appUser(user store.User, cfg config.Config) AppUser {
@@ -125,6 +149,9 @@ func appUser(user store.User, cfg config.Config) AppUser {
 		Upload: user.Upload, Download: user.Download, Total: user.Total,
 		ExpireAt: user.ExpireAt, DeviceLimit: user.DeviceLimit,
 		SubscriptionURL: subscription.URL(cfg, user), SubscriptionProtocol: "anyportal-rest",
+		InviteCode: user.InviteCode, UserType: user.UserType,
+		CanAuthorizeAgent: user.CanAuthorizeAgent, WalletEnabled: user.WalletEnabled,
+		IsAgent: user.IsAgent, IsDistributor: user.IsDistributor, MemberRate: user.MemberRate,
 		Access: AccessView{OK: state.OK, Code: state.Code, Message: state.Message},
 	}
 }
@@ -185,10 +212,13 @@ func settingsView(settings map[string]string) SettingsView {
 	interval, _ := parseSetting(settings["auto_update_interval"])
 	trialBytes, _ := parseSetting(settings["trial_bytes"])
 	trialDays, _ := parseSetting(settings["trial_days"])
+	fee, _ := parseSetting(settings["withdraw_fee_percent"])
+	minCents, _ := parseSetting(settings["withdraw_min_cents"])
 	return SettingsView{
 		ProfileName: settings["profile_name"], SupportURL: settings["support_url"],
 		ProfileWebPageURL:  settings["profile_web_page_url"],
 		AutoUpdateInterval: interval, TrialBytes: trialBytes, TrialDays: trialDays,
+		WithdrawFeePercent: fee, WithdrawMinCents: minCents,
 	}
 }
 

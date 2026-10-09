@@ -167,6 +167,14 @@ func (s *Store) rebuildUsers(info map[string]columnMeta) error {
 }
 
 func (s *Store) migrateOrders() error {
+	var name string
+	err := s.db.QueryRow(`SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'orders'`).Scan(&name)
+	if err == sql.ErrNoRows {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
 	rows, err := s.db.Query(`PRAGMA table_info(orders)`)
 	if err != nil {
 		return err

@@ -107,7 +107,7 @@ func (s *Store) InitMember(id int64, username, invite string) error {
 			return err
 		}
 		if !ok || found.MemberStatus == 1 {
-			return errs.New(400, "VALIDATION", "邀请码不存在")
+			return errs.New(400, "VALIDATION", "邀请码不正确")
 		}
 		parent = found
 	}
@@ -180,9 +180,9 @@ func linkMemberTx(tx *sql.Tx, id int64, username string, parentID int64) error {
 	if parent.ParentID > 0 {
 		_ = tx.QueryRow(`SELECT parent_id FROM users WHERE id = ?`, parent.ParentID).Scan(&level3)
 	}
-	if _, err = tx.Exec(`UPDATE users SET username = ?, parent_id = ?, distributor_id = ?, relation_path = ?,
+	if _, err = tx.Exec(`UPDATE users SET username = ?, parent_id = ?, referrer_id = ?, distributor_id = ?, relation_path = ?,
 		wallet_enabled = ?, commission_mode = ?, invite_code = ? WHERE id = ?`,
-		username, parentID, distributorID, path, wallet, mode, code, id); err != nil {
+		username, parentID, parentID, distributorID, path, wallet, mode, code, id); err != nil {
 		return err
 	}
 	_, err = tx.Exec(`INSERT INTO user_relations (user_id, parent_id, level1_id, level2_id, level3_id, path)
@@ -270,7 +270,7 @@ func (s *Store) MembersOfDistributor(distributorID int64) ([]Member, error) {
 	return list, rows.Err()
 }
 
-func (s *Store) SetDistributor(id int64, rate float64, now int64) error {
+func (s *Store) OpenDistributor(id int64, rate float64, now int64) error {
 	if rate < 0 {
 		return errs.New(400, "VALIDATION", "分佣比例不能为负")
 	}
@@ -358,20 +358,19 @@ func (s *Store) SetDistributorRate(id int64, rate float64) error {
 	return nil
 }
 
-func (s *Store) SetMemberRate(distributorID, memberID int64, rate float64, actor int64, now int64) error {
+func (s *Store) SetCustomRate(distributorID, memberID int64, rate float64, actor int64, now int64) error {
 	if rate < 0 {
 		return errs.New(400, "VALIDATION", "返佣比例不能为负")
 	}
-	var own float64
-	err := s.db.QueryRow(`SELECT commission_rate FROM distributors WHERE user_id = ? AND status = 0`, distributorID).Scan(&own)
-	if err == sql.ErrNoRows {
-		return errs.New(404, "NOT_FOUND", "经销商不存在")
-	}
+	own, status, err := s.DistributorRate(distributorID)
 	if err != nil {
 		return err
 	}
+	if status != 0 {
+		return errs.New(404, "NOT_FOUND", "经销商不存在")
+	}
 	if rate > own {
-		return errs.New(400, "VALIDATION", "不能超过经销商本人比例")
+		return errs.New(400, "VALIDATION", "会员返佣比例不能超过经销商分佣比例")
 	}
 	m, ok, err := s.LoadMember(memberID)
 	if err != nil {
@@ -384,6 +383,10 @@ func (s *Store) SetMemberRate(distributorID, memberID int64, rate float64, actor
 		VALUES (?, ?, ?, 'custom', ?, ?, ?)
 		ON CONFLICT(distributor_id, member_id) DO UPDATE SET rate = excluded.rate, max_rate = excluded.max_rate, created_by = excluded.created_by`,
 		distributorID, memberID, rate, own, actor, now)
+	if err != nil {
+		return err
+	}
+	_, err = s.db.Exec(`UPDATE users SET member_rate = ? WHERE id = ?`, int(rate), memberID)
 	return err
 }
 

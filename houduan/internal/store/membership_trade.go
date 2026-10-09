@@ -3,6 +3,7 @@ package store
 import (
 	"database/sql"
 	"fmt"
+	"strconv"
 	"time"
 
 	"xvay/houduan/internal/errs"
@@ -39,7 +40,7 @@ type CommerceOrder struct {
 	CreatedAt        int64
 }
 
-type Wallet struct {
+type MemberWallet struct {
 	UserID          int64
 	Balance         float64
 	Frozen          float64
@@ -113,8 +114,8 @@ func (s *Store) CreateCommerceOrder(userID, packageID, now int64) (CommerceOrder
 	return order, err
 }
 
-func (s *Store) FindOrder(id int64) (CommerceOrder, bool, error) {
-	order, err := scanOrder(s.db.QueryRow(orderSelect+` WHERE id = ?`, id))
+func (s *Store) FindCommerceOrder(id int64) (CommerceOrder, bool, error) {
+	order, err := scanCommerceOrder(s.db.QueryRow(orderSelect+` WHERE id = ?`, id))
 	if err == sql.ErrNoRows {
 		return CommerceOrder{}, false, nil
 	}
@@ -124,8 +125,8 @@ func (s *Store) FindOrder(id int64) (CommerceOrder, bool, error) {
 	return order, true, nil
 }
 
-func (s *Store) FindOrderByNo(orderNo string) (CommerceOrder, bool, error) {
-	order, err := scanOrder(s.db.QueryRow(orderSelect+` WHERE order_no = ?`, orderNo))
+func (s *Store) FindCommerceOrderByNo(orderNo string) (CommerceOrder, bool, error) {
+	order, err := scanCommerceOrder(s.db.QueryRow(orderSelect+` WHERE order_no = ?`, orderNo))
 	if err == sql.ErrNoRows {
 		return CommerceOrder{}, false, nil
 	}
@@ -138,7 +139,7 @@ func (s *Store) FindOrderByNo(orderNo string) (CommerceOrder, bool, error) {
 const orderSelect = `SELECT id, order_no, user_id, package_id, amount, gateway_fee, commission_base, pay_channel, pay_status, pay_time,
 	refund_status, commission_status, node_start_at, node_end_at, traffic_gb, traffic_used_gb, service_status, created_at FROM orders`
 
-func scanOrder(row interface{ Scan(...any) error }) (CommerceOrder, error) {
+func scanCommerceOrder(row interface{ Scan(...any) error }) (CommerceOrder, error) {
 	var o CommerceOrder
 	err := row.Scan(&o.ID, &o.OrderNo, &o.UserID, &o.PackageID, &o.Amount, &o.GatewayFee, &o.CommissionBase,
 		&o.PayChannel, &o.PayStatus, &o.PayTime, &o.RefundStatus, &o.CommissionStatus,
@@ -173,7 +174,7 @@ func (s *Store) ListCommerceOrders(userID int64, from, to int64, limit int) ([]C
 	defer rows.Close()
 	var list []CommerceOrder
 	for rows.Next() {
-		o, err := scanOrder(rows)
+		o, err := scanCommerceOrder(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -210,7 +211,7 @@ func (s *Store) ListOrdersForUsers(ids []int64, limit int) ([]CommerceOrder, err
 	defer rows.Close()
 	var list []CommerceOrder
 	for rows.Next() {
-		o, err := scanOrder(rows)
+		o, err := scanCommerceOrder(rows)
 		if err != nil {
 			return nil, err
 		}
@@ -224,10 +225,10 @@ func (s *Store) ListOrdersForUsers(ids []int64, limit int) ([]CommerceOrder, err
 
 // MarkOrderPaid records the gateway fee and creates one commission mode.
 // A second notify for the same order does nothing.
-func (s *Store) MarkOrderPaid(orderNo string, gatewayFee float64, now int64) (CommerceOrder, error) {
+func (s *Store) MarkCommercePaid(orderNo string, gatewayFee float64, now int64) (CommerceOrder, error) {
 	var paid CommerceOrder
 	err := s.tx(func(tx *sql.Tx) error {
-		order, err := scanOrder(tx.QueryRow(orderSelect+` WHERE order_no = ?`, orderNo))
+		order, err := scanCommerceOrder(tx.QueryRow(orderSelect+` WHERE order_no = ?`, orderNo))
 		if err == sql.ErrNoRows {
 			return errs.New(404, "NOT_FOUND", "订单不存在")
 		}
@@ -264,7 +265,7 @@ func (s *Store) MarkOrderPaid(orderNo string, gatewayFee float64, now int64) (Co
 		if err := s.writeCommissions(tx, order.ID, order.UserID, base, now); err != nil {
 			return err
 		}
-		paid, err = scanOrder(tx.QueryRow(orderSelect+` WHERE id = ?`, order.ID))
+		paid, err = scanCommerceOrder(tx.QueryRow(orderSelect+` WHERE id = ?`, order.ID))
 		return err
 	})
 	return paid, err
@@ -305,7 +306,7 @@ func (s *Store) writeCommissions(tx *sql.Tx, orderID, buyerID int64, base float6
 	if err != nil {
 		return err
 	}
-	for _, line := range SplitCommission(base, upline, plan) {
+	for _, line := range SplitMemberCommission(base, upline, plan) {
 		if line.Amount < 0 {
 			continue
 		}
@@ -377,7 +378,7 @@ func creditFrozen(tx *sql.Tx, userID int64, amount float64) error {
 	return err
 }
 
-func (s *Store) SettleDue(now time.Time) (int, error) {
+func (s *Store) SettleMemberDue(now time.Time) (int, error) {
 	day := int(s.mustConfigFloat("settle_day", 1))
 	if day < 1 {
 		day = 1
@@ -430,17 +431,17 @@ func (s *Store) SettleDue(now time.Time) (int, error) {
 	return n, err
 }
 
-func (s *Store) Wallet(userID int64) (Wallet, error) {
-	var w Wallet
+func (s *Store) MemberWallet(userID int64) (MemberWallet, error) {
+	var w MemberWallet
 	err := s.db.QueryRow(`SELECT user_id, balance, frozen, total_income, total_withdraw, negative_balance FROM wallets WHERE user_id = ?`, userID).
 		Scan(&w.UserID, &w.Balance, &w.Frozen, &w.TotalIncome, &w.TotalWithdraw, &w.NegativeBalance)
 	if err == sql.ErrNoRows {
-		return Wallet{UserID: userID}, nil
+		return MemberWallet{UserID: userID}, nil
 	}
 	return w, err
 }
 
-func (s *Store) RequestWithdraw(userID int64, amount float64, now int64) (int64, error) {
+func (s *Store) RequestMemberWithdraw(userID int64, amount float64, now int64) (int64, error) {
 	member, ok, err := s.LoadMember(userID)
 	if err != nil {
 		return 0, err
@@ -539,7 +540,23 @@ func (s *Store) AuditWithdrawal(id int64, action string, now int64) error {
 	})
 }
 
-func (s *Store) ListWithdrawals(userID int64, limit int) ([]map[string]any, error) {
+func withdrawalStatusCode(status string) int {
+	switch status {
+	case "", "0", "pending":
+		return 0
+	case "1", "approved", "success":
+		return 1
+	case "2", "paid":
+		return 2
+	case "3", "rejected":
+		return 3
+	default:
+		n, _ := strconv.Atoi(status)
+		return n
+	}
+}
+
+func (s *Store) ListMemberWithdrawals(userID int64, limit int) ([]map[string]any, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}
@@ -561,14 +578,13 @@ func (s *Store) ListWithdrawals(userID int64, limit int) ([]map[string]any, erro
 	for rows.Next() {
 		var id, uid, apply, audit, pay int64
 		var amount, fee, feeRate float64
-		var status int
-		var username, month, remark string
-		if err := rows.Scan(&id, &uid, &username, &amount, &fee, &feeRate, &status, &apply, &audit, &pay, &month, &remark); err != nil {
+		var statusText, username, month, remark string
+		if err := rows.Scan(&id, &uid, &username, &amount, &fee, &feeRate, &statusText, &apply, &audit, &pay, &month, &remark); err != nil {
 			return nil, err
 		}
 		list = append(list, map[string]any{
 			"id": id, "userId": uid, "username": username, "amount": amount, "fee": fee, "feeRate": feeRate,
-			"status": status, "applyTime": apply, "auditTime": audit, "payTime": pay, "month": month, "remark": remark,
+			"status": withdrawalStatusCode(statusText), "applyTime": apply, "auditTime": audit, "payTime": pay, "month": month, "remark": remark,
 		})
 	}
 	if list == nil {
@@ -611,7 +627,7 @@ func (s *Store) ListCommissionRows(userID int64, limit int) ([]CommissionRow, er
 func (s *Store) ApplyRefund(orderID, userID int64, reason string) (int64, error) {
 	var id int64
 	err := s.tx(func(tx *sql.Tx) error {
-		order, err := scanOrder(tx.QueryRow(orderSelect+` WHERE id = ?`, orderID))
+		order, err := scanCommerceOrder(tx.QueryRow(orderSelect+` WHERE id = ?`, orderID))
 		if err == sql.ErrNoRows {
 			return errs.New(404, "NOT_FOUND", "订单不存在")
 		}
@@ -746,7 +762,7 @@ func debitWallet(tx *sql.Tx, userID int64, amount float64, fromFrozen bool) erro
 	return err
 }
 
-func (s *Store) ListRefunds(limit int) ([]map[string]any, error) {
+func (s *Store) ListMemberRefunds(limit int) ([]map[string]any, error) {
 	if limit <= 0 || limit > 500 {
 		limit = 100
 	}

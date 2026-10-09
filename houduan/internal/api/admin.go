@@ -274,7 +274,7 @@ func (s *Server) adminResetToken(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) adminNodes(w http.ResponseWriter, r *http.Request) error {
-	if err := s.requireAdmin(r); err != nil {
+	if err := s.allowRole(r); err != nil {
 		return err
 	}
 	out, err := s.presentNodes()
@@ -286,7 +286,7 @@ func (s *Server) adminNodes(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) adminCreateNode(w http.ResponseWriter, r *http.Request) error {
-	if err := s.requireAdmin(r); err != nil {
+	if err := s.allowRole(r); err != nil {
 		return err
 	}
 	body, err := readJSON(r)
@@ -315,7 +315,7 @@ func (s *Server) adminCreateNode(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) adminGetNode(w http.ResponseWriter, r *http.Request) error {
-	if err := s.requireAdmin(r); err != nil {
+	if err := s.allowRole(r); err != nil {
 		return err
 	}
 	node, err := s.loadNode(r)
@@ -331,7 +331,7 @@ func (s *Server) adminGetNode(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) adminPatchNode(w http.ResponseWriter, r *http.Request) error {
-	if err := s.requireAdmin(r); err != nil {
+	if err := s.allowRole(r); err != nil {
 		return err
 	}
 	id, err := idParam(r)
@@ -384,7 +384,7 @@ func (s *Server) adminPatchNode(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) adminDeleteNode(w http.ResponseWriter, r *http.Request) error {
-	if err := s.requireAdmin(r); err != nil {
+	if err := s.allowRole(r); err != nil {
 		return err
 	}
 	id, err := idParam(r)
@@ -400,7 +400,7 @@ func (s *Server) adminDeleteNode(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) adminNodeConfig(w http.ResponseWriter, r *http.Request) error {
-	if err := s.requireAdmin(r); err != nil {
+	if err := s.allowRole(r); err != nil {
 		return err
 	}
 	node, err := s.loadNode(r)
@@ -416,7 +416,7 @@ func (s *Server) adminNodeConfig(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) adminRenderNode(w http.ResponseWriter, r *http.Request) error {
-	if err := s.requireAdmin(r); err != nil {
+	if err := s.allowRole(r); err != nil {
 		return err
 	}
 	node, err := s.loadNode(r)
@@ -475,6 +475,20 @@ func (s *Server) adminPutSettings(w http.ResponseWriter, r *http.Request) error 
 			return err
 		}
 		patch["auto_update_interval"] = strconv.FormatInt(n, 10)
+	}
+	if value, ok := body["withdrawFeePercent"]; ok && value != nil {
+		n, err := validate.NonNegative(value, "提现手续费")
+		if err != nil {
+			return err
+		}
+		patch["withdraw_fee_percent"] = strconv.FormatInt(n, 10)
+	}
+	if value, ok := body["withdrawMinCents"]; ok && value != nil {
+		n, err := validate.NonNegative(value, "提现最低金额")
+		if err != nil {
+			return err
+		}
+		patch["withdraw_min_cents"] = strconv.FormatInt(n, 10)
 	}
 	if value, ok := body["trialBytes"]; ok && value != nil {
 		n, err := validate.ParseBytes(value, nil)

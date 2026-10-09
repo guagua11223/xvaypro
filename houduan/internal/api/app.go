@@ -143,7 +143,7 @@ func (s *Server) me(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, appUser(user, s.cfg))
+	writeOK(w, http.StatusOK, s.presentUser(user))
 	return nil
 }
 

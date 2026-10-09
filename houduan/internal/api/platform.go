@@ -51,7 +51,7 @@ func (s *Server) adminStats(w http.ResponseWriter, r *http.Request) error {
 	if err := s.allowRole(r, "finance", "support"); err != nil {
 		return err
 	}
-	_, _ = s.db.SettleDue(time.Now())
+	_, _ = s.db.SettleMemberDue(time.Now())
 	stats, err := s.db.MemberStats(time.Now())
 	if err != nil {
 		return err
@@ -104,7 +104,7 @@ func (s *Server) adminSetDistributor(w http.ResponseWriter, r *http.Request) err
 		writeOK(w, http.StatusOK, map[string]any{"id": id, "isDistributor": 0})
 		return nil
 	}
-	if err := s.db.SetDistributor(id, rate, time.Now().UnixMilli()); err != nil {
+	if err := s.db.OpenDistributor(id, rate, time.Now().UnixMilli()); err != nil {
 		return err
 	}
 	_, roleID := s.staffRole(r)
@@ -220,7 +220,7 @@ func (s *Server) adminMemberRecords(w http.ResponseWriter, r *http.Request) erro
 	if err != nil {
 		return err
 	}
-	withdraws, err := s.db.ListWithdrawals(id, 50)
+	withdraws, err := s.db.ListMemberWithdrawals(id, 50)
 	if err != nil {
 		return err
 	}
@@ -251,7 +251,7 @@ func (s *Server) adminDistributors(w http.ResponseWriter, r *http.Request) error
 		if err != nil {
 			return err
 		}
-		wallet, err := s.db.Wallet(item.ID)
+		wallet, err := s.db.MemberWallet(item.ID)
 		if err != nil {
 			return err
 		}
@@ -323,7 +323,7 @@ func (s *Server) adminWithdrawals(w http.ResponseWriter, r *http.Request) error 
 	if err := s.allowRole(r, "finance"); err != nil {
 		return err
 	}
-	list, err := s.db.ListWithdrawals(0, 200)
+	list, err := s.db.ListMemberWithdrawals(0, 200)
 	if err != nil {
 		return err
 	}
@@ -381,7 +381,7 @@ func (s *Server) adminRefunds(w http.ResponseWriter, r *http.Request) error {
 	if err := s.allowRole(r, "finance"); err != nil {
 		return err
 	}
-	list, err := s.db.ListRefunds(200)
+	list, err := s.db.ListMemberRefunds(200)
 	if err != nil {
 		return err
 	}
@@ -553,11 +553,15 @@ func (s *Server) adminTickets(w http.ResponseWriter, r *http.Request) error {
 	if err := s.allowRole(r, "support"); err != nil {
 		return err
 	}
-	list, err := s.db.ListTickets(0)
+	list, err := s.db.ListMemberTickets(0)
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, map[string]any{"tickets": list})
+	rows, err := s.db.ListAllTickets()
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, map[string]any{"tickets": list, "items": ticketViews(rows)})
 	return nil
 }
 

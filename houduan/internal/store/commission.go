@@ -33,7 +33,7 @@ func roundMoney(v float64) float64 {
 
 // SplitCommission picks exactly one mode.
 // Distributor direct referral, else a custom rate on the direct referrer, else the system pool.
-func SplitCommission(base float64, upline []CommissionParty, plan CommissionPlan) []CommissionShare {
+func SplitMemberCommission(base float64, upline []CommissionParty, plan CommissionPlan) []CommissionShare {
 	base = roundMoney(base)
 	if base <= 0 || len(upline) == 0 {
 		return nil

@@ -149,6 +149,89 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
   expires_at INTEGER NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS security_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL DEFAULT 0,
+  action TEXT NOT NULL,
+  ip TEXT NOT NULL DEFAULT '',
+  device TEXT NOT NULL DEFAULT '',
+  detail TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS email_codes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  purpose TEXT NOT NULL,
+  email TEXT NOT NULL,
+  user_id INTEGER NOT NULL DEFAULT 0,
+  code_hash TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  ip TEXT NOT NULL DEFAULT '',
+  device TEXT NOT NULL DEFAULT '',
+  consumed_at INTEGER NOT NULL DEFAULT 0,
+  attempts INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS service_plans (
+  code TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  price INTEGER NOT NULL,
+  traffic_gb INTEGER NOT NULL,
+  duration_days INTEGER NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  enabled INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE TABLE IF NOT EXISTS commission_records (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL,
+  order_no TEXT NOT NULL DEFAULT '',
+  buyer_id INTEGER NOT NULL DEFAULT 0,
+  buyer_name TEXT NOT NULL DEFAULT '',
+  beneficiary_id INTEGER NOT NULL DEFAULT 0,
+  level INTEGER NOT NULL DEFAULT 0,
+  mode INTEGER NOT NULL DEFAULT 0,
+  rate INTEGER NOT NULL DEFAULT 0,
+  base_amount INTEGER NOT NULL DEFAULT 0,
+  amount INTEGER NOT NULL DEFAULT 0,
+  reversed_amount INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at INTEGER NOT NULL,
+  settled_at INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS platform_requests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  requester_id INTEGER NOT NULL,
+  target_id INTEGER NOT NULL,
+  action TEXT NOT NULL,
+  reason TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS wallet_entries (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  kind TEXT NOT NULL,
+  amount INTEGER NOT NULL,
+  balance_after INTEGER NOT NULL DEFAULT 0,
+  ref_id INTEGER NOT NULL DEFAULT 0,
+  detail TEXT NOT NULL DEFAULT '',
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS tickets (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL,
+  subject TEXT NOT NULL,
+  body TEXT NOT NULL DEFAULT '',
+  contact TEXT NOT NULL DEFAULT '',
+  status TEXT NOT NULL DEFAULT 'open',
+  created_at INTEGER NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS agent_sessions (
   token_hash TEXT PRIMARY KEY,
   agent_id INTEGER NOT NULL,
@@ -183,7 +266,15 @@ func Open(cfg config.Config) (*Store, error) {
 		db.Close()
 		return nil, err
 	}
+	if err := store.migrate(); err != nil {
+		db.Close()
+		return nil, err
+	}
 	if err := store.migrateMembership(); err != nil {
+		db.Close()
+		return nil, err
+	}
+	if err := store.seedPlans(); err != nil {
 		db.Close()
 		return nil, err
 	}

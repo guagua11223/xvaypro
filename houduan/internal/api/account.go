@@ -145,7 +145,7 @@ func (s *Server) sendBindCode(w http.ResponseWriter, r *http.Request) error {
 	return s.deliverCode(w, r, store.PurposeBind, email, user.ID, true)
 }
 
-func (s *Server) bindEmail(w http.ResponseWriter, r *http.Request) error {
+func (s *Server) accountBindEmail(w http.ResponseWriter, r *http.Request) error {
 	user, err := s.requireUser(r)
 	if err != nil {
 		return err
