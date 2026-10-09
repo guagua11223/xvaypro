@@ -7,6 +7,9 @@ plugins {
 
 android {
     namespace = "com.github.anyportal.anyportal"
+    buildFeatures {
+        buildConfig = true
+    }
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
