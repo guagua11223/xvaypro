@@ -142,6 +142,18 @@ func (s *Store) ListNodeMeta() (map[int64]NodeMeta, error) {
 	return out, rows.Err()
 }
 
+func (s *Store) TouchLastLogin(userID, now int64) error {
+	res, err := s.db.Exec(`UPDATE user_profiles SET last_login_at = ? WHERE user_id = ?`, now, userID)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil || n > 0 {
+		return err
+	}
+	return s.SaveProfile(Profile{UserID: userID, LastLoginAt: now})
+}
+
 func (s *Store) SetCreatedAt(userID, createdAt int64) error {
 	_, err := s.db.Exec(`UPDATE users SET created_at = ? WHERE id = ?`, createdAt, userID)
 	return err

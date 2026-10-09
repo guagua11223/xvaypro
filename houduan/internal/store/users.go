@@ -2,22 +2,65 @@ package store
 
 import (
 	"database/sql"
+	"strings"
 	"time"
 
 	"xvay/houduan/internal/auth"
 	"xvay/houduan/internal/errs"
 )
 
-const userCols = `id, email, password_hash, uuid, hy2_password, sub_token,
-	upload, download, total, expire_at, status, device_limit, created_at`
+const userCols = `id, username, email, password_hash, uuid, hy2_password, sub_token,
+	upload, download, total, expire_at, status, device_limit, created_at,
+	nickname, avatar, user_type, referrer_id, distributor_id, is_distributor, is_agent,
+	commission_mode, wallet_enabled, can_authorize_agent, email_status, invite_code,
+	distributor_rate, member_rate`
+
+func colsWith(alias, cols string) string {
+	parts := strings.Split(cols, ",")
+	out := make([]string, len(parts))
+	for i, part := range parts {
+		out[i] = alias + "." + strings.TrimSpace(part)
+	}
+	return strings.Join(out, ", ")
+}
 
 func scanUser(row interface{ Scan(...any) error }) (User, error) {
 	var user User
+	var email sql.NullString
 	err := row.Scan(
-		&user.ID, &user.Email, &user.PasswordHash, &user.UUID, &user.Hy2Password, &user.SubToken,
+		&user.ID, &user.Username, &email, &user.PasswordHash, &user.UUID, &user.Hy2Password, &user.SubToken,
 		&user.Upload, &user.Download, &user.Total, &user.ExpireAt, &user.Status, &user.DeviceLimit, &user.CreatedAt,
+		&user.Nickname, &user.Avatar, &user.UserType, &user.ReferrerID, &user.DistributorID,
+		&user.IsDistributor, &user.IsAgent, &user.CommissionMode, &user.WalletEnabled,
+		&user.CanAuthorizeAgent, &user.EmailStatus, &user.InviteCode, &user.DistributorRate, &user.MemberRate,
 	)
+	user.Email = email.String
 	return user, err
+}
+
+func emailArg(email string) any {
+	email = strings.TrimSpace(email)
+	if email == "" {
+		return nil
+	}
+	return email
+}
+
+func userConflict(err error) error {
+	if err == nil {
+		return nil
+	}
+	msg := err.Error()
+	switch {
+	case strings.Contains(msg, "users.username"):
+		return errs.New(409, "CONFLICT", "用户名已存在")
+	case strings.Contains(msg, "users.email"):
+		return errs.New(409, "CONFLICT", "该邮箱已绑定其他账号")
+	case errs.IsUnique(err):
+		return errs.New(409, "CONFLICT", "账号已存在")
+	default:
+		return err
+	}
 }
 
 func (s *Store) CreateUser(input UserInput) (User, error) {
@@ -37,28 +80,63 @@ func (s *Store) CreateUser(input UserInput) (User, error) {
 	if err != nil {
 		return User{}, err
 	}
+	username := strings.TrimSpace(input.Username)
+	if username == "" {
+		username = strings.TrimSpace(input.Email)
+	}
+	if username == "" {
+		return User{}, errs.New(400, "VALIDATION", "请输入用户名")
+	}
+	nickname := strings.TrimSpace(input.Nickname)
+	if nickname == "" {
+		nickname = username
+	}
+	userType := input.UserType
+	if userType == "" {
+		userType = "member"
+	}
 	status := input.Status
 	if status == "" {
 		status = "active"
 	}
 	row := s.db.QueryRow(
 		`INSERT INTO users (
-			email, password_hash, uuid, hy2_password, sub_token,
-			upload, download, total, expire_at, status, device_limit, created_at
-		) VALUES (?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)
+			username, email, password_hash, uuid, hy2_password, sub_token,
+			upload, download, total, expire_at, status, device_limit, created_at,
+			nickname, avatar, user_type
+		) VALUES (?, ?, ?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?, ?, ?, ?)
 		RETURNING `+userCols,
-		input.Email, hash, uuid, hy2, sub, input.Total, input.ExpireAt, status, input.DeviceLimit, time.Now().UnixMilli(),
+		username, emailArg(input.Email), hash, uuid, hy2, sub,
+		input.Total, input.ExpireAt, status, input.DeviceLimit, time.Now().UnixMilli(),
+		nickname, input.Avatar, userType,
 	)
 	user, err := scanUser(row)
-	if errs.IsUnique(err) {
-		return User{}, errs.New(409, "CONFLICT", "邮箱已注册")
+	if err != nil {
+		return User{}, userConflict(err)
 	}
-	return user, err
+	return s.finishNewUser(user)
 }
 
 func (s *Store) FindUserByEmail(email string) (User, bool, error) {
 	user, err := scanUser(s.db.QueryRow(`SELECT `+userCols+` FROM users WHERE email = ?`, email))
 	return optionalUser(user, err)
+}
+
+func (s *Store) FindUserByUsername(username string) (User, bool, error) {
+	user, err := scanUser(s.db.QueryRow(`SELECT `+userCols+` FROM users WHERE username = ?`, username))
+	return optionalUser(user, err)
+}
+
+func (s *Store) FindUserByAccount(account string) (User, bool, error) {
+	account = strings.ToLower(strings.TrimSpace(account))
+	if account == "" {
+		return User{}, false, nil
+	}
+	user, ok, err := s.FindUserByUsername(account)
+	if err != nil || ok {
+		return user, ok, err
+	}
+	return s.FindUserByEmail(account)
 }
 
 func (s *Store) FindUserByID(id int64) (User, bool, error) {
@@ -73,8 +151,7 @@ func (s *Store) FindUserBySubToken(token string) (User, bool, error) {
 
 func (s *Store) FindUserBySession(token string, now int64) (User, bool, error) {
 	user, err := scanUser(s.db.QueryRow(
-		`SELECT users.id, users.email, users.password_hash, users.uuid, users.hy2_password, users.sub_token,
-			users.upload, users.download, users.total, users.expire_at, users.status, users.device_limit, users.created_at
+		`SELECT `+colsWith("users", userCols)+`
 		 FROM sessions JOIN users ON users.id = sessions.user_id
 		 WHERE sessions.token_hash = ? AND sessions.expires_at > ?`,
 		auth.HashToken(token), now,
@@ -140,6 +217,11 @@ func (s *Store) DeleteSession(token string) error {
 	return err
 }
 
+func (s *Store) DeleteUserSessions(userID int64) error {
+	_, err := s.db.Exec(`DELETE FROM sessions WHERE user_id = ?`, userID)
+	return err
+}
+
 func (s *Store) ListUsers(limit int) ([]User, error) {
 	rows, err := s.db.Query(`SELECT `+userCols+` FROM users ORDER BY id DESC LIMIT ?`, limit)
 	if err != nil {
@@ -168,8 +250,20 @@ func (s *Store) UpdateUser(id int64, patch UserPatch) (User, error) {
 	if !ok {
 		return User{}, errs.New(404, "NOT_FOUND", "用户不存在")
 	}
+	if patch.Username != nil {
+		current.Username = *patch.Username
+	}
 	if patch.Email != nil {
 		current.Email = *patch.Email
+	}
+	if patch.Nickname != nil {
+		current.Nickname = *patch.Nickname
+	}
+	if patch.Avatar != nil {
+		current.Avatar = *patch.Avatar
+	}
+	if patch.UserType != nil {
+		current.UserType = *patch.UserType
 	}
 	if patch.Password != nil {
 		hash, err := auth.HashPassword(*patch.Password)
@@ -198,17 +292,38 @@ func (s *Store) UpdateUser(id int64, patch UserPatch) (User, error) {
 	}
 	row := s.db.QueryRow(
 		`UPDATE users SET
-			email = ?, password_hash = ?, total = ?, expire_at = ?, status = ?,
-			device_limit = ?, upload = ?, download = ?
+			username = ?, email = ?, password_hash = ?, total = ?, expire_at = ?, status = ?,
+			device_limit = ?, upload = ?, download = ?, nickname = ?, avatar = ?, user_type = ?
 		 WHERE id = ?
 		 RETURNING `+userCols,
-		current.Email, current.PasswordHash, current.Total, current.ExpireAt, current.Status,
-		current.DeviceLimit, current.Upload, current.Download, id,
+		current.Username, emailArg(current.Email), current.PasswordHash, current.Total, current.ExpireAt, current.Status,
+		current.DeviceLimit, current.Upload, current.Download, current.Nickname, current.Avatar, current.UserType, id,
 	)
 	user, err := scanUser(row)
-	if errs.IsUnique(err) {
-		return User{}, errs.New(409, "CONFLICT", "邮箱已注册")
+	if err != nil {
+		return User{}, userConflict(err)
 	}
+	return user, nil
+}
+
+func (s *Store) BindUserEmail(userID int64, email string) (User, error) {
+	other, ok, err := s.FindUserByEmail(email)
+	if err != nil {
+		return User{}, err
+	}
+	if ok && other.ID == userID {
+		return other, errs.New(409, "CONFLICT", "该邮箱已绑定当前账号")
+	}
+	if ok {
+		return User{}, errs.New(409, "CONFLICT", "该邮箱已绑定其他账号")
+	}
+	if _, err := s.UpdateUser(userID, UserPatch{Email: &email}); err != nil {
+		return User{}, err
+	}
+	if _, err := s.db.Exec(`UPDATE users SET email_status = 2 WHERE id = ?`, userID); err != nil {
+		return User{}, err
+	}
+	user, _, err := s.FindUserByID(userID)
 	return user, err
 }
 

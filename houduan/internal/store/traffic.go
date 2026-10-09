@@ -132,6 +132,10 @@ func (s *Store) SetSettings(patch map[string]string) (map[string]string, error) 
 	allowed := map[string]bool{
 		"profile_name": true, "support_url": true, "profile_web_page_url": true,
 		"auto_update_interval": true, "trial_bytes": true, "trial_days": true,
+		"support_wechat": true, "support_qq": true, "support_telegram": true,
+		"support_online": true, "support_qrcode": true,
+		"commission_pool_percent": true, "commission_settle_day": true, "commission_last_period": true,
+		"withdraw_fee_percent": true, "withdraw_min_cents": true, "expire_remind_days": true,
 	}
 	err := s.tx(func(tx *sql.Tx) error {
 		for key, value := range patch {
