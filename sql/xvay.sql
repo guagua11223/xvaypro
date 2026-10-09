@@ -1,0 +1,137 @@
+-- SQLite schema for houduan (xvay).
+-- The server also creates these tables on startup. This file is the same
+-- schema for a manual database at houduan/data/xvay.sqlite.
+
+PRAGMA foreign_keys = ON;
+PRAGMA busy_timeout = 5000;
+PRAGMA journal_mode = WAL;
+
+CREATE TABLE IF NOT EXISTS users (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  email TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  uuid TEXT NOT NULL UNIQUE,
+  hy2_password TEXT NOT NULL,
+  sub_token TEXT NOT NULL UNIQUE,
+  upload INTEGER NOT NULL DEFAULT 0,
+  download INTEGER NOT NULL DEFAULT 0,
+  total INTEGER NOT NULL DEFAULT 0,
+  expire_at INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'active',
+  device_limit INTEGER NOT NULL DEFAULT 3,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS sessions (
+  token_hash TEXT PRIMARY KEY,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);
+
+CREATE TABLE IF NOT EXISTS nodes (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  name TEXT NOT NULL,
+  region TEXT NOT NULL DEFAULT '',
+  country_code TEXT NOT NULL DEFAULT '',
+  host TEXT NOT NULL,
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  remark TEXT NOT NULL DEFAULT '',
+  secret TEXT NOT NULL,
+  xray_enabled INTEGER NOT NULL DEFAULT 1,
+  xray_port INTEGER NOT NULL DEFAULT 443,
+  xray_api_port INTEGER NOT NULL DEFAULT 10085,
+  reality_private_key TEXT NOT NULL,
+  reality_public_key TEXT NOT NULL,
+  reality_short_ids TEXT NOT NULL,
+  reality_sni TEXT NOT NULL,
+  reality_dest TEXT NOT NULL,
+  reality_spider_x TEXT NOT NULL DEFAULT '/',
+  reality_fingerprint TEXT NOT NULL DEFAULT 'chrome',
+  reality_flow TEXT NOT NULL DEFAULT 'xtls-rprx-vision',
+  hy2_enabled INTEGER NOT NULL DEFAULT 1,
+  hy2_port INTEGER NOT NULL DEFAULT 8443,
+  hy2_sni TEXT NOT NULL,
+  hy2_insecure INTEGER NOT NULL DEFAULT 0,
+  hy2_obfs_password TEXT NOT NULL DEFAULT '',
+  hy2_up_mbps INTEGER NOT NULL DEFAULT 100,
+  hy2_down_mbps INTEGER NOT NULL DEFAULT 100,
+  hy2_cert_path TEXT NOT NULL DEFAULT '',
+  hy2_key_path TEXT NOT NULL DEFAULT '',
+  hy2_masquerade TEXT NOT NULL DEFAULT '',
+  hy2_stats_secret TEXT NOT NULL DEFAULT '',
+  last_seen_at INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS node_counters (
+  node_id INTEGER NOT NULL REFERENCES nodes(id) ON DELETE CASCADE,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  last_upload INTEGER NOT NULL DEFAULT 0,
+  last_download INTEGER NOT NULL DEFAULT 0,
+  PRIMARY KEY (node_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS announcements (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  enabled INTEGER NOT NULL DEFAULT 1,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS connect_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  device_id TEXT NOT NULL,
+  node_id INTEGER NOT NULL,
+  protocol TEXT NOT NULL,
+  started_at INTEGER NOT NULL,
+  stopped_at INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_connect_user ON connect_sessions(user_id, stopped_at);
+
+CREATE TABLE IF NOT EXISTS user_profiles (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  display_name TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  plan_id INTEGER NOT NULL DEFAULT 0,
+  agent_id INTEGER NOT NULL DEFAULT 0,
+  device TEXT NOT NULL DEFAULT '',
+  platform TEXT NOT NULL DEFAULT '',
+  region TEXT NOT NULL DEFAULT '',
+  last_login_at INTEGER NOT NULL DEFAULT 0,
+  demo INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS node_meta (
+  node_id INTEGER PRIMARY KEY REFERENCES nodes(id) ON DELETE CASCADE,
+  group_id INTEGER NOT NULL DEFAULT 0,
+  core_type TEXT NOT NULL DEFAULT '',
+  line_key TEXT NOT NULL DEFAULT '',
+  line_type TEXT NOT NULL DEFAULT '',
+  latency INTEGER NOT NULL DEFAULT 0,
+  line_status TEXT NOT NULL DEFAULT '',
+  url TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS catalog (
+  kind TEXT NOT NULL,
+  id INTEGER NOT NULL,
+  body TEXT NOT NULL,
+  PRIMARY KEY (kind, id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  token_hash TEXT PRIMARY KEY,
+  admin_id INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);

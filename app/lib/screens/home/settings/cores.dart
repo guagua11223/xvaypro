@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import 'package:smooth_highlight/smooth_highlight.dart';
 
 import '../../../extensions/localization.dart';
+import '../../../theme/lets_icons.dart';
 import '../../../models/asset.dart';
 import '../../../models/edit_status.dart';
 import '../../../screens/core.dart';
@@ -347,6 +348,7 @@ class _CoresScreenState extends State<CoresScreen> {
             enabled: _highlightCoresPopupMenuButton,
             color: Colors.grey,
             child: PopupMenuButton(
+              icon: const Icon(LetsIcons.more),
               itemBuilder: (context) => CoresAction.values
                   .map(
                     (action) => PopupMenuItem(

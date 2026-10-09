@@ -7,6 +7,7 @@ import 'package:path/path.dart' as p;
 import 'package:smooth_highlight/smooth_highlight.dart';
 
 import '../../../extensions/localization.dart';
+import '../../../theme/lets_icons.dart';
 import '../../../models/asset.dart';
 import '../../../screens/asset.dart';
 import '../../../utils/asset_remote/github.dart';
@@ -239,6 +240,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
             enabled: _highlightAssetsPopupMenuButton,
             color: Colors.grey,
             child: PopupMenuButton(
+              icon: const Icon(LetsIcons.more),
               itemBuilder: (context) => AssetsAction.values
                   .map(
                     (action) => PopupMenuItem(

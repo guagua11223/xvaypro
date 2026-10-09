@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../extensions/localization.dart';
 import '../../theme/lets_colors.dart';
+import '../../theme/lets_icons.dart';
 import '../../utils/prefs.dart';
 
 class GuidePage extends StatefulWidget {
@@ -36,17 +37,17 @@ class _GuidePageState extends State<GuidePage> {
   Widget build(BuildContext context) {
     final pages = [
       _GuideSlide(
-        icon: Icons.bolt,
+        icon: LetsIcons.bolt,
         title: context.loc.guide_title_1,
         subtitle: context.loc.guide_desc_1,
       ),
       _GuideSlide(
-        icon: Icons.shield_outlined,
+        icon: LetsIcons.shield,
         title: context.loc.guide_title_2,
         subtitle: context.loc.guide_desc_2,
       ),
       _GuideSlide(
-        icon: Icons.public,
+        icon: LetsIcons.region,
         title: context.loc.guide_title_3,
         subtitle: context.loc.guide_desc_3,
       ),
@@ -65,7 +66,7 @@ class _GuidePageState extends State<GuidePage> {
                   onPressed: _finish,
                   child: Text(
                     context.loc.guide_skip,
-                    style: const TextStyle(color: Color(0xFF20A1FF)),
+                    style: const TextStyle(color: LetsColors.onAccent),
                   ),
                 ),
               ),
@@ -88,8 +89,8 @@ class _GuidePageState extends State<GuidePage> {
                     height: 8,
                     decoration: BoxDecoration(
                       color: active
-                          ? const Color(0xFF20A1FF)
-                          : LetsColors.white.withValues(alpha: 0.3),
+                          ? LetsColors.accent
+                          : LetsColors.onAccent.withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(4),
                     ),
                   );
@@ -104,7 +105,10 @@ class _GuidePageState extends State<GuidePage> {
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: LetsColors.accent,
-                      foregroundColor: LetsColors.white,
+                      foregroundColor: LetsColors.onAccent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+                      ),
                       elevation: 0,
                     ),
                     onPressed: () {
@@ -151,7 +155,7 @@ class _GuideSlide extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 96, color: const Color(0xFF20A1FF)),
+          Icon(icon, size: 96, color: LetsColors.accent),
           const SizedBox(height: 32),
           Text(
             title,

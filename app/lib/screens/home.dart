@@ -78,7 +78,7 @@ class _HomePageState extends State<HomePage> with WindowListener, TrayListener {
 
     if (isWide) {
       return Scaffold(
-        backgroundColor: LetsColors.pageBg,
+        backgroundColor: LetsColors.of(context).page,
         body: Row(
           children: [
             SizedBox(
@@ -101,10 +101,10 @@ class _HomePageState extends State<HomePage> with WindowListener, TrayListener {
 
     return Scaffold(
       key: _scaffoldKey,
-      backgroundColor: LetsColors.pageBg,
+      backgroundColor: LetsColors.of(context).page,
       drawer: Drawer(
         width: MediaQuery.sizeOf(context).width * 0.86,
-        backgroundColor: LetsColors.white,
+        backgroundColor: LetsColors.of(context).surface,
         child: HomeDrawerPanel(onNavigate: _openPage),
       ),
       body: ConnectHome(

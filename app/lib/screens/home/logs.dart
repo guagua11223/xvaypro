@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
 
 import '../../extensions/localization.dart';
+import '../../theme/lets_icons.dart';
 // import '../../utils/logger.dart';
 import '../../models/block_queue.dart';
 import '../../models/counted_circular_buffer.dart';
@@ -240,6 +241,7 @@ class _LogViewerState extends State<LogViewer> {
         title: Text(context.loc.logs),
         actions: [
           PopupMenuButton(
+            icon: const Icon(LetsIcons.more),
             itemBuilder: (context) => LogsAction.values
                 .map(
                   (action) => PopupMenuItem(

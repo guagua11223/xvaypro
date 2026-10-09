@@ -23,3 +23,20 @@ plugins {
 }
 
 include ":app"
+
+// system_theme 3.2.0 calls jcenter(), which Gradle 9 removed. 3.3.0 drops
+// jcenter but requires Flutter 3.44. Gradle 9 makes ProjectDescriptor.buildFile
+// read-only, so replace the cached script before project evaluation.
+def packageConfig = new File(settingsDir, "../.dart_tool/package_config.json")
+if (packageConfig.exists()) {
+    def config = new groovy.json.JsonSlurper().parse(packageConfig)
+    def theme = config.packages.find { it.name == "system_theme" }
+    if (theme != null) {
+        def rootUri = theme.rootUri.toString()
+        def rootDir = rootUri.startsWith("file:") ? new File(URI.create(rootUri)) : new File(packageConfig.parentFile, rootUri)
+        def pluginBuild = new File(rootDir, "android/build.gradle")
+        if (pluginBuild.exists() && pluginBuild.getText("UTF-8").contains("jcenter()")) {
+            pluginBuild.setText(file("patches/system_theme.build.gradle").getText("UTF-8"), "UTF-8")
+        }
+    }
+}
