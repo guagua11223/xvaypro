@@ -294,7 +294,7 @@ Future<bool> updateProfileGroup({
                 id: drift.Value(profileGroupId),
                 name: drift.Value(name!),
                 updatedAt: drift.Value(DateTime.now()),
-                type: drift.Value(profileGroupType),
+                type: drift.Value(profileGroupType!),
                 coreTypeId: drift.Value(coreTypeId),
               ),
             );
@@ -318,7 +318,7 @@ Future<bool> updateProfileGroup({
                 id: drift.Value(profileGroupId),
                 name: drift.Value(name!),
                 updatedAt: drift.Value(DateTime.now()),
-                type: drift.Value(profileGroupType),
+                type: drift.Value(profileGroupType!),
               ),
             );
         await db

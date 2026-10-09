@@ -109,7 +109,7 @@ Future<bool> updateProfile({
                 key: drift.Value(key!),
                 updatedAt: drift.Value(updatedAt ?? DateTime.now()),
                 coreCfg: drift.Value(coreCfg),
-                type: drift.Value(profileType),
+                type: drift.Value(profileType!),
                 coreTypeId: drift.Value(coreTypeId),
                 coreCfgFmt: drift.Value(coreCfgFmt!),
                 profileGroupId: drift.Value(profileGroupId!),
@@ -120,7 +120,7 @@ Future<bool> updateProfile({
             .insertOnConflictUpdate(
               ProfileRemoteCompanion(
                 profileId: drift.Value(profileId),
-                url: drift.Value(url),
+                url: drift.Value(url!),
                 autoUpdateInterval: drift.Value(autoUpdateInterval!),
               ),
             );
@@ -134,7 +134,7 @@ Future<bool> updateProfile({
                 key: drift.Value(key!),
                 updatedAt: drift.Value(DateTime.now()),
                 coreCfg: drift.Value(coreCfg!),
-                type: drift.Value(profileType),
+                type: drift.Value(profileType!),
                 coreTypeId: drift.Value(coreTypeId),
                 coreCfgFmt: drift.Value(coreCfgFmt!),
                 profileGroupId: drift.Value(profileGroupId!),
