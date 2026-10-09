@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:smooth_highlight/smooth_highlight.dart';
 
 import '../../extensions/localization.dart';
+import '../../theme/lets_icons.dart';
 import '../../models/profile_group.dart';
 import '../../screens/profile_group.dart';
 import '../../utils/core/base/plugin.dart';
@@ -581,7 +582,8 @@ class _ProfileListState extends State<ProfileList> {
           SmoothHighlight(
             enabled: _highlightProfilesPopupMenuButton,
             color: Colors.grey,
-            child: PopupMenuButton(
+              child: PopupMenuButton(
+                icon: const Icon(LetsIcons.more),
               itemBuilder: (context) => ProfilesAction.values
                   .map(
                     (action) => PopupMenuItem(

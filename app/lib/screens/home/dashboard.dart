@@ -4,6 +4,8 @@ import 'package:drift/drift.dart';
 import 'package:smooth_highlight/smooth_highlight.dart';
 
 import '../../extensions/localization.dart';
+import '../../theme/lets_colors.dart';
+import '../../theme/lets_icons.dart';
 import '../../utils/core/base/plugin.dart';
 import '../../utils/db.dart';
 import '../../utils/prefs.dart';
@@ -87,6 +89,7 @@ class _DashboardState extends State<Dashboard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: LetsColors.of(context).page,
       appBar: AppBar(
         title: Text(context.loc.dashboard),
       ),
@@ -113,7 +116,7 @@ class _DashboardState extends State<Dashboard> {
                               ? ""
                               : _selectedProfileName!,
                         ),
-                        trailing: const Icon(Icons.more_vert),
+                        trailing: const LetsIcon(LetsIcons.more),
                         onTap: () {
                           if (_profiles.isEmpty && mounted) {
                             showSnackBarNow(

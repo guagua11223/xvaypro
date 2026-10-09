@@ -1,0 +1,828 @@
+// ignore: unused_import
+import 'package:intl/intl.dart' as intl;
+import 'app_localizations.dart';
+
+// ignore_for_file: type=lint
+
+/// The translations for Persian (`fa`).
+class AppLocalizationsFa extends AppLocalizations {
+  AppLocalizationsFa([String locale = 'fa']) : super(locale);
+
+  @override
+  String get a_url_that_returns_204 =>
+      'یک آدرس اینترنتی که پاسخ 204 را برمیگرداند';
+
+  @override
+  String get about => 'درباره';
+
+  @override
+  String get add_asset => 'افزودن دارایی';
+
+  @override
+  String get add_core => 'افزودن هسته';
+
+  @override
+  String get add_core_type => 'افزودن نوع هسته';
+
+  @override
+  String get add_profile => 'افزودن پروفایل';
+
+  @override
+  String get add_profile_group => 'افزودن گروه پروفایل';
+
+  @override
+  String get administrator => 'مدیر';
+
+  @override
+  String get advanced => 'پیشرفته';
+
+  @override
+  String get all_apps_are_proxied_if_disabled =>
+      'همه برنامه‌ها در صورت غیرفعال شدن پروکسی می‌شوند';
+
+  @override
+  String get all_apps_in_allowed_list_will_be_proxied =>
+      'همه برنامه‌های موجود در لیست مجاز پروکسی خواهند شد';
+
+  @override
+  String get all_apps_not_in_disallowed_list_will_be_proxied =>
+      'همه برنامه‌هایی که در لیست غیرمجاز نیستند پروکسی خواهند شد';
+
+  @override
+  String get all_ipv4_defined_in_dns_servers_will_not_be_proxied =>
+      'تمامی آدرسهای IPv4 تعریفشده در dns.servers به پروکسی نخواهند شد';
+
+  @override
+  String get allowed_all_apps_in_allowed_list_will_be_proxied =>
+      'مجاز: همه برنامه‌های موجود در لیست مجاز پروکسی خواهند شد';
+
+  @override
+  String get allowed_applications => 'برنامه‌های مجاز';
+
+  @override
+  String get api_config => 'پیکربندی API';
+
+  @override
+  String get api_port => 'درگاه API';
+
+  @override
+  String get app => 'برنامه';
+
+  @override
+  String get app_name => 'نام برنامه';
+
+  @override
+  String
+  get append_a_fake_dns_server_so_unresolved_domains_will_be_resolved_by_proxy_server_this_will_disable_dns_fallback_and_may_contaminate_the_local_dns_cache =>
+      'یک سرور FakeDNS اضافه کنید تا دامنههای حل نشده توسط سرور پراکسی حل شوند - این کار باعث غیرفعال شدن بازگشت به DNS و ممکن است导致 آلودگی در کش DNS محلی میشود.';
+
+  @override
+  String get args => 'آرگومان‌ها';
+
+  @override
+  String get asset_path => 'مسیر دارایی';
+
+  @override
+  String get asset_type => 'نوع دارایی';
+
+  @override
+  String get assets => 'دارایی‌ها';
+
+  @override
+  String get assets_remote_auto_update_etc_ =>
+      'به‌روزرسانی خودکار دارایی‌های راه دور و غیره';
+
+  @override
+  String get auto_change_brightness_based_on_system_settings =>
+      'تغییر خودکار روشنایی بر اساس تنظیمات سیستم';
+
+  @override
+  String get auto_change_language_based_on_system_settings =>
+      'تغییر خودکار زبان بر اساس تنظیمات سیستم';
+
+  @override
+  String get auto_connect_at_app_launch => 'اتصال خودکار هنگام اجرای برنامه';
+
+  @override
+  String get auto_connect_at_device_boot =>
+      'اتصال خودکار هنگام راه‌اندازی دستگاه';
+
+  @override
+  String get auto_connect_selected_profile_at_app_launch =>
+      'اتصال خودکار پروفایل انتخاب‌شده هنگام اجرای برنامه';
+
+  @override
+  String get auto_connect_selected_profile_at_device_boot =>
+      'اتصال خودکار پروفایل انتخاب‌شده هنگام راه‌اندازی دستگاه';
+
+  @override
+  String get auto_download_installer_and_update_on_next_app_launch =>
+      'دانلود خودکار نصب‌کننده و به‌روزرسانی در اجرای بعدی برنامه';
+
+  @override
+  String get auto_launch => 'اجرای خودکار';
+
+  @override
+  String get auto_launch_at_login => 'اجرای خودکار هنگام ورود';
+
+  @override
+  String get auto_startup_tray_icon_etc_ => 'اجرای خودکار، آیکون سینی و غیره';
+
+  @override
+  String get auto_update => 'به‌روزرسانی خودکار';
+
+  @override
+  String get auto_update_interval_seconds_0_to_disable =>
+      'فاصله به‌روزرسانی خودکار (ثانیه)، ۰ برای غیرفعال کردن';
+
+  @override
+  String
+  get bind_all_outbounds_to_ip_address_useful_when_using_with_some_tun_tools =>
+      'اتصال همه خروجی‌ها به آدرس IP، مفید هنگام استفاده با برخی ابزارهای تونل';
+
+  @override
+  String get binding_interface => 'رابط اتصال';
+
+  @override
+  String get binding_ip => 'آدرس IP اتصال';
+
+  @override
+  String get black_dark => 'سیاه تیره';
+
+  @override
+  String get cancel => 'لغو';
+
+  @override
+  String get check_update => 'بررسی به‌روزرسانی';
+
+  @override
+  String get close_to_tray => 'بستن به سینی سیستم';
+
+  @override
+  String get connect => 'اتصال';
+
+  @override
+  String get connectivity => 'اتصال';
+
+  @override
+  String get connectivity_basic_settings => 'تنظیمات اولیه اتصال';
+
+  @override
+  String get copied => 'کپی شده';
+
+  @override
+  String get core => 'هسته';
+
+  @override
+  String get core_config => 'پیکربندی هسته';
+
+  @override
+  String get core_config_format => 'فرمت پیکربندی هسته';
+
+  @override
+  String get core_executable => 'اجرای هسته';
+
+  @override
+  String get core_path_does_not_exist => 'مسیر هسته وجود ندارد';
+
+  @override
+  String get core_type => 'نوع هسته';
+
+  @override
+  String get cores => 'هسته‌ها';
+
+  @override
+  String get dark_theme => 'تم تاریک';
+
+  @override
+  String get dashboard => 'داشبورد';
+
+  @override
+  String get default_ => 'پیشفرض';
+
+  @override
+  String get delete => 'حذف';
+
+  @override
+  String get direct => 'مستقیم';
+
+  @override
+  String get direct_speed => 'سرعت مستقیم';
+
+  @override
+  String get disable_to_show_all_toggles_inside_a_dashboard_pane_instead =>
+      'غیرفعال کردن برای نمایش همه کلیدهای روشن و خاموش در داخل یک پانل نظرات به جای آن';
+
+  @override
+  String get disallowed_all_apps_not_in_disallowed_list_will_be_proxied =>
+      'غیرمجاز: همه برنامه‌هایی که در لیست غیرمجاز نیستند پروکسی خواهند شد';
+
+  @override
+  String get disallowed_applications => 'برنامه‌های غیرمجاز';
+
+  @override
+  String get dns_config => 'پیکربندی DNS';
+
+  @override
+  String get dns_ipv4 => 'DNS IPv4';
+
+  @override
+  String get dns_ipv6 => 'DNS IPv6';
+
+  @override
+  String get dock_to_tray_instead_when_app_window_is_closed =>
+      'به جای بستن، برنامه را به سینی سیستم انتقال دهید';
+
+  @override
+  String get e_g_c_path_to_v2ray_exe => 'مثال: C:\\path\\to\\v2ray.exe';
+
+  @override
+  String get e_g_github_v2fly_v2ray_core_v2ray_windows_64_zip_v2ray_exe =>
+      'مثال: github://v2fly/v2ray-core/v2ray-windows-64.zip/v2ray.exe';
+
+  @override
+  String get e_g_path_to_v2ray => 'مثال: /path/to/v2ray';
+
+  @override
+  String get edit => 'ویرایش';
+
+  @override
+  String get edit_asset => 'ویرایش دارایی';
+
+  @override
+  String get edit_config => 'ویرایش پیکربندی';
+
+  @override
+  String get edit_core => 'ویرایش هسته';
+
+  @override
+  String get edit_core_type => 'ویرایش نوع هسته';
+
+  @override
+  String get edit_profile => 'ویرایش پروفایل';
+
+  @override
+  String get edit_profile_group => 'ویرایش گروه پروفایل';
+
+  @override
+  String get either_to_match_predefined_profile_or_for_profile_injection =>
+      'برای مطابقت با پروفایل از پیش تعریف‌شده یا تزریق پروفایل';
+
+  @override
+  String get embedded => 'جاسازی‌شده';
+
+  @override
+  String get enable_ipv4 => 'فعال‌سازی IPv4';
+
+  @override
+  String get enable_ipv6 => 'فعال‌سازی IPv6';
+
+  @override
+  String get enable_system_proxy => 'فعال‌سازی پروکسی سیستم';
+
+  @override
+  String get enable_tun => 'فعال کردن Tun';
+
+  @override
+  String get enable_tun2socks => 'فعالسازی Tun2socks';
+
+  @override
+  String get enable_tun2socks_so_a_socks_proxy_works_like_a_vpn =>
+      'فعال‌سازی Tun2socks تا یک پروکسی SOCKS مانند VPN کار کند';
+
+  @override
+  String
+  get enable_tun2socks_so_a_socks_proxy_works_like_a_vpn_requires_elevation_ =>
+      'فعال‌سازی Tun2socks تا یک پروکسی SOCKS مانند VPN کار کند\nنیاز به دسترسی سطح بالا دارد';
+
+  @override
+  String get enable_tun_via_platform_api_ =>
+      'فعال‌سازی تونل (از طریق API پلتفرم)';
+
+  @override
+  String get enable_tun_via_root_ => 'فعال‌سازی تونل (از طریق روت)';
+
+  @override
+  String get envs => 'محیط‌ها';
+
+  @override
+  String get exit => 'خروج';
+
+  @override
+  String failed_to_fetch_url(String url) {
+    return 'ناتوان در دریافت: $url';
+  }
+
+  @override
+  String get first_install_time => 'زمان نصب اولیه';
+
+  @override
+  String get follow_system_brightness => 'پیروی از روشنایی سیستم';
+
+  @override
+  String get follow_system_locale => 'پیروی از زبان سیستم';
+
+  @override
+  String get foreground => 'پیش‌زمینه';
+
+  @override
+  String get general => 'عمومی';
+
+  @override
+  String get general_settings => 'تنظیمات عمومی';
+
+  @override
+  String get generated_assets => 'دارایی‌های تولید‌شده';
+
+  @override
+  String get github_token => 'Token de GitHub';
+
+  @override
+  String get github_token_increase_rate_limits =>
+      'Token de GitHub para aumentar los límites de tasa';
+
+  @override
+  String get go_coroutines => 'روال‌های همزمان Go';
+
+  @override
+  String get http_port => 'درگاه HTTP';
+
+  @override
+  String get inbound_config => 'پیکربندی ورودی';
+
+  @override
+  String get info_reconnected => 'اطلاعات: مجدداً متصل شد';
+
+  @override
+  String get inject_api => 'تزریق API';
+
+  @override
+  String get inject_configuration_into_v2ray_xray_profile =>
+      'تزریق پیکربندی به پروفایل v2ray/xray';
+
+  @override
+  String get inject_fake_dns => 'تزریق FakeDNS';
+
+  @override
+  String get inject_http_inbound => 'تزریق ورودی HTTP';
+
+  @override
+  String get inject_local_dns => 'تزریق DNS محلی';
+
+  @override
+  String get inject_log => 'تزریق لاگ';
+
+  @override
+  String get inject_rule_to_exclude_core_dns => 'تزریق قانون برای حذف DNS هسته';
+
+  @override
+  String get inject_rule_to_exclude_core_path =>
+      'تزریق قانون برای حذف مسیر هسته';
+
+  @override
+  String get inject_send_through => 'تزریق sendThrough';
+
+  @override
+  String get inject_socks_inbound => 'تزریق ورودی SOCKS';
+
+  @override
+  String get inject_socks_outbound => 'تزریق خروجی SOCKS';
+
+  @override
+  String get install_now => 'نصب کنون';
+
+  @override
+  String get installed_apps => 'برنامه‌های نصب‌شده';
+
+  @override
+  String ip_not_found_for_binding_interface_binding_interface(
+    String bindingInterface,
+  ) {
+    return 'آی‌پی پیدا نشد برای رابط اتصال: $bindingInterface';
+  }
+
+  @override
+  String get ipv4 => 'IPv4';
+
+  @override
+  String get ipv6 => 'IPv6';
+
+  @override
+  String get language => 'زبان';
+
+  @override
+  String get language_settings => 'تنظیمات زبان';
+
+  @override
+  String last_checked_datetime(String datetime) {
+    return 'آخرین بررسی در: $datetime';
+  }
+
+  @override
+  String get last_update_time => 'زمان آخرین به روز رسانی';
+
+  @override
+  String get launch_settings => 'تنظیمات راه‌اندازی';
+
+  @override
+  String get live_objects => 'اشیای زنده';
+
+  @override
+  String get local_directory => 'دایرکتوری محلی';
+
+  @override
+  String get local_profile_group => 'گروه پروفایل محلی';
+
+  @override
+  String get log_config => 'پیکربندی لاگ';
+
+  @override
+  String get log_config_override => 'جای‌گذاری پیکربندی لاگ';
+
+  @override
+  String get log_level => 'سطح لاگ';
+
+  @override
+  String get logs => 'لاگ‌ها';
+
+  @override
+  String get manually_created_profiles => 'پروفایل‌های ایجادشده دستی';
+
+  @override
+  String get memory => 'حافظه';
+
+  @override
+  String get name => 'نام';
+
+  @override
+  String get necessary_for_dashboard_infomation => 'ضروری برای اطلاعات داشبورد';
+
+  @override
+  String get no_profile_yet_create_one_first =>
+      'هنوز پروفایلی وجود ندارد، ابتدا یکی ایجاد کنید';
+
+  @override
+  String get notification => 'اعلان';
+
+  @override
+  String
+  get notification_permission_is_required_for_quick_tiles_to_work_properly =>
+      'مجوز اعلان برای عملکرد صحیح کاشی‌های سریع مورد نیاز است';
+
+  @override
+  String get open_settings => 'باز کردن تنظیمات';
+
+  @override
+  String get options => 'گزینهها';
+
+  @override
+  String get outbound_config_additional_socks_outbound =>
+      'پیکربندی خروجی: خروجی SOCKS اضافی';
+
+  @override
+  String get outbound_config_send_through => 'پیکربندی خروجی: ارسال از طریق';
+
+  @override
+  String get override_log_config => 'جای‌گذاری پیکربندی لاگ';
+
+  @override
+  String get path_of_core_exectuable_assets_etc_ =>
+      'مسیر فایل اجرایی هسته، دارایی‌ها و غیره';
+
+  @override
+  String pending_install_tag_name(String tagName) {
+    return 'در انتظار نصب: $tagName';
+  }
+
+  @override
+  String get per_app_proxy => 'پروکسی برای هر برنامه';
+
+  @override
+  String get per_app_proxy_mode => 'حالت پروکسی برای هر برنامه';
+
+  @override
+  String get performance => 'عملکرد';
+
+  @override
+  String get permission_required => 'اجازه مورد نیاز است';
+
+  @override
+  String get ping_http_address => 'آدرس پینگ (HTTP)';
+
+  @override
+  String get ping_maximum_concurrency => 'حداکثر همزمانسازی پینگ';
+
+  @override
+  String please_select_a_core_type_name_core(String coreTypeName) {
+    return 'Por favor, seleccione un $coreTypeName.';
+  }
+
+  @override
+  String get please_select_a_profile => 'لطفاً یک پروفایل انتخاب کنید';
+
+  @override
+  String get please_specify_v2ray_core_executable_path =>
+      'لطفاً مسیر اجرایی v2ray-core را مشخص کنید';
+
+  @override
+  String get port => 'پورت';
+
+  @override
+  String get profile => 'پروفایل';
+
+  @override
+  String get profile_group => 'گروه پروفایل';
+
+  @override
+  String get profile_override => 'جای‌گذاری پروفایل';
+
+  @override
+  String get profile_type => 'نوع پروفایل';
+
+  @override
+  String get profiles => 'پروفایل‌ها';
+
+  @override
+  String get protocol => 'پروتکل';
+
+  @override
+  String get provided_by_os_not_all_apps_respect_this_setting =>
+      'توسط سیستم‌عامل ارائه شده، همه برنامه‌ها این تنظیم را رعایت نمی‌کنند';
+
+  @override
+  String get proxy => 'پروکسی';
+
+  @override
+  String get proxy_speed => 'سرعت پروکسی';
+
+  @override
+  String get reconnected => 'اتصال مجدد برقرار شد';
+
+  @override
+  String get reconnecting => 'در حال اتصال مجدد';
+
+  @override
+  String
+  get replace_local_dns_with_explicit_ip_and_bind_proxy_server_domain_names_to_it_useful_when_using_tun =>
+      'جایگزینی DNS محلی با آیپی صریح و اتصال نامهای دامنه سرور پراکسی به آن، مفید khi استفاده از Tun.';
+
+  @override
+  String get routing_rule_additional_rules => 'قانون مسیریابی: قوانین اضافی';
+
+  @override
+  String get routing_rule_additionally_exclude_core_path =>
+      'قانون مسیریابی: حذف مسیر هسته به‌صورت اضافی';
+
+  @override
+  String run_as_elevated_user(String elevatedUser) {
+    return 'اجرا به عنوان $elevatedUser';
+  }
+
+  @override
+  String
+  get runs_the_service_in_foreground_less_likely_be_killed_by_system_a_notification_must_show =>
+      'اجرای سرویس در پیش‌زمینه (احتمال کمتری برای بسته شدن توسط سیستم). نمایش اعلان ضروری است';
+
+  @override
+  String get save_and_update => 'ذخیره و به‌روزرسانی';
+
+  @override
+  String get see_settings_connectivity => 'مشاهده `تنظیمات` -> `اتصال`';
+
+  @override
+  String get selected_profile => 'پروفایل انتخاب‌شده';
+
+  @override
+  String get send_through_binding_stratagy => 'استراتژی اتصال ارسال از طریق';
+
+  @override
+  String get send_through_ip_binding_stratagy =>
+      'استراتژی اتصال ارسال از طریق IP';
+
+  @override
+  String get server_address => 'آدرس سرور';
+
+  @override
+  String get set_to_0_to_disable => 'با تنظیم بر روی ۰ این ویژگی غیرفعال میشود';
+
+  @override
+  String get settings => 'تنظیمات';
+
+  @override
+  String get show_dashboard_floating_button => 'نمایش دکمه شناور در پانل نظرات';
+
+  @override
+  String get show_system_apps => 'نمایش برنامههای سیستم';
+
+  @override
+  String get sing_box_path_is_null => 'مسیر sing-box برابر با nulla است';
+
+  @override
+  String get socks_and_http => 'SOCKS و HTTP';
+
+  @override
+  String get socks_password => 'رمز عبور SOCKS';
+
+  @override
+  String get socks_port => 'پورت SOCKS';
+
+  @override
+  String get socks_user_name => 'نام کاربری SOCKS';
+
+  @override
+  String get sort_by => 'مرتب سازی بر اساس';
+
+  @override
+  String get speed_graph => 'نمودار سرعت';
+
+  @override
+  String get standalone => 'مستقل';
+
+  @override
+  String get storage_permission_is_required_for_cores_to_load_assets_ =>
+      'مجوز ذخیره‌سازی برای بارگیری دارایی‌های هسته مورد نیاز است';
+
+  @override
+  String get system_proxy => 'پروکسی سیستم';
+
+  @override
+  String get theme_settings => 'تنظیمات پوسته';
+
+  @override
+  String get toggles => 'کلیدهای روشن و خاموش';
+
+  @override
+  String get total => 'کل';
+
+  @override
+  String get total_speed => 'سرعت کلی';
+
+  @override
+  String get traffic => 'ترافیک';
+
+  @override
+  String get tun2socks_settings => 'تنظیمات Tun2socks';
+
+  @override
+  String get tun_needs_additionally_a_sing_box_core =>
+      'تون به یک هسته sing-box نیاز دارد';
+
+  @override
+  String get tun_settings => 'تنظیمات TUN';
+
+  @override
+  String get tun_stack => 'استک Tun';
+
+  @override
+  String get tun_via_platform_api_ => 'TUN (از طریق API پلتفرم)';
+
+  @override
+  String get tun_via_root_ => 'TUN (از طریق روت)';
+
+  @override
+  String get type => 'نوع';
+
+  @override
+  String get typically_required_by_tun => 'معمولاً مورد نیاز توسط TUN';
+
+  @override
+  String get uptime => 'مدت زمان اجرا';
+
+  @override
+  String get url => 'آدرس اینترنتی (URL)';
+
+  @override
+  String get use_black_background_in_dark_theme =>
+      'استفاده از پس‌زمینه سیاه در پوسته تاریک';
+
+  @override
+  String get use_dark_theme => 'استفاده از پوسته تاریک';
+
+  @override
+  String get user_data => 'داده‌های کاربر';
+
+  @override
+  String get view_app_log => 'مشاهده لاگ برنامه';
+
+  @override
+  String get view_core_log => 'مشاهده لاگ هسته';
+
+  @override
+  String get view_tun2socks_log => 'مشاهده لاگ Tun2socks';
+
+  @override
+  String get vitual_network_adaptor => 'آداپتور شبکه مجازی';
+
+  @override
+  String get warning_failed_due_to_unable_to_update_launch_at_login =>
+      'هشدار: به‌روزرسانی `راه‌اندازی در ورود به سیستم` ناموفق بود';
+
+  @override
+  String get warning_failed_to_reconnect => 'هشدار: اتصال مجدد ناموفق بود';
+
+  @override
+  String get warning_invalid_asset => 'هشدار: دارایی نامعتبر';
+
+  @override
+  String get warning_invalid_url => 'هشدار: آدرس اینترنتی نامعتبر';
+
+  @override
+  String get warning_no_core_selected_ => 'هشدار: هیچ هسته‌ای انتخاب نشده است!';
+
+  @override
+  String warning_you_need_to_be_elevated_user_to_enable_tun(
+    String elevatedUser,
+  ) {
+    return 'هشدار: شما باید $elevatedUser باشید تا 能 فعال کردن Tun';
+  }
+
+  @override
+  String warning_you_need_to_be_elevated_user_to_modify_this_setting(
+    String elevatedUser,
+  ) {
+    return 'هشدار: شما باید $elevatedUser باشید تا این تنظیم را تغییر دهید';
+  }
+
+  @override
+  String get working_dir => 'دایرکتوری کاری';
+
+  @override
+  String
+  get works_fine_on_windows_will_fail_on_other_systems_with_short_lived_packets_like_dns_ =>
+      'این پیکربندی در ویندوز کار می‌کند، اما در سیستمهای دیگر با پکتهای کوتاه-lived (مانند DNS) شکست خواهد خورد';
+
+  @override
+  String
+  get you_may_want_to_check_settings_profile_override_inject_http_inbound =>
+      'ممکن است بخواهید `تنظیمات` -> `جای‌گذاری پروفایل` -> `تزریق ورودی HTTP` را بررسی کنید';
+
+  @override
+  String
+  get you_may_want_to_check_settings_profile_override_inject_socks_inbound =>
+      'ممکن است بخواهید `تنظیمات` -> `جای‌گذاری پروفایل` -> `تزریق ورودی SOCKS` را بررسی کنید';
+
+  @override
+  String get connect_cta_start => 'Lets Go';
+
+  @override
+  String get connect_cta_stop => 'Lets Stop';
+
+  @override
+  String get home_connecting => 'Connecting…';
+
+  @override
+  String get home_status_connected => 'Connected';
+
+  @override
+  String get home_status_disconnected => 'Disconnected';
+
+  @override
+  String get region_auto => 'Auto';
+
+  @override
+  String region_label(String name) {
+    return 'Region: $name';
+  }
+
+  @override
+  String get switch_region => 'Switch Region';
+
+  @override
+  String get full_mask => 'Full Mask';
+
+  @override
+  String get full_speed => 'Full Speed';
+
+  @override
+  String get manage_profiles => 'Manage';
+
+  @override
+  String get guide_skip => 'Skip';
+
+  @override
+  String get guide_next => 'Next';
+
+  @override
+  String get guide_start => 'Get Started';
+
+  @override
+  String get guide_title_1 => 'Stable connection';
+
+  @override
+  String get guide_desc_1 =>
+      'One tap to connect. The selected node and core stay on the existing engine.';
+
+  @override
+  String get guide_title_2 => 'Safe by default';
+
+  @override
+  String get guide_desc_2 =>
+      'Full Mask uses TUN globally. Full Speed keeps the proxy path only.';
+
+  @override
+  String get guide_title_3 => 'Always ready';
+
+  @override
+  String get guide_desc_3 =>
+      'Switch regions, manage profiles, and keep your current configuration.';
+}

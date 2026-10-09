@@ -1,23 +1,42 @@
 package store
 
 type User struct {
-	ID           int64
-	Email        string
-	PasswordHash string
-	UUID         string
-	Hy2Password  string
-	SubToken     string
-	Upload       int64
-	Download     int64
-	Total        int64
-	ExpireAt     int64
-	Status       string
-	DeviceLimit  int64
-	CreatedAt    int64
+	ID                int64
+	Username          string
+	Email             string
+	PasswordHash      string
+	UUID              string
+	Hy2Password       string
+	SubToken          string
+	Upload            int64
+	Download          int64
+	Total             int64
+	ExpireAt          int64
+	Status            string
+	DeviceLimit       int64
+	CreatedAt         int64
+	Nickname          string
+	Avatar            string
+	UserType          string
+	ReferrerID        int64
+	DistributorID     int64
+	IsDistributor     int
+	IsAgent           int
+	CommissionMode    int
+	WalletEnabled     int
+	CanAuthorizeAgent int
+	EmailStatus       int
+	InviteCode        string
+	DistributorRate   int
+	MemberRate        int
 }
 
 type UserInput struct {
+	Username    string
 	Email       string
+	Nickname    string
+	Avatar      string
+	UserType    string
 	Password    string
 	Total       int64
 	ExpireAt    int64
@@ -26,7 +45,11 @@ type UserInput struct {
 }
 
 type UserPatch struct {
+	Username    *string
 	Email       *string
+	Nickname    *string
+	Avatar      *string
+	UserType    *string
 	Password    *string
 	Total       *int64
 	ExpireAt    *int64

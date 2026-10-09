@@ -171,12 +171,13 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = LetsColors.of(context);
     return Scaffold(
-      backgroundColor: LetsColors.pageBg,
+      backgroundColor: palette.page,
       appBar: AppBar(
         title: const Text('我的'),
-        backgroundColor: LetsColors.white,
-        foregroundColor: LetsColors.textPrimary,
+        backgroundColor: palette.bar,
+        foregroundColor: palette.onBar,
         elevation: 0,
       ),
       body: ListView(
@@ -305,5 +306,23 @@ class _AccountScreenState extends State<AccountScreen> {
     final index = value is num ? value.toInt() : -1;
     if (index < 0 || index >= names.length) return '—';
     return names[index];
+  }
+
+  InputDecoration _fieldDecoration(LetsPalette palette, String hint) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(LetsColors.radiusInput),
+      borderSide: BorderSide(color: palette.line),
+    );
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(color: palette.muted),
+      filled: true,
+      fillColor: palette.surface,
+      border: border,
+      enabledBorder: border,
+      focusedBorder: border.copyWith(
+        borderSide: const BorderSide(color: LetsColors.accent, width: 1.5),
+      ),
+    );
   }
 }

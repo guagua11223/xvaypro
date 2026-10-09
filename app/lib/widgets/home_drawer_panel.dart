@@ -10,6 +10,7 @@ import '../screens/home/select_line.dart';
 import '../screens/home/settings.dart';
 import '../screens/home/settings/about.dart';
 import '../theme/lets_colors.dart';
+import '../theme/lets_icons.dart';
 import '../utils/prefs.dart';
 import '../utils/vpn_manager.dart';
 
@@ -44,8 +45,9 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
 
   @override
   Widget build(BuildContext context) {
+    final palette = LetsColors.of(context);
     return ColoredBox(
-      color: LetsColors.white,
+      color: palette.surface,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -54,7 +56,7 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const LetsIcon(LetsIcons.back),
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),
               ),
@@ -73,11 +75,11 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                     children: [
                       CircleAvatar(
                         radius: 32,
-                        backgroundColor: LetsColors.orbPink,
-                        child: Icon(
-                          Icons.person,
-                          size: 32,
-                          color: LetsColors.orbPinkDeep,
+                        backgroundColor: LetsColors.accent.withValues(alpha: 0.12),
+                        child: const LetsIcon(
+                          LetsIcons.account,
+                          size: 28,
+                          color: LetsColors.accent,
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -89,10 +91,10 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                               "飞连",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                color: LetsColors.textPrimary,
+                                color: palette.text,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -100,25 +102,25 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                               name,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
-                                color: LetsColors.textPrimary,
+                                color: palette.text,
                               ),
                             ),
                             const SizedBox(height: 4),
                             Text(
                               status,
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 12,
-                                color: LetsColors.textSecondary,
+                                color: palette.muted,
                               ),
                             ),
                           ],
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.chevron_right),
+                        icon: const LetsIcon(LetsIcons.chevron),
                         onPressed: () => widget.onNavigate(const SettingList()),
                       ),
                     ],
@@ -126,43 +128,43 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                 },
               ),
             ),
-            const Divider(height: 1, color: LetsColors.divider),
+            Divider(height: 1, color: palette.line),
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 children: [
                   _DrawerItem(
-                    icon: Icons.account_circle_outlined,
-                    label: '飞连 账户',
+                    icon: LetsIcons.account,
+                    label: '飞连账户',
                     onTap: () => widget.onNavigate(const AccountScreen()),
                   ),
                   _DrawerItem(
-                    icon: Icons.public,
+                    icon: LetsIcons.region,
                     label: context.loc.switch_region,
                     onTap: () => widget.onNavigate(const SelectLineScreen()),
                   ),
                   _DrawerItem(
-                    icon: Icons.description_outlined,
+                    icon: LetsIcons.profiles,
                     label: context.loc.profiles,
                     onTap: () => widget.onNavigate(const ProfileList()),
                   ),
                   _DrawerItem(
-                    icon: Icons.dashboard_outlined,
+                    icon: LetsIcons.dashboard,
                     label: context.loc.dashboard,
                     onTap: () => widget.onNavigate(const Dashboard()),
                   ),
                   _DrawerItem(
-                    icon: Icons.mail_outline,
+                    icon: LetsIcons.logs,
                     label: context.loc.logs,
                     onTap: () => widget.onNavigate(const LogViewer()),
                   ),
                   _DrawerItem(
-                    icon: Icons.settings_outlined,
+                    icon: LetsIcons.settings,
                     label: context.loc.settings,
                     onTap: () => widget.onNavigate(const SettingList()),
                   ),
                   _DrawerItem(
-                    icon: Icons.info_outline,
+                    icon: LetsIcons.about,
                     label: context.loc.about,
                     onTap: () => widget.onNavigate(const AboutScreen()),
                   ),
@@ -176,10 +178,10 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: LetsColors.accent,
-                    foregroundColor: LetsColors.white,
+                    foregroundColor: LetsColors.onAccent,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(LetsColors.radiusCard),
                     ),
                   ),
                   onPressed: () => widget.onNavigate(const ProfileList()),
@@ -192,9 +194,9 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
               child: Text(
                 _version,
                 textAlign: TextAlign.center,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 12,
-                  color: LetsColors.textSecondary,
+                  color: palette.muted,
                 ),
               ),
             ),
@@ -218,14 +220,14 @@ class _DrawerItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const color = Color(0xFF333333);
+    final color = LetsColors.of(context).text;
     return InkWell(
       onTap: onTap,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 10, 16, 10),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: color),
+            LetsIcon(icon, color: color),
             const SizedBox(width: 15),
             Text(
               label,
