@@ -184,11 +184,25 @@ class _ConnectHomeState extends State<ConnectHome> {
           Expanded(
             child: Center(
               child: ListenableBuilder(
-                listenable: vPNMan,
+                listenable: Listenable.merge([vPNMan, prefs]),
                 builder: (context, _) {
+                  final notice = prefs.getString('xvay.announcement') ?? '';
                   return Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      if (notice.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(28, 0, 28, 16),
+                          child: Text(
+                            notice,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: LetsColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
                       ConnectOrb(
                         isActive: vPNMan.isCoreActive,
                         isToggling: vPNMan.isTogglingAll || _preparing,

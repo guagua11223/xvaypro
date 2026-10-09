@@ -2,7 +2,7 @@
 import { onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
 import { API_BASE } from '@/config'
-import { db, refreshBackend, saveAppSettings, saveBackendSettings } from '@/stores/db'
+import { db, refreshBackend, saveAppSettings } from '@/stores/db'
 
 const form = reactive({ ...db.appSettings })
 
@@ -24,29 +24,25 @@ async function save() {
     return
   }
   try {
-    await saveBackendSettings({
-      profileName: form.appName.trim(),
+    await saveAppSettings({
+      ...form,
+      appName: form.appName.trim(),
+      version: form.version.trim(),
+      serverAddress: form.serverAddress.trim(),
+      pingUrl: form.pingUrl.trim(),
+      announcement: form.announcement.trim(),
       supportUrl: form.supportUrl.trim(),
+      aboutText: form.aboutText.trim(),
+      socksPort: Number(form.socksPort) || 15491,
+      httpPort: Number(form.httpPort) || 15492,
+      pingMaxConcurrency: Number(form.pingMaxConcurrency) || 1,
+      tun: form.defaultMode === 'fullMask',
     })
+    Object.assign(form, db.appSettings)
+    ElMessage.success('App 配置已保存到后端')
   } catch (error) {
     ElMessage.error(error.message || '后端保存失败')
-    return
   }
-  saveAppSettings({
-    ...form,
-    appName: form.appName.trim(),
-    version: form.version.trim(),
-    serverAddress: form.serverAddress.trim(),
-    pingUrl: form.pingUrl.trim(),
-    announcement: form.announcement.trim(),
-    supportUrl: form.supportUrl.trim(),
-    aboutText: form.aboutText.trim(),
-    socksPort: Number(form.socksPort) || 15491,
-    httpPort: Number(form.httpPort) || 15492,
-    pingMaxConcurrency: Number(form.pingMaxConcurrency) || 1,
-    tun: form.defaultMode === 'fullMask',
-  })
-  ElMessage.success('App 配置已保存到后端')
 }
 
 onMounted(async () => {

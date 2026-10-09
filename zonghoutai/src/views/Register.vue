@@ -41,14 +41,15 @@ const rules = {
 async function submit() {
   await formRef.value.validate()
   loading.value = true
-  const result = register(form)
-  loading.value = false
-  if (!result.ok) {
-    ElMessage.error(result.message)
-    return
+  try {
+    await register(form)
+    ElMessage.success('注册成功，已自动登录')
+    router.push('/dashboard')
+  } catch (error) {
+    ElMessage.error(error.message || '注册失败')
+  } finally {
+    loading.value = false
   }
-  ElMessage.success('注册成功，已自动登录')
-  router.push('/dashboard')
 }
 </script>
 

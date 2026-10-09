@@ -39,7 +39,8 @@ const rules = {
   email: [{ required: true, type: 'email', message: '请输入邮箱', trigger: 'blur' }],
   password: [{
     validator: (_rule, value, callback) => {
-      if (!editingId.value && !value) callback(new Error('请设置登录密码'))
+      if (!editingId.value && (!value || value.length < 8)) callback(new Error('密码至少 8 位'))
+      else if (value && value.length < 8) callback(new Error('密码至少 8 位'))
       else callback()
     },
     trigger: 'blur',
@@ -91,11 +92,21 @@ function openEdit(row) {
 }
 
 function userPayload() {
+  const plan = db.plans.find((item) => item.id === form.planId)
   const body = {
     email: form.email.trim(),
     status: form.status,
     total: Math.round((Number(form.trafficTotalGB) || 0) * 1024 * 1024 * 1024),
-    deviceLimit: 3,
+    download: Math.round((Number(form.trafficUsedGB) || 0) * 1024 * 1024 * 1024),
+    upload: 0,
+    deviceLimit: plan?.deviceLimit || 3,
+    displayName: form.username.trim(),
+    phone: form.phone.trim(),
+    planId: form.planId || 0,
+    agentId: form.agentId || 0,
+    device: form.device.trim(),
+    platform: form.platform,
+    region: form.region.trim(),
   }
   if (form.password) body.password = form.password
   if (form.expireAt) body.expireAt = new Date(form.expireAt).getTime()

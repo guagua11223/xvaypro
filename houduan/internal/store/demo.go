@@ -37,8 +37,13 @@ func (s *Store) SeedDemo() error {
 		return err
 	}
 	if _, err := s.SetSettings(map[string]string{
-		"profile_name": "AnyPortal",
-		"support_url":  "https://xvay.example/support",
+		"profile_name":     "AnyPortal",
+		"support_url":      "https://xvay.example/support",
+		"support_wechat":   "feilian-support",
+		"support_qq":       "800123456",
+		"support_telegram": "https://t.me/feilian",
+		"support_online":   "https://xvay.example/support",
+		"support_qrcode":   "https://xvay.example/support/qr.png",
 	}); err != nil {
 		return err
 	}
@@ -180,7 +185,7 @@ func (s *Store) seedDemoUsers() (map[string]int64, error) {
 			continue
 		}
 		user, err := s.CreateUser(UserInput{
-			Email: row.Email, Password: demoUserPassword,
+			Email: row.Email, Nickname: row.Name, Password: demoUserPassword,
 			Total: gbBytes(row.TotalGB), ExpireAt: futureMs(row.ExpireDays),
 			Status: row.Status, DeviceLimit: row.Devices,
 		})

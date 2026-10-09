@@ -1,4 +1,15 @@
-const String kBackendBase = 'http://47.84.63.205:888';
+import 'dart:io';
+
+const _backendOverride = String.fromEnvironment('BACKEND_BASE');
+
+/// Android 模拟器里的 127.0.0.1 是模拟器自己，10.0.2.2 才是本机上的 houduan。
+String resolveBackendBase() {
+  if (_backendOverride.isNotEmpty) return _backendOverride;
+  if (Platform.isAndroid) return 'http://10.0.2.2:8787';
+  return 'http://127.0.0.1:8787';
+}
+
+final String kBackendBase = resolveBackendBase();
 
 /// 80 端口在云安全组里没放行，订阅地址如果还写着 80，改走已经开放的 888。
 String reachableBackendUrl(String url) {

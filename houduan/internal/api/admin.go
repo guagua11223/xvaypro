@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"xvay/houduan/internal/render"
 	"xvay/houduan/internal/store"
@@ -42,13 +41,12 @@ func (s *Server) adminUsers(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	users, err := s.db.ListUsers(limit)
+	out, err := s.presentUsers()
 	if err != nil {
 		return err
 	}
-	out := make([]AdminUser, len(users))
-	for i, user := range users {
-		out[i] = adminUser(user, s.cfg)
+	if limit < len(out) {
+		out = out[:limit]
 	}
 	writeOK(w, http.StatusOK, map[string]any{"users": out})
 	return nil
@@ -62,9 +60,43 @@ func (s *Server) adminCreateUser(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	email, err := validate.ParseEmail(body["email"])
+	email := ""
+	if raw := strings.TrimSpace(store.AsString(body["email"])); raw != "" {
+		email, err = validate.ParseEmail(body["email"])
+		if err != nil {
+			return err
+		}
+	}
+	username := ""
+	if raw := strings.TrimSpace(store.AsString(body["username"])); raw != "" {
+		username, err = validate.ParseUsername(raw)
+		if err != nil {
+			return err
+		}
+	}
+	if username == "" {
+		username = email
+	}
+	if username == "" {
+		return badRequest("请输入用户名或邮箱")
+	}
+	nickname, err := validate.ParseNickname(body["nickname"], username)
 	if err != nil {
 		return err
+	}
+	userType := "member"
+	if raw := strings.TrimSpace(store.AsString(body["userType"])); raw != "" {
+		userType, err = validate.ParseUserType(raw)
+		if err != nil {
+			return err
+		}
+	}
+	avatar := ""
+	if _, ok := body["avatar"]; ok {
+		avatar, err = validate.ParseAvatar(body["avatar"])
+		if err != nil {
+			return err
+		}
 	}
 	password, err := validate.ParsePassword(body["password"])
 	if err != nil {
@@ -94,13 +126,21 @@ func (s *Server) adminCreateUser(w http.ResponseWriter, r *http.Request) error {
 		}
 	}
 	user, err := s.db.CreateUser(store.UserInput{
-		Email: email, Password: password, Total: total, ExpireAt: expireAt, Status: status, DeviceLimit: deviceLimit,
+		Username: username, Email: email, Nickname: nickname, Avatar: avatar, UserType: userType,
+		Password: password, Total: total, ExpireAt: expireAt, Status: status, DeviceLimit: deviceLimit,
 	})
 	if err != nil {
 		return err
 	}
+	if err := s.saveUserProfile(user.ID, body); err != nil {
+		return err
+	}
 	s.syncNodes()
-	writeOK(w, http.StatusCreated, adminUser(user, s.cfg))
+	view, err := s.oneUser(user)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusCreated, view)
 	return nil
 }
 
@@ -119,7 +159,11 @@ func (s *Server) adminGetUser(w http.ResponseWriter, r *http.Request) error {
 	if !ok {
 		return notFound("用户不存在")
 	}
-	writeOK(w, http.StatusOK, adminUser(user, s.cfg))
+	view, err := s.oneUser(user)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -142,6 +186,37 @@ func (s *Server) adminPatchUser(w http.ResponseWriter, r *http.Request) error {
 			return err
 		}
 		patch.Email = &email
+	}
+	if value, ok := body["username"]; ok && value != nil {
+		username, err := validate.ParseUsername(value)
+		if err != nil {
+			return err
+		}
+		patch.Username = &username
+	}
+	if value, ok := body["nickname"]; ok && value != nil {
+		nickname, err := validate.ParseNickname(value, "")
+		if err != nil {
+			return err
+		}
+		if nickname == "" {
+			return badRequest("昵称不能为空")
+		}
+		patch.Nickname = &nickname
+	}
+	if value, ok := body["avatar"]; ok && value != nil {
+		avatar, err := validate.ParseAvatar(value)
+		if err != nil {
+			return err
+		}
+		patch.Avatar = &avatar
+	}
+	if value, ok := body["userType"]; ok && value != nil {
+		userType, err := validate.ParseUserType(value)
+		if err != nil {
+			return err
+		}
+		patch.UserType = &userType
 	}
 	if value, ok := body["password"]; ok && value != nil {
 		password, err := validate.ParsePassword(value)
@@ -196,8 +271,26 @@ func (s *Server) adminPatchUser(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if err := s.saveUserProfile(id, body); err != nil {
+		return err
+	}
+	if patch.Nickname != nil {
+		if err := s.syncDisplayName(user); err != nil {
+			return err
+		}
+	}
+	if patch.UserType != nil {
+		user, err = s.db.ApplyUserType(user.ID, *patch.UserType)
+		if err != nil {
+			return err
+		}
+	}
 	s.syncNodes()
-	writeOK(w, http.StatusOK, adminUser(user, s.cfg))
+	view, err := s.oneUser(user)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -229,7 +322,11 @@ func (s *Server) adminResetTraffic(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, adminUser(user, s.cfg))
+	view, err := s.oneUser(user)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -245,7 +342,11 @@ func (s *Server) adminResetToken(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, adminUser(user, s.cfg))
+	view, err := s.oneUser(user)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -253,14 +354,9 @@ func (s *Server) adminNodes(w http.ResponseWriter, r *http.Request) error {
 	if err := s.requireAdmin(r); err != nil {
 		return err
 	}
-	nodes, err := s.db.ListNodes()
+	out, err := s.presentNodes()
 	if err != nil {
 		return err
-	}
-	now := time.Now().UnixMilli()
-	out := make([]AdminNode, len(nodes))
-	for i, node := range nodes {
-		out[i] = adminNode(node, now, s.cfg.NodeOfflineMs)
 	}
 	writeOK(w, http.StatusOK, map[string]any{"nodes": out})
 	return nil
@@ -274,6 +370,7 @@ func (s *Server) adminCreateNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	normalizeNodeBody(body)
 	input, err := validate.NodeCreateInput(body)
 	if err != nil {
 		return err
@@ -282,8 +379,15 @@ func (s *Server) adminCreateNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if err := s.saveNodeMeta(node.ID, body); err != nil {
+		return err
+	}
 	s.syncNodes()
-	writeOK(w, http.StatusCreated, adminNode(node, time.Now().UnixMilli(), s.cfg.NodeOfflineMs))
+	view, err := s.oneNode(node)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusCreated, view)
 	return nil
 }
 
@@ -295,7 +399,11 @@ func (s *Server) adminGetNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, adminNode(node, time.Now().UnixMilli(), s.cfg.NodeOfflineMs))
+	view, err := s.oneNode(node)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -318,6 +426,7 @@ func (s *Server) adminPatchNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	normalizeNodeBody(body)
 	patch, err := validate.NodePatchInput(body)
 	if err != nil {
 		return err
@@ -339,8 +448,15 @@ func (s *Server) adminPatchNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if err := s.saveNodeMeta(id, body); err != nil {
+		return err
+	}
 	s.syncNodes()
-	writeOK(w, http.StatusOK, adminNode(node, time.Now().UnixMilli(), s.cfg.NodeOfflineMs))
+	view, err := s.oneNode(node)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -450,6 +566,56 @@ func (s *Server) adminPutSettings(w http.ResponseWriter, r *http.Request) error 
 			return err
 		}
 		patch["trial_days"] = strconv.FormatInt(n, 10)
+	}
+	for _, item := range []struct {
+		key, label string
+		min, max   int64
+	}{
+		{"commissionPoolPercent", "分佣池比例", 0, 100},
+		{"commissionSettleDay", "结算日", 1, 28},
+		{"withdrawFeePercent", "提现手续费比例", 0, 100},
+		{"withdrawMinCents", "最低提现金额", 0, 1_000_000_000},
+		{"expireRemindDays", "到期提醒天数", 1, 30},
+	} {
+		value, ok := body[item.key]
+		if !ok || value == nil {
+			continue
+		}
+		n, err := validate.NonNegative(value, item.label)
+		if err != nil {
+			return err
+		}
+		if n < item.min || n > item.max {
+			return badRequest(item.label + "超出范围")
+		}
+		settingKey := map[string]string{
+			"commissionPoolPercent": "commission_pool_percent",
+			"commissionSettleDay":   "commission_settle_day",
+			"withdrawFeePercent":    "withdraw_fee_percent",
+			"withdrawMinCents":      "withdraw_min_cents",
+			"expireRemindDays":      "expire_remind_days",
+		}[item.key]
+		patch[settingKey] = strconv.FormatInt(n, 10)
+	}
+	for _, item := range []struct {
+		jsonKey string
+		setting string
+	}{
+		{"supportWechat", "support_wechat"},
+		{"supportQq", "support_qq"},
+		{"supportTelegram", "support_telegram"},
+		{"supportOnline", "support_online"},
+		{"supportQrcode", "support_qrcode"},
+	} {
+		value, ok := body[item.jsonKey]
+		if !ok || value == nil {
+			continue
+		}
+		text := asTrimmed(value)
+		if len(text) > 512 {
+			return badRequest("客服信息过长")
+		}
+		patch[item.setting] = text
 	}
 	settings, err := s.db.SetSettings(patch)
 	if err != nil {

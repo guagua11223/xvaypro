@@ -101,23 +101,31 @@ async function submit() {
     parentId: form.parentId || null,
     remark: form.remark.trim(),
   }
-  if (editingId.value) updateItem('agents', editingId.value, payload)
-  else {
-    addItem('agents', {
-      ...payload,
-      balance: 0,
-      totalCommission: 0,
-      createdAt: new Date().toISOString(),
-    })
+  try {
+    if (editingId.value) await updateItem('agents', editingId.value, payload)
+    else {
+      await addItem('agents', {
+        ...payload,
+        balance: 0,
+        totalCommission: 0,
+        createdAt: new Date().toISOString(),
+      })
+    }
+    dialogVisible.value = false
+    ElMessage.success('代理商已保存')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
   }
-  dialogVisible.value = false
-  ElMessage.success('代理商已保存')
 }
 
-function toggleFreeze(row) {
+async function toggleFreeze(row) {
   const next = row.status === 'frozen' ? 'active' : 'frozen'
-  updateItem('agents', row.id, { status: next })
-  ElMessage.success(next === 'frozen' ? '已冻结' : '已恢复')
+  try {
+    await updateItem('agents', row.id, { status: next })
+    ElMessage.success(next === 'frozen' ? '已冻结' : '已恢复')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  }
 }
 
 async function remove(row) {
@@ -130,8 +138,12 @@ async function remove(row) {
     return
   }
   await ElMessageBox.confirm(`删除代理商「${row.name}」？`, '删除代理商', { type: 'warning' })
-  removeItem('agents', row.id)
-  ElMessage.success('已删除')
+  try {
+    await removeItem('agents', row.id)
+    ElMessage.success('已删除')
+  } catch (error) {
+    ElMessage.error(error.message || '删除失败')
+  }
 }
 </script>
 

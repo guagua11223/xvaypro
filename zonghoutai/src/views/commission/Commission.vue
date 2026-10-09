@@ -102,28 +102,36 @@ async function submit() {
   const user = db.users.find((item) => item.id === form.userId)
   const commission = Number(((Number(form.orderAmount) * rule.rate) / 100).toFixed(2))
   const orderNo = `XV${new Date().toISOString().slice(0, 10).replace(/-/g, '')}${String(db.commissions.length + 1).padStart(3, '0')}`
-  addItem('commissions', {
-    agentId: agent.id,
-    userId: user.id,
-    orderNo,
-    orderAmount: Number(form.orderAmount),
-    rate: rule.rate,
-    commission,
-    status: 'pending',
-    createdAt: new Date().toISOString(),
-    settledAt: '',
-    remark: form.remark.trim() || `${planName(user.planId)}成交`,
-  })
-  dialogVisible.value = false
-  ElMessage.success('已生成待结算分佣')
+  try {
+    await addItem('commissions', {
+      agentId: agent.id,
+      userId: user.id,
+      orderNo,
+      orderAmount: Number(form.orderAmount),
+      rate: rule.rate,
+      commission,
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      settledAt: '',
+      remark: form.remark.trim() || `${planName(user.planId)}成交`,
+    })
+    dialogVisible.value = false
+    ElMessage.success('已生成待结算分佣')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  }
 }
 
 async function settle(row) {
   await ElMessageBox.confirm(`确认结算 ${formatMoney(row.commission)} 给「${agentName(row.agentId)}」？`, '结算分佣', {
     type: 'warning',
   })
-  settleCommission(row.id)
-  ElMessage.success('已结算，金额计入代理可提现余额')
+  try {
+    await settleCommission(row.id)
+    ElMessage.success('已结算，金额计入代理可提现余额')
+  } catch (error) {
+    ElMessage.error(error.message || '结算失败')
+  }
 }
 
 async function reject(row) {
@@ -131,8 +139,12 @@ async function reject(row) {
     inputPlaceholder: '例如订单已退款',
     inputValidator: (text) => (text && text.trim() ? true : '请填写原因'),
   })
-  rejectCommission(row.id, value.trim())
-  ElMessage.success('已驳回')
+  try {
+    await rejectCommission(row.id, value.trim())
+    ElMessage.success('已驳回')
+  } catch (error) {
+    ElMessage.error(error.message || '驳回失败')
+  }
 }
 </script>
 

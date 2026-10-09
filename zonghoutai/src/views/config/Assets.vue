@@ -54,16 +54,24 @@ async function submit() {
     url: form.type === 'local' ? '' : form.url.trim(),
     autoUpdateInterval: form.type === 'local' ? 0 : Number(form.autoUpdateInterval) || 0,
   }
-  if (editingId.value) updateItem('assets', editingId.value, payload)
-  else addItem('assets', payload)
-  dialogVisible.value = false
-  ElMessage.success('资源已保存')
+  try {
+    if (editingId.value) await updateItem('assets', editingId.value, payload)
+    else await addItem('assets', payload)
+    dialogVisible.value = false
+    ElMessage.success('资源已保存')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  }
 }
 
 async function remove(row) {
   await ElMessageBox.confirm(`删除资源「${row.name}」？`, '删除资源', { type: 'warning' })
-  removeItem('assets', row.id)
-  ElMessage.success('已删除')
+  try {
+    await removeItem('assets', row.id)
+    ElMessage.success('已删除')
+  } catch (error) {
+    ElMessage.error(error.message || '删除失败')
+  }
 }
 </script>
 

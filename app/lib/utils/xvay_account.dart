@@ -130,7 +130,46 @@ class XvayAccount {
     await prefs.setString(_tokenKey, sessionToken);
     await prefs.setString(_emailKey, user['email'] as String? ?? email.trim());
     await syncSubscription(user);
+    try {
+      await bootstrap();
+    } catch (error) {
+      logger.w('bootstrap: $error');
+    }
     return user;
+  }
+
+  Future<Map<String, dynamic>> bootstrap() async {
+    final current = token;
+    if (current == null || current.isEmpty) {
+      throw Exception('尚未登录');
+    }
+    final response = await _client.get(
+      Uri.parse('$kBackendBase/api/app/bootstrap'),
+      headers: {'Authorization': 'Bearer $current'},
+    );
+    final payload = _decode(response);
+    final data = payload['data'];
+    if (data is! Map) {
+      throw Exception('缺少套餐和公告');
+    }
+    final result = Map<String, dynamic>.from(data);
+    final settings = result['settings'];
+    if (settings is Map) {
+      final announcement = settings['announcement'];
+      if (announcement is String) {
+        await prefs.setString('xvay.announcement', announcement);
+      }
+      final appName = settings['appName'];
+      if (appName is String && appName.isNotEmpty) {
+        await prefs.setString('xvay.appName', appName);
+      }
+    }
+    final plans = result['openPlans'];
+    if (plans is List) {
+      await prefs.setString('xvay.plans', jsonEncode(plans));
+    }
+    prefs.notifyListeners();
+    return result;
   }
 
   Map<String, dynamic> _decode(http.Response response) {
@@ -163,6 +202,7 @@ Future<void> ensureBackendProfile() async {
       user = await _deviceAccount(account);
     }
     await syncSubscription(user);
+    await account.bootstrap();
   } catch (error) {
     logger.w('ensureBackendProfile: $error');
   }

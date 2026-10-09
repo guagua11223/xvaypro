@@ -46,10 +46,14 @@ async function submit() {
     trafficGB: Number(form.trafficGB) || 0,
     deviceLimit: Number(form.deviceLimit) || 1,
   }
-  if (editingId.value) updateItem('plans', editingId.value, payload)
-  else addItem('plans', payload)
-  dialogVisible.value = false
-  ElMessage.success('套餐已保存')
+  try {
+    if (editingId.value) await updateItem('plans', editingId.value, payload)
+    else await addItem('plans', payload)
+    dialogVisible.value = false
+    ElMessage.success('套餐已保存')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  }
 }
 
 async function remove(row) {
@@ -58,8 +62,12 @@ async function remove(row) {
     return
   }
   await ElMessageBox.confirm(`删除套餐「${row.name}」？`, '删除套餐', { type: 'warning' })
-  removeItem('plans', row.id)
-  ElMessage.success('已删除')
+  try {
+    await removeItem('plans', row.id)
+    ElMessage.success('已删除')
+  } catch (error) {
+    ElMessage.error(error.message || '删除失败')
+  }
 }
 </script>
 

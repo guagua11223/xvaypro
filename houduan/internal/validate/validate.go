@@ -14,9 +14,12 @@ import (
 )
 
 var (
-	emailPattern = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
-	flows        = map[string]bool{"": true, "xtls-rprx-vision": true, "xtls-rprx-vision-udp443": true}
-	statuses     = map[string]bool{"active": true, "disabled": true, "expired": true}
+	emailPattern    = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
+	usernamePattern = regexp.MustCompile(`^[\p{Han}A-Za-z0-9_]{3,32}$`)
+	flows           = map[string]bool{"": true, "xtls-rprx-vision": true, "xtls-rprx-vision-udp443": true}
+	statuses        = map[string]bool{"active": true, "disabled": true, "expired": true}
+	orderStatuses   = map[string]bool{"pending": true, "paid": true, "closed": true, "refunded": true, "partial_refund": true}
+	refundStatuses  = map[string]bool{"pending": true, "success": true, "failed": true}
 )
 
 func ParseEmail(value any) (string, error) {
@@ -36,6 +39,81 @@ func ParsePassword(value any) (string, error) {
 		return "", errs.New(400, "VALIDATION", "密码长度需要在 8 到 128 之间")
 	}
 	return password, nil
+}
+
+func ParseUsername(value any) (string, error) {
+	name := strings.ToLower(strings.TrimSpace(asString(value)))
+	if !usernamePattern.MatchString(name) {
+		return "", errs.New(400, "VALIDATION", "用户名为 3-32 位字母、数字、下划线或中文")
+	}
+	return name, nil
+}
+
+func ParseNickname(value any, fallback string) (string, error) {
+	text := strings.TrimSpace(asString(value))
+	if text == "" {
+		return fallback, nil
+	}
+	if len([]rune(text)) > 32 {
+		return "", errs.New(400, "VALIDATION", "昵称最长 32 个字符")
+	}
+	return text, nil
+}
+
+func ParseAvatar(value any) (string, error) {
+	text := strings.TrimSpace(asString(value))
+	if len(text) > 512 {
+		return "", errs.New(400, "VALIDATION", "头像地址过长")
+	}
+	return text, nil
+}
+
+func ParseUserType(value any) (string, error) {
+	switch strings.TrimSpace(asString(value)) {
+	case "member", "普通会员":
+		return "member", nil
+	case "agent", "代理":
+		return "agent", nil
+	case "dealer", "经销商":
+		return "dealer", nil
+	default:
+		return "", errs.New(400, "VALIDATION", "用户类型只能是普通会员、代理或经销商")
+	}
+}
+
+func ParseCode(value any) (string, error) {
+	code := strings.TrimSpace(asString(value))
+	if len(code) != 6 {
+		return "", errs.New(400, "VALIDATION", "请输入 6 位验证码")
+	}
+	for _, r := range code {
+		if r < '0' || r > '9' {
+			return "", errs.New(400, "VALIDATION", "请输入 6 位验证码")
+		}
+	}
+	return code, nil
+}
+
+func ParseOrderStatus(value any, fallback string) (string, error) {
+	text := strings.TrimSpace(asString(value))
+	if text == "" {
+		return fallback, nil
+	}
+	if !orderStatuses[text] {
+		return "", errs.New(400, "VALIDATION", "订单状态不正确")
+	}
+	return text, nil
+}
+
+func ParseRefundStatus(value any, fallback string) (string, error) {
+	text := strings.TrimSpace(asString(value))
+	if text == "" {
+		return fallback, nil
+	}
+	if !refundStatuses[text] {
+		return "", errs.New(400, "VALIDATION", "退款状态不正确")
+	}
+	return text, nil
 }
 
 func ParseTime(value any) (int64, error) {

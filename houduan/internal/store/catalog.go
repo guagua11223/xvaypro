@@ -176,8 +176,13 @@ func (s *Store) CreateAdminSession(adminID int64, ttl time.Duration) (string, er
 }
 
 func (s *Store) AdminSessionValid(token string, now int64) (bool, error) {
+	_, ok, err := s.AdminSessionAdminID(token, now)
+	return ok, err
+}
+
+func (s *Store) AdminSessionAdminID(token string, now int64) (int64, bool, error) {
 	if token == "" {
-		return false, nil
+		return 0, false, nil
 	}
 	var id int64
 	err := s.db.QueryRow(
@@ -185,12 +190,12 @@ func (s *Store) AdminSessionValid(token string, now int64) (bool, error) {
 		auth.HashToken(token), now,
 	).Scan(&id)
 	if err == sql.ErrNoRows {
-		return false, nil
+		return 0, false, nil
 	}
 	if err != nil {
-		return false, err
+		return 0, false, err
 	}
-	return true, nil
+	return id, true, nil
 }
 
 func (s *Store) ClearAdminSessions() error {

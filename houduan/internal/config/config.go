@@ -21,6 +21,16 @@ type Config struct {
 	SessionTTLMs     int64
 	NodeOfflineMs    int64
 	AcceptAppTraffic bool
+	SMTPHost         string
+	SMTPPort         string
+	SMTPUser         string
+	SMTPPass         string
+	SMTPFrom         string
+	MailDebug        bool
+	PayGatewayURL    string
+	PayMerchantID    string
+	PayKey           string
+	PayDebug         bool
 }
 
 func Load() Config {
@@ -38,6 +48,16 @@ func Load() Config {
 		SessionTTLMs:     numberEnv("SESSION_TTL_MS", 30*24*3600*1000),
 		NodeOfflineMs:    numberEnv("NODE_OFFLINE_MS", 180_000),
 		AcceptAppTraffic: os.Getenv("ACCEPT_APP_TRAFFIC") == "1",
+		SMTPHost:         env("SMTP_HOST", ""),
+		SMTPPort:         env("SMTP_PORT", "587"),
+		SMTPUser:         env("SMTP_USER", ""),
+		SMTPPass:         env("SMTP_PASS", ""),
+		SMTPFrom:         env("SMTP_FROM", ""),
+		MailDebug:        os.Getenv("MAIL_DEBUG") == "1",
+		PayGatewayURL:    env("PAY_GATEWAY_URL", ""),
+		PayMerchantID:    env("PAY_MERCHANT_ID", ""),
+		PayKey:           env("PAY_KEY", ""),
+		PayDebug:         os.Getenv("PAY_DEBUG") == "1",
 	}
 }
 
