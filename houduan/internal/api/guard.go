@@ -26,7 +26,17 @@ func (s *Server) requireUser(r *http.Request) (store.User, error) {
 
 func (s *Server) requireAdmin(r *http.Request) error {
 	token := auth.BearerToken(r.Header.Get("Authorization"))
-	if s.cfg.AdminToken == "" || !auth.SafeEqual(token, s.cfg.AdminToken) {
+	if token == "" {
+		return errs.New(http.StatusUnauthorized, "UNAUTHORIZED", "管理凭证无效")
+	}
+	if s.cfg.AdminToken != "" && auth.SafeEqual(token, s.cfg.AdminToken) {
+		return nil
+	}
+	ok, err := s.db.AdminSessionValid(token, time.Now().UnixMilli())
+	if err != nil {
+		return err
+	}
+	if !ok {
 		return errs.New(http.StatusUnauthorized, "UNAUTHORIZED", "管理凭证无效")
 	}
 	return nil

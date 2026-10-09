@@ -26,18 +26,26 @@ function openEdit(row) {
 
 async function submit() {
   await formRef.value.validate()
-  updateItem('cores', form.id, {
-    version: form.version.trim(),
-    enabled: form.enabled,
-    isExec: form.isExec,
-    workingDir: form.workingDir.trim(),
-  })
-  dialogVisible.value = false
-  ElMessage.success('内核配置已保存')
+  try {
+    await updateItem('cores', form.id, {
+      version: form.version.trim(),
+      enabled: form.enabled,
+      isExec: form.isExec,
+      workingDir: form.workingDir.trim(),
+    })
+    dialogVisible.value = false
+    ElMessage.success('内核配置已保存')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  }
 }
 
-function toggle(row, enabled) {
-  updateItem('cores', row.id, { enabled })
+async function toggle(row, enabled) {
+  try {
+    await updateItem('cores', row.id, { enabled })
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  }
 }
 </script>
 

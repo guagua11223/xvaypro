@@ -18,11 +18,36 @@ class _AccountScreenState extends State<AccountScreen> {
   bool _register = false;
   bool _busy = false;
   String? _message;
+  String _notice = '';
+  List<Map<String, dynamic>> _plans = [];
 
   @override
   void initState() {
     super.initState();
     _email.text = _account.email ?? '';
+    _loadCatalog();
+  }
+
+  Future<void> _loadCatalog() async {
+    if (!_account.isLoggedIn) return;
+    try {
+      final data = await _account.bootstrap();
+      if (!mounted) return;
+      final settings = data['settings'];
+      final plans = data['openPlans'];
+      setState(() {
+        _notice = settings is Map ? '${settings['announcement'] ?? ''}' : '';
+        _plans = plans is List
+            ? plans
+                  .whereType<Map>()
+                  .map((item) => Map<String, dynamic>.from(item))
+                  .toList()
+            : [];
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() => _message = error.toString().replaceFirst('Exception: ', ''));
+    }
   }
 
   @override
@@ -51,6 +76,7 @@ class _AccountScreenState extends State<AccountScreen> {
       setState(() {
         _message = '已同步订阅：${user['subscriptionUrl'] ?? ''}';
       });
+      await _loadCatalog();
     } catch (error) {
       if (!mounted) return;
       setState(() => _message = error.toString().replaceFirst('Exception: ', ''));
@@ -87,7 +113,24 @@ class _AccountScreenState extends State<AccountScreen> {
             style: const TextStyle(color: LetsColors.textSecondary),
           ),
           const SizedBox(height: 8),
-          const Text('登录后会把你的订阅写入线路配置，客户端按这个地址拉取节点。'),
+          const Text('登录后会把你的订阅写入线路配置，套餐和公告从后端读取。'),
+          if (_notice.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(_notice),
+          ],
+          if (_plans.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text('可开通套餐'),
+            const SizedBox(height: 8),
+            for (final plan in _plans)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text('${plan['name'] ?? ''}'),
+                subtitle: Text(
+                  '¥${plan['price'] ?? 0} / ${plan['durationDays'] ?? 0} 天 / ${plan['trafficGB'] ?? 0} GB',
+                ),
+              ),
+          ],
           const SizedBox(height: 20),
           TextField(
             controller: _email,

@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"xvay/houduan/internal/render"
 	"xvay/houduan/internal/store"
@@ -42,13 +41,12 @@ func (s *Server) adminUsers(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	users, err := s.db.ListUsers(limit)
+	out, err := s.presentUsers()
 	if err != nil {
 		return err
 	}
-	out := make([]AdminUser, len(users))
-	for i, user := range users {
-		out[i] = adminUser(user, s.cfg)
+	if limit < len(out) {
+		out = out[:limit]
 	}
 	writeOK(w, http.StatusOK, map[string]any{"users": out})
 	return nil
@@ -99,8 +97,15 @@ func (s *Server) adminCreateUser(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if err := s.saveUserProfile(user.ID, body); err != nil {
+		return err
+	}
 	s.syncNodes()
-	writeOK(w, http.StatusCreated, adminUser(user, s.cfg))
+	view, err := s.oneUser(user)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusCreated, view)
 	return nil
 }
 
@@ -119,7 +124,11 @@ func (s *Server) adminGetUser(w http.ResponseWriter, r *http.Request) error {
 	if !ok {
 		return notFound("用户不存在")
 	}
-	writeOK(w, http.StatusOK, adminUser(user, s.cfg))
+	view, err := s.oneUser(user)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -196,8 +205,15 @@ func (s *Server) adminPatchUser(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if err := s.saveUserProfile(id, body); err != nil {
+		return err
+	}
 	s.syncNodes()
-	writeOK(w, http.StatusOK, adminUser(user, s.cfg))
+	view, err := s.oneUser(user)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -229,7 +245,11 @@ func (s *Server) adminResetTraffic(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, adminUser(user, s.cfg))
+	view, err := s.oneUser(user)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -245,7 +265,11 @@ func (s *Server) adminResetToken(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, adminUser(user, s.cfg))
+	view, err := s.oneUser(user)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -253,14 +277,9 @@ func (s *Server) adminNodes(w http.ResponseWriter, r *http.Request) error {
 	if err := s.requireAdmin(r); err != nil {
 		return err
 	}
-	nodes, err := s.db.ListNodes()
+	out, err := s.presentNodes()
 	if err != nil {
 		return err
-	}
-	now := time.Now().UnixMilli()
-	out := make([]AdminNode, len(nodes))
-	for i, node := range nodes {
-		out[i] = adminNode(node, now, s.cfg.NodeOfflineMs)
 	}
 	writeOK(w, http.StatusOK, map[string]any{"nodes": out})
 	return nil
@@ -274,6 +293,7 @@ func (s *Server) adminCreateNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	normalizeNodeBody(body)
 	input, err := validate.NodeCreateInput(body)
 	if err != nil {
 		return err
@@ -282,8 +302,15 @@ func (s *Server) adminCreateNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if err := s.saveNodeMeta(node.ID, body); err != nil {
+		return err
+	}
 	s.syncNodes()
-	writeOK(w, http.StatusCreated, adminNode(node, time.Now().UnixMilli(), s.cfg.NodeOfflineMs))
+	view, err := s.oneNode(node)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusCreated, view)
 	return nil
 }
 
@@ -295,7 +322,11 @@ func (s *Server) adminGetNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, adminNode(node, time.Now().UnixMilli(), s.cfg.NodeOfflineMs))
+	view, err := s.oneNode(node)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 
@@ -318,6 +349,7 @@ func (s *Server) adminPatchNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	normalizeNodeBody(body)
 	patch, err := validate.NodePatchInput(body)
 	if err != nil {
 		return err
@@ -339,8 +371,15 @@ func (s *Server) adminPatchNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if err := s.saveNodeMeta(id, body); err != nil {
+		return err
+	}
 	s.syncNodes()
-	writeOK(w, http.StatusOK, adminNode(node, time.Now().UnixMilli(), s.cfg.NodeOfflineMs))
+	view, err := s.oneNode(node)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, view)
 	return nil
 }
 

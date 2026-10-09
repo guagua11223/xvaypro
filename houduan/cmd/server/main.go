@@ -22,11 +22,17 @@ func main() {
 	}
 	defer db.Close()
 
+	if err := db.SeedDemo(); err != nil {
+		log.Printf("seed demo: %v", err)
+	}
 	if err := nodeproc.EnsureDefault(db, cfg); err != nil {
 		log.Printf("default node: %v", err)
 	}
 	if err := nodeproc.Sync(db, cfg); err != nil {
 		log.Printf("sync nodes: %v", err)
+	}
+	if err := db.KeepDemoOnline(); err != nil {
+		log.Printf("demo nodes: %v", err)
 	}
 	go nodeproc.Run(context.Background(), db)
 
@@ -35,9 +41,6 @@ func main() {
 		Addr:              addr,
 		Handler:           api.New(cfg, db),
 		ReadHeaderTimeout: 10 * time.Second,
-	}
-	if cfg.AdminToken == "" {
-		log.Print("ADMIN_TOKEN is empty; admin API will reject every request")
 	}
 	log.Printf("xvay listening on %s", addr)
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {

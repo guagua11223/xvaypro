@@ -1,8 +1,8 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ElMessageBox } from 'element-plus'
-import { logout, resetDb, session } from '@/stores/db'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { logout, refreshBackend, resetDb, session } from '@/stores/db'
 
 const route = useRoute()
 const router = useRouter()
@@ -15,14 +15,23 @@ function toggleCollapse() {
   collapsed.value = !collapsed.value
 }
 
+onMounted(() => {
+  refreshBackend().catch((error) => ElMessage.error(error.message || '加载数据失败'))
+})
+
 async function onReset() {
   await ElMessageBox.confirm('演示数据会恢复到初始内容，已注册的运营账号也会被清除。', '重置演示数据', {
     type: 'warning',
     confirmButtonText: '重置',
     cancelButtonText: '取消',
   })
-  resetDb()
-  if (!session.user) router.push('/login')
+  try {
+    await resetDb()
+  } catch (error) {
+    ElMessage.error(error.message || '重置失败')
+    return
+  }
+  router.push('/login')
 }
 
 function onLogout() {

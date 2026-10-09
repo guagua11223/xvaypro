@@ -74,9 +74,16 @@ async function submit() {
   await formRef.value.validate()
   const body = {
     name: form.name.trim(),
-    host: form.url.trim(),
+    host: form.url.trim() || '127.0.0.1',
+    url: form.url.trim(),
     region: form.region.trim(),
     enabled: form.status !== 'offline',
+    groupId: form.groupId,
+    coreType: form.coreType,
+    key: form.key.trim(),
+    lineType: form.type,
+    latency: Number(form.latency) || 0,
+    lineStatus: form.status,
   }
   try {
     if (editingId.value) {

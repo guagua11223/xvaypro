@@ -36,6 +36,14 @@ type AdminUser struct {
 	Hy2Password string `json:"hy2Password"`
 	SubToken    string `json:"subToken"`
 	CreatedAt   int64  `json:"createdAt"`
+	DisplayName string `json:"displayName,omitempty"`
+	Phone       string `json:"phone,omitempty"`
+	PlanID      int64  `json:"planId,omitempty"`
+	AgentID     int64  `json:"agentId,omitempty"`
+	Device      string `json:"device,omitempty"`
+	Platform    string `json:"platform,omitempty"`
+	Region      string `json:"region,omitempty"`
+	LastLoginAt int64  `json:"lastLoginAt,omitempty"`
 }
 
 type PublicNode struct {
@@ -85,6 +93,13 @@ type AdminNode struct {
 	LastSeenAt int64    `json:"lastSeenAt"`
 	Xray       XrayView `json:"xray"`
 	Hysteria2  Hy2View  `json:"hysteria2"`
+	GroupID    int64    `json:"groupId,omitempty"`
+	CoreType   string   `json:"coreType,omitempty"`
+	Key        string   `json:"key,omitempty"`
+	LineType   string   `json:"lineType,omitempty"`
+	Latency    int      `json:"latency,omitempty"`
+	LineStatus string   `json:"lineStatus,omitempty"`
+	URL        string   `json:"url,omitempty"`
 }
 
 type PublicAnnouncement struct {

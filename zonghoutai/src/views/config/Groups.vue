@@ -64,10 +64,14 @@ async function submit() {
     protocol: form.type === 'local' ? '' : form.protocol,
     autoUpdateInterval: form.type === 'local' ? 0 : Number(form.autoUpdateInterval) || 0,
   }
-  if (editingId.value) updateItem('groups', editingId.value, payload)
-  else addItem('groups', payload)
-  dialogVisible.value = false
-  ElMessage.success('分组已保存')
+  try {
+    if (editingId.value) await updateItem('groups', editingId.value, payload)
+    else await addItem('groups', payload)
+    dialogVisible.value = false
+    ElMessage.success('分组已保存')
+  } catch (error) {
+    ElMessage.error(error.message || '保存失败')
+  }
 }
 
 async function remove(row) {
@@ -76,8 +80,12 @@ async function remove(row) {
     return
   }
   await ElMessageBox.confirm(`删除分组「${row.name}」？`, '删除分组', { type: 'warning' })
-  removeItem('groups', row.id)
-  ElMessage.success('已删除')
+  try {
+    await removeItem('groups', row.id)
+    ElMessage.success('已删除')
+  } catch (error) {
+    ElMessage.error(error.message || '删除失败')
+  }
 }
 </script>
 
