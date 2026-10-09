@@ -12,7 +12,7 @@ import Invite from '@/views/Invite.vue'
 import Notice from '@/views/Notice.vue'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     { path: '/login', component: Login, meta: { public: true, title: '登录' } },
     { path: '/register', component: Register, meta: { public: true, title: '注册' } },
