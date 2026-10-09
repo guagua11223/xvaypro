@@ -1,7 +1,8 @@
 <script setup>
-import { reactive } from 'vue'
+import { onMounted, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { db, saveAppSettings } from '@/stores/db'
+import { API_BASE } from '@/config'
+import { db, refreshBackend, saveAppSettings, saveBackendSettings } from '@/stores/db'
 
 const form = reactive({ ...db.appSettings })
 
@@ -13,13 +14,22 @@ const locales = [
   { value: 'ko', label: '한국어' },
 ]
 
-function save() {
+async function save() {
   if (!form.appName.trim()) {
     ElMessage.warning('请填写应用名称')
     return
   }
   if (!form.serverAddress.trim()) {
     ElMessage.warning('请填写服务器地址')
+    return
+  }
+  try {
+    await saveBackendSettings({
+      profileName: form.appName.trim(),
+      supportUrl: form.supportUrl.trim(),
+    })
+  } catch (error) {
+    ElMessage.error(error.message || '后端保存失败')
     return
   }
   saveAppSettings({
@@ -36,8 +46,17 @@ function save() {
     pingMaxConcurrency: Number(form.pingMaxConcurrency) || 1,
     tun: form.defaultMode === 'fullMask',
   })
-  ElMessage.success('App 配置已保存，客户端下次拉取时生效')
+  ElMessage.success('App 配置已保存到后端')
 }
+
+onMounted(async () => {
+  try {
+    await refreshBackend()
+    Object.assign(form, db.appSettings)
+  } catch (error) {
+    ElMessage.error(error.message || '加载配置失败')
+  }
+})
 </script>
 
 <template>
@@ -45,7 +64,7 @@ function save() {
     <div class="page-head">
       <div>
         <h2>App 配置</h2>
-        <p>对应客户端设置里的通用、SOCKS/HTTP、系统代理、Tun 和关于。保存后作为下发给 AnyPortal 的默认值。</p>
+        <p>接口地址 {{ API_BASE }}/api/ 。应用名称和支持链接会保存到后端，订阅配置按这里下发。</p>
       </div>
       <el-button type="primary" @click="save">保存配置</el-button>
     </div>

@@ -1,7 +1,8 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { agentName, db, labelOf, NODE_STATUS, userName } from '@/stores/db'
+import { ElMessage } from 'element-plus'
+import { agentName, db, labelOf, NODE_STATUS, refreshBackend, userName } from '@/stores/db'
 import { formatMoney, formatTime } from '@/utils/format'
 
 const router = useRouter()
@@ -19,6 +20,10 @@ const recentUsers = computed(() =>
 const recentCommissions = computed(() =>
   [...db.commissions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5),
 )
+
+onMounted(() => {
+  refreshBackend().catch((error) => ElMessage.error(error.message || '加载概览失败'))
+})
 </script>
 
 <template>

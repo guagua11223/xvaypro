@@ -4,9 +4,9 @@ import 'package:http/http.dart' as http;
 
 import '../config/backend.dart';
 import '../models/profile_group.dart';
-import '../utils/db.dart';
-import '../utils/db/update_profile_group.dart';
-import '../utils/prefs.dart';
+import 'db.dart';
+import 'db/update_profile_group.dart';
+import 'prefs.dart';
 
 const _tokenKey = 'xvay.token';
 const _emailKey = 'xvay.email';
