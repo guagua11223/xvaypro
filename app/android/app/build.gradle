@@ -55,6 +55,7 @@ android {
     productFlavors {
         apilatest {
             dimension "target"
+            isDefault true
             targetSdk = flutter.targetSdkVersion
         }
 
@@ -111,6 +112,12 @@ android {
     //     }
     // }
 
+    sourceSets {
+        main {
+            jniLibs.srcDirs += ['src/main/jniLibs']
+        }
+    }
+
     lint {
         disable 'ExpiredTargetSdkVersion'
     }
@@ -154,3 +161,28 @@ task runNdkBuild(type: Exec) {
 }
 
 preBuild.dependsOn runNdkBuild
+
+// flutter run 不带 --flavor 时会安装 app-debug.apk。
+// 产品风味实际产出 app-apilatest-debug.apk，这里同步一份以免装到旧包。
+afterEvaluate {
+    ["assembleApilatestDebug", "assembleApi28Debug"].each { taskName ->
+        def assemble = tasks.findByName(taskName)
+        if (assemble == null) {
+            return
+        }
+        assemble.doLast {
+            def flavor = taskName.contains("Api28") ? "api28" : "apilatest"
+            def src = file("${layout.buildDirectory.get()}/outputs/apk/${flavor}/debug/app-${flavor}-debug.apk")
+            def destDir = file("${rootProject.projectDir}/../build/app/outputs/flutter-apk")
+            if (!src.exists()) {
+                return
+            }
+            destDir.mkdirs()
+            copy {
+                from src
+                into destDir
+                rename { "app-debug.apk" }
+            }
+        }
+    }
+}

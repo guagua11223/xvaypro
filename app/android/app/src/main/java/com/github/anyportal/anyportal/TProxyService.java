@@ -68,8 +68,17 @@ public class TProxyService extends VpnService {
         return binder;
     }
 
+    private static final boolean nativeLibraryLoaded;
+
     static {
-        System.loadLibrary("hev-socks5-tunnel");
+        boolean loaded = false;
+        try {
+            System.loadLibrary("hev-socks5-tunnel");
+            loaded = true;
+        } catch (UnsatisfiedLinkError e) {
+            Log.e(TAG, "libhev-socks5-tunnel.so missing from APK", e);
+        }
+        nativeLibraryLoaded = loaded;
     }
 
     public static native void TProxyStartService(String config_path, int fd);
@@ -542,12 +551,18 @@ public class TProxyService extends VpnService {
         }
 
         File confFile = new File(getFilesDir(), "conf/tun2socks.hev_socks5_tunnel.gen.yaml");
+        if (!nativeLibraryLoaded) {
+            Log.e(TAG, "skip TProxyStartService: native library not loaded");
+            return;
+        }
         TProxyStartService(confFile.getAbsolutePath(), tunFd.getFd());
     }
 
     private void stopTunEmbedded() {
         if (tunFd != null) {
-            TProxyStopService();
+            if (nativeLibraryLoaded) {
+                TProxyStopService();
+            }
 
             try {
                 tunFd.close();
