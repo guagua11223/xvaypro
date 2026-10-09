@@ -6,6 +6,7 @@ import '../../extensions/localization.dart';
 import '../../theme/lets_colors.dart';
 import '../../utils/prefs.dart';
 import '../../utils/profile_selection.dart';
+import '../../utils/xvay_account.dart';
 import '../../utils/show_snack_bar_now.dart';
 import '../../utils/vpn_manager.dart';
 import '../../widgets/connect_orb.dart';
@@ -37,6 +38,7 @@ class _ConnectHomeState extends State<ConnectHome> {
     super.initState();
     vPNMan.addListener(_onVpnChanged);
     _syncConnectedClock();
+    ensureBackendProfile();
   }
 
   @override

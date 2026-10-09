@@ -99,6 +99,7 @@ func (s *Server) adminCreateUser(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	s.syncNodes()
 	writeOK(w, http.StatusCreated, adminUser(user, s.cfg))
 	return nil
 }
@@ -195,6 +196,7 @@ func (s *Server) adminPatchUser(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	s.syncNodes()
 	writeOK(w, http.StatusOK, adminUser(user, s.cfg))
 	return nil
 }
@@ -210,6 +212,7 @@ func (s *Server) adminDeleteUser(w http.ResponseWriter, r *http.Request) error {
 	if err := s.db.DeleteUser(id); err != nil {
 		return err
 	}
+	s.syncNodes()
 	writeOK(w, http.StatusOK, map[string]any{"id": id})
 	return nil
 }
@@ -279,6 +282,7 @@ func (s *Server) adminCreateNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	s.syncNodes()
 	writeOK(w, http.StatusCreated, adminNode(node, time.Now().UnixMilli(), s.cfg.NodeOfflineMs))
 	return nil
 }
@@ -335,6 +339,7 @@ func (s *Server) adminPatchNode(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	s.syncNodes()
 	writeOK(w, http.StatusOK, adminNode(node, time.Now().UnixMilli(), s.cfg.NodeOfflineMs))
 	return nil
 }
@@ -350,6 +355,7 @@ func (s *Server) adminDeleteNode(w http.ResponseWriter, r *http.Request) error {
 	if err := s.db.DeleteNode(id); err != nil {
 		return err
 	}
+	s.syncNodes()
 	writeOK(w, http.StatusOK, map[string]any{"id": id})
 	return nil
 }

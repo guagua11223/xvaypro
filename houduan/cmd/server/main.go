@@ -9,6 +9,7 @@ import (
 
 	"xvay/houduan/internal/api"
 	"xvay/houduan/internal/config"
+	"xvay/houduan/internal/nodeproc"
 	"xvay/houduan/internal/store"
 )
 
@@ -19,6 +20,13 @@ func main() {
 		log.Fatalf("open database: %v", err)
 	}
 	defer db.Close()
+
+	if err := nodeproc.EnsureDefault(db, cfg); err != nil {
+		log.Printf("default node: %v", err)
+	}
+	if err := nodeproc.Sync(db, cfg); err != nil {
+		log.Printf("sync nodes: %v", err)
+	}
 
 	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
 	server := &http.Server{

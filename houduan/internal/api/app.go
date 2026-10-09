@@ -45,6 +45,7 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	s.syncNodes()
 	writeOK(w, http.StatusCreated, map[string]any{"token": token, "user": appUser(user, s.cfg)})
 	return nil
 }

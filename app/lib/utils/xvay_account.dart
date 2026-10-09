@@ -3,9 +3,11 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import '../config/backend.dart';
+import '../models/core.dart';
 import '../models/profile_group.dart';
 import 'db.dart';
 import 'db/update_profile_group.dart';
+import 'logger.dart';
 import 'prefs.dart';
 
 const _tokenKey = 'xvay.token';
@@ -26,6 +28,23 @@ class XvayAccount {
 
   Future<Map<String, dynamic>> login(String email, String password) {
     return _auth('/api/app/login', email, password);
+  }
+
+  Future<Map<String, dynamic>> me() async {
+    final current = token;
+    if (current == null || current.isEmpty) {
+      throw Exception('尚未登录');
+    }
+    final response = await _client.get(
+      Uri.parse('$kBackendBase/api/app/me'),
+      headers: {'Authorization': 'Bearer $current'},
+    );
+    final payload = _decode(response);
+    final data = payload['data'];
+    if (data is! Map) {
+      throw Exception('账号信息缺少内容');
+    }
+    return Map<String, dynamic>.from(data);
   }
 
   Future<void> logout() async {
@@ -80,9 +99,50 @@ class XvayAccount {
   }
 }
 
+Future<void> ensureBackendProfile() async {
+  final account = XvayAccount();
+  try {
+    Map<String, dynamic> user;
+    if (account.isLoggedIn) {
+      try {
+        user = await account.me();
+      } catch (_) {
+        await prefs.remove(_tokenKey);
+        user = await _deviceAccount(account);
+      }
+    } else {
+      user = await _deviceAccount(account);
+    }
+    await syncSubscription(user);
+  } catch (error) {
+    logger.w('ensureBackendProfile: $error');
+  }
+}
+
+Future<Map<String, dynamic>> _deviceAccount(XvayAccount account) async {
+  var email = prefs.getString('xvay.deviceEmail');
+  var password = prefs.getString('xvay.devicePassword');
+  if (email == null ||
+      email.isEmpty ||
+      password == null ||
+      password.length < 8) {
+    final id = DateTime.now().millisecondsSinceEpoch.toRadixString(36);
+    email = 'd$id@feilian.app';
+    password = 'Fl$id!a8';
+    await prefs.setString('xvay.deviceEmail', email);
+    await prefs.setString('xvay.devicePassword', password);
+  }
+  try {
+    return await account.login(email, password);
+  } catch (_) {
+    return account.register(email, password);
+  }
+}
+
 Future<void> syncSubscription(Map<String, dynamic> user) async {
-  final url = user['subscriptionUrl'] as String?;
-  if (url == null || url.isEmpty) return;
+  final raw = user['subscriptionUrl'] as String?;
+  if (raw == null || raw.isEmpty) return;
+  final url = reachableBackendUrl(raw);
   final name = (user['email'] as String?) ?? '飞连';
   final remotes = await db.select(db.profileGroupRemote).get();
   ProfileGroupData? existing;
@@ -102,4 +162,30 @@ Future<void> syncSubscription(Map<String, dynamic> user) async {
     url: url,
     autoUpdateInterval: 86400,
   );
+  await selectFirstProfile();
+}
+
+Future<void> selectFirstProfile() async {
+  final selectedId = prefs.getInt('app.selectedProfileId');
+  if (selectedId != null) {
+    final current = await (db.select(
+      db.profile,
+    )..where((row) => row.id.equals(selectedId))).getSingleOrNull();
+    if (current != null) return;
+  }
+  final profiles = await db.select(db.profile).get();
+  if (profiles.isEmpty) return;
+  var chosen = profiles.first;
+  for (final profile in profiles) {
+    final reality =
+        profile.coreTypeId == CoreTypeDefault.xray.index ||
+        profile.name.contains('Reality');
+    if (reality) {
+      chosen = profile;
+      break;
+    }
+  }
+  await prefs.setInt('app.selectedProfileId', chosen.id);
+  await prefs.setString('cache.app.selectedProfileName', chosen.name);
+  prefs.notifyListeners();
 }

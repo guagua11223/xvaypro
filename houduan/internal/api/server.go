@@ -1,9 +1,11 @@
 package api
 
 import (
+	"log"
 	"net/http"
 
 	"xvay/houduan/internal/config"
+	"xvay/houduan/internal/nodeproc"
 	"xvay/houduan/internal/store"
 )
 
@@ -57,6 +59,12 @@ func New(cfg config.Config, db *store.Store) *Server {
 		{http.MethodDelete, "/api/admin/announcements/:id", s.adminDeleteAnnouncement},
 	}
 	return s
+}
+
+func (s *Server) syncNodes() {
+	if err := nodeproc.Sync(s.db, s.cfg); err != nil {
+		log.Printf("sync nodes: %v", err)
+	}
 }
 
 func (s *Server) health(w http.ResponseWriter, _ *http.Request) error {

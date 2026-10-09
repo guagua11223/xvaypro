@@ -46,6 +46,9 @@ func BuildHysteriaServer(node Node, users []User, paths Hy2Paths) map[string]any
 	for _, user := range users {
 		userpass[UserEmail(user.ID)] = user.Hy2Password
 	}
+	if len(userpass) == 0 {
+		userpass["_"] = "_"
+	}
 	masquerade := node.Hy2Masquerade
 	if masquerade == "" {
 		masquerade = "https://" + node.Hy2SNI + "/"
