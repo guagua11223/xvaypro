@@ -148,6 +148,13 @@ CREATE TABLE IF NOT EXISTS admin_sessions (
   created_at INTEGER NOT NULL,
   expires_at INTEGER NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS agent_sessions (
+  token_hash TEXT PRIMARY KEY,
+  agent_id INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
 `
 
 type Store struct {

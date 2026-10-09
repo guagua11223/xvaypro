@@ -111,6 +111,14 @@ func (s *Server) adminCatalog(w http.ResponseWriter, r *http.Request) error {
 		if err != nil {
 			return err
 		}
+		if kind == "agents" {
+			public := make([]map[string]any, 0, len(rows))
+			for _, row := range rows {
+				public = append(public, store.PublicAgent(row))
+			}
+			payload[kind] = public
+			continue
+		}
 		payload[kind] = rows
 	}
 	admins, err := s.db.ListCatalog("admins")

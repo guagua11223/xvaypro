@@ -40,6 +40,13 @@ func New(cfg config.Config, db *store.Store) *Server {
 		{http.MethodGet, "/api/node/:id/hysteria2", s.nodeHysteria},
 		{http.MethodGet, "/api/node/:id/bundle", s.nodeBundleRoute},
 
+		{http.MethodPost, "/api/agent/register", s.agentRegister},
+		{http.MethodPost, "/api/agent/login", s.agentLogin},
+		{http.MethodPost, "/api/agent/logout", s.agentLogout},
+		{http.MethodGet, "/api/agent/me", s.agentMe},
+		{http.MethodGet, "/api/agent/team", s.agentTeam},
+		{http.MethodGet, "/api/agent/commissions", s.agentCommissions},
+
 		{http.MethodPost, "/api/admin/login", s.adminLogin},
 		{http.MethodPost, "/api/admin/register", s.adminRegister},
 		{http.MethodPost, "/api/admin/demo/reset", s.adminResetDemo},
