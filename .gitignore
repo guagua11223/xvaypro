@@ -1,14 +1,24 @@
 .DS_Store
 .idea/
+*.iml
 .apk-extract/
 lets-latest.apk
+*.apk
+*.aab
+*.ipa
 
-app/.dart_tool/
-app/.idea/
-app/android/.idea/
-app/build/
-app/android/build/
-app/.flutter-plugins-dependencies
+# 构建产物与依赖
+**/build/
+**/.dart_tool/
+**/.gradle/
+**/.cxx/
+**/node_modules/
+**/dist/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+
+# 误生成的根目录 npm 锁
+/package-lock.json
 
 .env
 *.sqlite
