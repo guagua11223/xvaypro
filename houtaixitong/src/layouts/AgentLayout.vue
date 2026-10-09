@@ -7,8 +7,8 @@ const route = useRoute()
 const router = useRouter()
 const collapsed = ref(false)
 
-const title = computed(() => route.meta.title || '代理商后台')
-const level = computed(() => LEVELS[session.user?.level] || { label: '代理', type: 'info' })
+const title = computed(() => route.meta.title || '经销商后台')
+const level = computed(() => LEVELS[session.user?.level] || { label: '经销商', type: 'warning' })
 
 function toggleCollapse() {
   collapsed.value = !collapsed.value
@@ -25,7 +25,7 @@ async function onLogout() {
     <el-aside class="admin-aside" :width="collapsed ? '64px' : '220px'">
       <div class="logo">
         <i>X</i>
-        <span v-show="!collapsed">飞连 代理商</span>
+        <span v-show="!collapsed">飞连 经销商</span>
       </div>
       <el-menu
         :default-active="route.path"
@@ -41,11 +41,23 @@ async function onLogout() {
         </el-menu-item>
         <el-menu-item index="/team">
           <el-icon><Avatar /></el-icon>
-          <span>我的代理</span>
+          <span>旗下会员</span>
         </el-menu-item>
         <el-menu-item index="/commission">
           <el-icon><Money /></el-icon>
-          <span>分佣订单</span>
+          <span>订单佣金</span>
+        </el-menu-item>
+        <el-menu-item index="/withdraw">
+          <el-icon><Wallet /></el-icon>
+          <span>提现</span>
+        </el-menu-item>
+        <el-menu-item index="/invite">
+          <el-icon><Share /></el-icon>
+          <span>邀请</span>
+        </el-menu-item>
+        <el-menu-item index="/notice">
+          <el-icon><Bell /></el-icon>
+          <span>公告客服</span>
         </el-menu-item>
       </el-menu>
     </el-aside>
@@ -59,8 +71,8 @@ async function onLogout() {
         </div>
         <el-dropdown>
           <span class="header-user">
-            <el-avatar :size="32">{{ session.user?.name?.slice(0, 1) }}</el-avatar>
-            <span>{{ session.user?.name }}</span>
+            <el-avatar :size="32">{{ (session.user?.username || session.user?.name || '经').slice(0, 1) }}</el-avatar>
+            <span>{{ session.user?.username || session.user?.name }}</span>
             <el-tag size="small" :type="level.type" effect="plain">{{ level.label }}</el-tag>
           </span>
           <template #dropdown>

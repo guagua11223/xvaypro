@@ -3,7 +3,9 @@ package api
 import (
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
+	"unicode/utf8"
 
 	"xvay/houduan/internal/auth"
 	"xvay/houduan/internal/errs"
@@ -22,9 +24,34 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	email, err := validate.ParseEmail(body["email"])
-	if err != nil {
-		return err
+	username := strings.TrimSpace(store.AsString(body["username"]))
+	invite := strings.TrimSpace(store.AsString(body["inviteCode"]))
+	var email string
+	if username != "" {
+		if err := validUsername(username); err != nil {
+			return err
+		}
+		taken, err := s.db.UsernameTaken(username, 0)
+		if err != nil {
+			return err
+		}
+		if taken {
+			return errs.New(http.StatusConflict, "CONFLICT", "用户名已存在")
+		}
+		if strings.TrimSpace(store.AsString(body["email"])) != "" {
+			email, err = validate.ParseEmail(body["email"])
+			if err != nil {
+				return err
+			}
+		} else {
+			email = username + "@member.xvay"
+		}
+	} else {
+		email, err = validate.ParseEmail(body["email"])
+		if err != nil {
+			return err
+		}
+		username = email
 	}
 	password, err := validate.ParsePassword(body["password"])
 	if err != nil {
@@ -42,6 +69,9 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if err := s.db.InitMember(user.ID, username, invite); err != nil {
+		return err
+	}
 	token, err := s.db.CreateSession(user, s.cfg.SessionTTLMs)
 	if err != nil {
 		return err
@@ -56,18 +86,30 @@ func (s *Server) login(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	email, err := validate.ParseEmail(body["email"])
-	if err != nil {
-		return err
+	account := strings.TrimSpace(store.AsString(body["username"]))
+	if account == "" {
+		account = strings.TrimSpace(store.AsString(body["email"]))
 	}
 	password, _ := body["password"].(string)
-	user, ok, err := s.db.FindUserByEmail(email)
+	member, ok, err := s.db.FindLogin(account)
 	if err != nil {
 		return err
 	}
-	if !ok || !checkPassword(password, user.PasswordHash) {
-		return unauthorized("邮箱或密码不正确")
+	user, found := store.User{}, false
+	if ok {
+		user, found, err = s.db.FindUserByID(member.ID)
+		if err != nil {
+			return err
+		}
 	}
+	if !found || !checkPassword(password, user.PasswordHash) {
+		_ = s.db.AddLoginLog("user", account, false, clientIP(r), deviceOf(r))
+		return unauthorized("账号或密码不正确")
+	}
+	if member.MemberStatus == 1 || user.Status == "disabled" {
+		return forbidden("账号已封禁")
+	}
+	_ = s.db.AddLoginLog("user", account, true, clientIP(r), deviceOf(r))
 	token, err := s.db.CreateSession(user, s.cfg.SessionTTLMs)
 	if err != nil {
 		return err
@@ -223,6 +265,14 @@ func (s *Server) subscription(w http.ResponseWriter, r *http.Request) error {
 	default:
 		return badRequest("format 只能是 anyportal 或 v2ray")
 	}
+}
+
+func validUsername(username string) error {
+	n := utf8.RuneCountInString(username)
+	if n < 3 || n > 20 || strings.ContainsAny(username, " \t@") {
+		return badRequest("用户名需要 3-20 位，且不能包含空格或 @")
+	}
+	return nil
 }
 
 func bearer(r *http.Request) string {

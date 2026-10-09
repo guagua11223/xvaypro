@@ -25,12 +25,43 @@ class XvayAccount {
   String? get email => prefs.getString(_emailKey);
   bool get isLoggedIn => (token ?? '').isNotEmpty;
 
-  Future<Map<String, dynamic>> register(String email, String password) {
-    return _auth('/api/app/register', email, password);
+  Future<Map<String, dynamic>> register(String email, String password, [String inviteCode = '']) {
+    return _auth('/api/app/register', email, password, inviteCode);
   }
 
   Future<Map<String, dynamic>> login(String email, String password) {
     return _auth('/api/app/login', email, password);
+  }
+
+  Future<Map<String, dynamic>> apiGet(String path) async {
+    final current = token;
+    if (current == null || current.isEmpty) {
+      throw Exception('尚未登录');
+    }
+    final response = await _client.get(
+      Uri.parse('$kBackendBase$path'),
+      headers: {'Authorization': 'Bearer $current'},
+    );
+    final data = _decode(response)['data'];
+    if (data is! Map) throw Exception('响应缺少内容');
+    return Map<String, dynamic>.from(data);
+  }
+
+  Future<Map<String, dynamic>> apiPost(String path, Map<String, dynamic> body, {bool auth = true}) async {
+    final headers = {'Content-Type': 'application/json'};
+    if (auth) {
+      final current = token;
+      if (current == null || current.isEmpty) throw Exception('尚未登录');
+      headers['Authorization'] = 'Bearer $current';
+    }
+    final response = await _client.post(
+      Uri.parse('$kBackendBase$path'),
+      headers: headers,
+      body: jsonEncode(body),
+    );
+    final data = _decode(response)['data'];
+    if (data is Map) return Map<String, dynamic>.from(data);
+    return {};
   }
 
   Future<Map<String, dynamic>> me() async {
@@ -142,12 +173,21 @@ class XvayAccount {
   Future<Map<String, dynamic>> _auth(
     String path,
     String email,
-    String password,
-  ) async {
+    String password, [
+    String inviteCode = '',
+  ]) async {
+    final account = email.trim();
+    final body = <String, dynamic>{'password': password};
+    if (account.contains('@')) {
+      body['email'] = account;
+    } else {
+      body['username'] = account;
+    }
+    if (inviteCode.trim().isNotEmpty) body['inviteCode'] = inviteCode.trim();
     final response = await _client.post(
       Uri.parse('$kBackendBase$path'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email.trim(), 'password': password}),
+      body: jsonEncode(body),
     );
     final payload = _decode(response);
     final data = payload['data'];

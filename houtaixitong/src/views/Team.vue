@@ -1,42 +1,44 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { onMounted, ref } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { request } from '@/api'
-import { LEVELS, token } from '@/stores/session'
-import { formatMoney, formatTime } from '@/utils/format'
+import { token } from '@/stores/session'
 
-const loading = ref(false)
-const keyword = ref('')
-const direct = ref([])
-
-const rows = computed(() => {
-  const text = keyword.value.trim().toLowerCase()
-  if (!text) return direct.value
-  return direct.value.filter((item) => {
-    const self = `${item.name} ${item.username} ${item.inviteCode}`.toLowerCase().includes(text)
-    const child = (item.agents || []).some((agent) =>
-      `${agent.name} ${agent.username} ${agent.inviteCode}`.toLowerCase().includes(text),
-    )
-    return self || child
-  })
-})
+const rows = ref([])
+const ownRate = ref(0)
 
 onMounted(load)
 
 async function load() {
-  loading.value = true
-  try {
-    const data = await request('/api/agent/team', { token: token() })
-    direct.value = data.direct || []
-  } catch (error) {
-    ElMessage.error(error.message || '加载失败')
-  } finally {
-    loading.value = false
-  }
+  const data = await request('/api/distributor/members', { token: token() })
+  rows.value = data.members || []
+  ownRate.value = data.rate || 0
 }
 
-function levelOf(value) {
-  return LEVELS[value] || { label: value || '—', type: 'info' }
+async function setRate(row) {
+  const { value } = await ElMessageBox.prompt(`不能超过本人比例 ${ownRate.value}%`, '设置返佣比例', {
+    inputValue: String(row.customRate || 0),
+  })
+  const rate = Number(value)
+  if (rate > ownRate.value) {
+    ElMessage.error('不能超过经销商本人比例')
+    return
+  }
+  await request(`/api/distributor/members/${row.id}/rate`, { method: 'POST', token: token(), body: { rate } })
+  ElMessage.success('已设置')
+  await load()
+}
+
+async function makeAgent(row) {
+  await request(`/api/distributor/members/${row.id}/agent`, { method: 'POST', token: token(), body: {} })
+  ElMessage.success('已授权代理，对方不能再发展代理')
+  await load()
+}
+
+async function askBan(row) {
+  const { value } = await ElMessageBox.prompt('提交给平台处理，经销商不能直接封禁', '申请处理', { inputPlaceholder: '原因' })
+  await request(`/api/distributor/members/${row.id}/ban-request`, { method: 'POST', token: token(), body: { reason: value } })
+  ElMessage.success('已提交平台')
 }
 </script>
 
@@ -44,65 +46,27 @@ function levelOf(value) {
   <div class="page">
     <div class="page-head">
       <div>
-        <h2>我的代理</h2>
-        <p>展开一行，可以看到这个代理名下再发展的代理。这里只显示两级。</p>
+        <h2>旗下会员</h2>
+        <p>可以设置返佣、无限授权代理。代理不能再授权下一级代理。</p>
       </div>
-      <el-input v-model="keyword" clearable placeholder="搜索名称、账号、邀请码" style="width: 240px" />
     </div>
-    <el-table v-loading="loading" :data="rows" row-key="id" empty-text="还没有下级代理">
-      <el-table-column type="expand">
+    <el-table :data="rows">
+      <el-table-column prop="id" label="ID" width="70" />
+      <el-table-column prop="username" label="名称" min-width="120" />
+      <el-table-column prop="userType" label="类型" width="90" />
+      <el-table-column prop="parentName" label="推荐人" min-width="120" />
+      <el-table-column label="返佣比例" width="100">
+        <template #default="{ row }">{{ row.hasCustomRate ? row.customRate + '%' : '未设置' }}</template>
+      </el-table-column>
+      <el-table-column label="钱包" width="80">
+        <template #default="{ row }">{{ row.walletEnabled ? '开通' : '关闭' }}</template>
+      </el-table-column>
+      <el-table-column label="操作" width="240">
         <template #default="{ row }">
-          <div style="padding: 4px 12px 12px 48px">
-            <p class="nested-title">{{ row.name }} 名下的代理</p>
-            <el-table :data="row.agents || []" size="small" empty-text="还没有再发展的代理">
-              <el-table-column prop="name" label="名称" min-width="120" />
-              <el-table-column prop="username" label="账号" min-width="120" />
-              <el-table-column label="等级" width="90">
-                <template #default="{ row: agent }">
-                  <el-tag size="small" :type="levelOf(agent.level).type">{{ levelOf(agent.level).label }}</el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column prop="inviteCode" label="邀请码" min-width="120" />
-              <el-table-column label="状态" width="90">
-                <template #default="{ row: agent }">
-                  <el-tag size="small" :type="agent.status === 'frozen' ? 'info' : 'success'">
-                    {{ agent.status === 'frozen' ? '冻结' : '正常' }}
-                  </el-tag>
-                </template>
-              </el-table-column>
-              <el-table-column label="累计分佣" width="120">
-                <template #default="{ row: agent }">{{ formatMoney(agent.totalCommission) }}</template>
-              </el-table-column>
-            </el-table>
-          </div>
+          <el-button link type="primary" @click="setRate(row)">设置比例</el-button>
+          <el-button v-if="!row.isAgent" link @click="makeAgent(row)">授权代理</el-button>
+          <el-button link @click="askBan(row)">申请处理</el-button>
         </template>
-      </el-table-column>
-      <el-table-column prop="name" label="名称" min-width="120" />
-      <el-table-column prop="username" label="账号" min-width="120" />
-      <el-table-column prop="phone" label="手机" min-width="120">
-        <template #default="{ row }">{{ row.phone || '—' }}</template>
-      </el-table-column>
-      <el-table-column label="等级" width="90">
-        <template #default="{ row }">
-          <el-tag size="small" :type="levelOf(row.level).type">{{ levelOf(row.level).label }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="inviteCode" label="邀请码" min-width="130" />
-      <el-table-column label="名下代理" width="100">
-        <template #default="{ row }">{{ row.agents?.length || 0 }}</template>
-      </el-table-column>
-      <el-table-column label="状态" width="90">
-        <template #default="{ row }">
-          <el-tag size="small" :type="row.status === 'frozen' ? 'info' : 'success'">
-            {{ row.status === 'frozen' ? '冻结' : '正常' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="累计分佣" width="120">
-        <template #default="{ row }">{{ formatMoney(row.totalCommission) }}</template>
-      </el-table-column>
-      <el-table-column label="加入时间" min-width="150">
-        <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
       </el-table-column>
     </el-table>
   </div>

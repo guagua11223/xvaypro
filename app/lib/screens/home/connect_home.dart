@@ -35,6 +35,7 @@ class _ConnectHomeState extends State<ConnectHome> {
   Timer? _ticker;
   Duration _elapsed = Duration.zero;
   bool _preparing = false;
+  String _quota = '';
 
   @override
   void initState() {
@@ -42,6 +43,7 @@ class _ConnectHomeState extends State<ConnectHome> {
     vPNMan.addListener(_onVpnChanged);
     _syncConnectedClock();
     ensureBackendProfile();
+    _loadQuota();
   }
 
   @override
@@ -71,6 +73,21 @@ class _ConnectHomeState extends State<ConnectHome> {
       _ticker?.cancel();
       _ticker = null;
     }
+  }
+
+  Future<void> _loadQuota() async {
+    final account = XvayAccount();
+    if (!account.isLoggedIn) return;
+    try {
+      final data = await account.apiGet('/api/user/profile');
+      final gb = data['trafficRemainGb'];
+      final seconds = data['remainSeconds'];
+      final days = seconds is num ? (seconds.toInt() / 86400).floor() : 0;
+      if (!mounted) return;
+      setState(() {
+        _quota = '剩余 ${gb is num ? gb.toStringAsFixed(2) : '0.00'} GB · 剩余 $days 天';
+      });
+    } catch (_) {}
   }
 
   String _formatElapsed(Duration d) {
@@ -213,6 +230,16 @@ class _ConnectHomeState extends State<ConnectHome> {
                             ? null
                             : _handleToggle,
                       ),
+                      if (_quota.isNotEmpty) ...[
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(28, 0, 28, 12),
+                          child: Text(
+                            _quota,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 13, color: LetsColors.textSecondary),
+                          ),
+                        ),
+                      ],
                       if (vPNMan.isCoreActive) ...[
                         const SizedBox(height: 8),
                         Text(

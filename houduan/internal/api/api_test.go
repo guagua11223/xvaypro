@@ -487,3 +487,108 @@ func callRaw(t *testing.T, handler http.Handler, method, path, token string, ext
 	handler.ServeHTTP(rec, req)
 	return rawResult{Code: rec.Code, Body: rec.Body.String()}
 }
+
+func TestCommerceModes(t *testing.T) {
+	cfg := config.Config{
+		DataDir: t.TempDir(), DatabasePath: ":memory:", AdminToken: "admin-token",
+		SessionTTLMs: 3_600_000, PublicBaseURL: "http://127.0.0.1:8787",
+		TrialBytes: 1024, TrialDays: 7,
+	}
+	db, err := store.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	handler := api.New(cfg, db)
+
+	register := func(username, invite string) (string, int64) {
+		t.Helper()
+		res := call(t, handler, http.MethodPost, "/api/app/register", "", map[string]any{
+			"username": username, "password": "password1", "inviteCode": invite,
+		})
+		if res.Status != http.StatusCreated {
+			t.Fatalf("register %s %d %s", username, res.Status, res.Raw)
+		}
+		token := res.Data["token"].(string)
+		me := call(t, handler, http.MethodGet, "/api/user/profile", token, nil)
+		return token, int64(me.Data["id"].(float64))
+	}
+	_, idA := register("user-a", "")
+	meA := call(t, handler, http.MethodGet, "/api/user/profile", call(t, handler, http.MethodPost, "/api/app/login", "", map[string]any{
+		"username": "user-a", "password": "password1",
+	}).Data["token"].(string), nil)
+	inviteA := meA.Data["inviteCode"].(string)
+	tokenB, _ := register("user-b", inviteA)
+	meB := call(t, handler, http.MethodGet, "/api/user/profile", tokenB, nil)
+	tokenC, _ := register("user-c", meB.Data["inviteCode"].(string))
+	meC := call(t, handler, http.MethodGet, "/api/user/profile", tokenC, nil)
+	tokenD, _ := register("user-d", meC.Data["inviteCode"].(string))
+
+	secret := call(t, handler, http.MethodPost, "/api/admin/payment/fourth", "admin-token", map[string]any{
+		"fourth_notify_secret": "pay-secret",
+	})
+	if secret.Status != http.StatusOK {
+		t.Fatalf("secret %d %s", secret.Status, secret.Raw)
+	}
+	pkgs := call(t, handler, http.MethodGet, "/api/packages", tokenD, nil)
+	list := pkgs.Data["packages"].([]any)
+	var pkgID float64
+	for _, item := range list {
+		row := item.(map[string]any)
+		if row["durationType"] == "week" {
+			pkgID = row["id"].(float64)
+		}
+	}
+	order := call(t, handler, http.MethodPost, "/api/orders", tokenD, map[string]any{"packageId": pkgID})
+	if order.Status != http.StatusCreated {
+		t.Fatalf("order %d %s", order.Status, order.Raw)
+	}
+	orderNo := order.Data["order"].(map[string]any)["orderNo"].(string)
+	paid := callWith(t, handler, http.MethodPost, "/api/pay/notify/fourth", "", map[string]string{"X-Fourth-Secret": "pay-secret"}, map[string]any{
+		"orderNo": orderNo, "gatewayFee": 0,
+	})
+	if paid.Status != http.StatusOK {
+		t.Fatalf("pay %d %s", paid.Status, paid.Raw)
+	}
+	rows := call(t, handler, http.MethodGet, "/api/admin/members/"+strconv.FormatInt(idA, 10)+"/records", "admin-token", nil)
+	comms := rows.Data["commissions"].([]any)
+	if len(comms) != 1 || comms[0].(map[string]any)["amount"].(float64) != 0.75 {
+		t.Fatalf("level3 amount %+v", rows.Raw)
+	}
+
+	if call(t, handler, http.MethodPost, "/api/admin/members/"+strconv.FormatInt(idA, 10)+"/distributor", "admin-token", map[string]any{"rate": 30}).Status != http.StatusOK {
+		t.Fatal("promote")
+	}
+	tokenE, _ := register("user-e", inviteA)
+	meE := call(t, handler, http.MethodGet, "/api/user/profile", tokenE, nil)
+	idE := int64(meE.Data["id"].(float64))
+	over := call(t, handler, http.MethodPost, "/api/distributor/login", "", map[string]any{"username": "user-a", "password": "password1"})
+	dToken := over.Data["token"].(string)
+	tooHigh := call(t, handler, http.MethodPost, "/api/distributor/members/"+strconv.FormatInt(idE, 10)+"/rate", dToken, map[string]any{"rate": 40})
+	if tooHigh.Status != http.StatusBadRequest {
+		t.Fatalf("rate cap %d %s", tooHigh.Status, tooHigh.Raw)
+	}
+	if call(t, handler, http.MethodPost, "/api/distributor/members/"+strconv.FormatInt(idE, 10)+"/rate", dToken, map[string]any{"rate": 20}).Status != http.StatusOK {
+		t.Fatal("set rate")
+	}
+	tokenF, _ := register("user-f", meE.Data["inviteCode"].(string))
+	orderF := call(t, handler, http.MethodPost, "/api/orders", tokenF, map[string]any{"packageId": pkgID})
+	orderNo = orderF.Data["order"].(map[string]any)["orderNo"].(string)
+	paid = callWith(t, handler, http.MethodPost, "/api/pay/notify/fourth", "", map[string]string{"X-Fourth-Secret": "pay-secret"}, map[string]any{
+		"orderNo": orderNo, "gatewayFee": 0,
+	})
+	if paid.Status != http.StatusOK {
+		t.Fatalf("pay f %s", paid.Raw)
+	}
+	mine := call(t, handler, http.MethodGet, "/api/distributor/commissions", dToken, nil)
+	for _, item := range mine.Data["commissions"].([]any) {
+		row := item.(map[string]any)
+		if row["fromUserId"].(float64) == float64(int64(call(t, handler, http.MethodGet, "/api/user/profile", tokenF, nil).Data["id"].(float64))) {
+			t.Fatalf("distributor also got the custom order: %s", mine.Raw)
+		}
+	}
+	eRows := call(t, handler, http.MethodGet, "/api/wallet", tokenE, nil)
+	if eRows.Status != http.StatusForbidden {
+		t.Fatalf("member under distributor should have no wallet yet %d", eRows.Status)
+	}
+}

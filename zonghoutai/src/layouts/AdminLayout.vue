@@ -50,7 +50,7 @@ function onLogout() {
       <el-menu
         :default-active="route.path"
         :collapse="collapsed"
-        :default-openeds="['config']"
+        :default-openeds="['config', 'ops']"
         router
         background-color="#0e122d"
         text-color="#c9d0e0"
@@ -71,6 +71,17 @@ function onLogout() {
           <el-menu-item index="/config/assets">资源文件</el-menu-item>
           <el-menu-item index="/config/plans">套餐</el-menu-item>
           <el-menu-item index="/config/app">App 配置</el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="ops">
+          <template #title>
+            <el-icon><User /></el-icon>
+            <span>会员运营</span>
+          </template>
+          <el-menu-item index="/members">会员管理</el-menu-item>
+          <el-menu-item index="/distributors">经销商</el-menu-item>
+          <el-menu-item index="/orders">订单</el-menu-item>
+          <el-menu-item index="/money">提现与退款</el-menu-item>
+          <el-menu-item index="/rules">规则与系统</el-menu-item>
         </el-sub-menu>
         <el-menu-item index="/users">
           <el-icon><User /></el-icon>

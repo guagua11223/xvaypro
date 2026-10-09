@@ -1,11 +1,13 @@
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { agentName, db, labelOf, NODE_STATUS, refreshBackend, userName } from '@/stores/db'
+import { adminRequest } from '@/ops'
 import { formatMoney, formatTime } from '@/utils/format'
 
 const router = useRouter()
+const stats = ref({})
 
 const onlineNodes = computed(() => db.nodes.filter((item) => item.status === 'online').length)
 const activeUsers = computed(() => db.users.filter((item) => item.status === 'active').length)
@@ -23,6 +25,7 @@ const recentCommissions = computed(() =>
 
 onMounted(() => {
   refreshBackend().catch((error) => ElMessage.error(error.message || '加载概览失败'))
+  adminRequest('/api/admin/stats').then((data) => { stats.value = data }).catch(() => {})
 })
 </script>
 
@@ -33,6 +36,12 @@ onMounted(() => {
         <h2>概览</h2>
         <p>对照 AnyPortal 的线路、内核与连接配置，汇总用户和代理分佣。</p>
       </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-card"><span>总会员</span><strong>{{ stats.members || 0 }}</strong><em>今日新增 {{ stats.todayMembers || 0 }}</em></div>
+      <div class="stat-card"><span>今日订单</span><strong>{{ formatMoney(stats.todayOrderAmount) }}</strong><em>累计 {{ formatMoney(stats.orderAmount) }}</em></div>
+      <div class="stat-card"><span>今日佣金</span><strong>{{ formatMoney(stats.todayCommission) }}</strong><em>累计 {{ formatMoney(stats.commissionTotal) }}</em></div>
+      <div class="stat-card"><span>待审核提现</span><strong>{{ stats.pendingWithdraw || 0 }}</strong><em>今日新增经销商 {{ stats.todayDistributors || 0 }}</em></div>
     </div>
     <div class="stat-grid">
       <div class="stat-card">

@@ -183,6 +183,10 @@ func Open(cfg config.Config) (*Store, error) {
 		db.Close()
 		return nil, err
 	}
+	if err := store.migrateMembership(); err != nil {
+		db.Close()
+		return nil, err
+	}
 	return store, nil
 }
 

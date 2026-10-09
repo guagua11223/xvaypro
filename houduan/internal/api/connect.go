@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"xvay/houduan/internal/access"
 	"xvay/houduan/internal/errs"
 	"xvay/houduan/internal/protocol"
 	"xvay/houduan/internal/store"
@@ -21,6 +22,16 @@ func (s *Server) appConnect(w http.ResponseWriter, r *http.Request) error {
 	user, err := s.requireUser(r)
 	if err != nil {
 		return err
+	}
+	if state := access.StateOf(user.Status, user.ExpireAt, user.Upload, user.Download, user.Total, time.Now()); !state.OK {
+		return errs.New(state.Status, state.Code, state.Message)
+	}
+	blocked, message, err := s.db.ServiceBlocked(user.ID, time.Now().UnixMilli())
+	if err != nil {
+		return err
+	}
+	if blocked {
+		return forbidden(message)
 	}
 	body, err := readJSON(r)
 	if err != nil {

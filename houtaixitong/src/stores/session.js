@@ -26,7 +26,7 @@ function save(user) {
 }
 
 export async function login(username, password) {
-  const data = await request('/api/agent/login', {
+  const data = await request('/api/distributor/login', {
     method: 'POST',
     body: { username, password },
   })

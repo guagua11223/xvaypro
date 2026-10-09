@@ -7,6 +7,9 @@ import Register from '@/views/Register.vue'
 import Dashboard from '@/views/Dashboard.vue'
 import Team from '@/views/Team.vue'
 import Commission from '@/views/Commission.vue'
+import Withdraw from '@/views/Withdraw.vue'
+import Invite from '@/views/Invite.vue'
+import Notice from '@/views/Notice.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -19,8 +22,11 @@ const router = createRouter({
       redirect: '/dashboard',
       children: [
         { path: 'dashboard', component: Dashboard, meta: { title: '概览' } },
-        { path: 'team', component: Team, meta: { title: '我的代理' } },
-        { path: 'commission', component: Commission, meta: { title: '分佣订单' } },
+        { path: 'team', component: Team, meta: { title: '旗下会员' } },
+        { path: 'commission', component: Commission, meta: { title: '订单佣金' } },
+        { path: 'withdraw', component: Withdraw, meta: { title: '提现' } },
+        { path: 'invite', component: Invite, meta: { title: '邀请' } },
+        { path: 'notice', component: Notice, meta: { title: '公告客服' } },
       ],
     },
   ],
