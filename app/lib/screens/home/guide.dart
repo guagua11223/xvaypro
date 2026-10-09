@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../../extensions/localization.dart';
 import '../../theme/lets_colors.dart';
+import '../../theme/lets_icons.dart';
 import '../../utils/prefs.dart';
 
 class GuidePage extends StatefulWidget {
@@ -36,17 +37,17 @@ class _GuidePageState extends State<GuidePage> {
   Widget build(BuildContext context) {
     final pages = [
       _GuideSlide(
-        icon: Icons.bolt,
+        icon: LetsIcons.bolt,
         title: context.loc.guide_title_1,
         subtitle: context.loc.guide_desc_1,
       ),
       _GuideSlide(
-        icon: Icons.shield_outlined,
+        icon: LetsIcons.shield,
         title: context.loc.guide_title_2,
         subtitle: context.loc.guide_desc_2,
       ),
       _GuideSlide(
-        icon: Icons.public,
+        icon: LetsIcons.region,
         title: context.loc.guide_title_3,
         subtitle: context.loc.guide_desc_3,
       ),

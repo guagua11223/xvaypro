@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../theme/lets_colors.dart';
+import '../theme/lets_icons.dart';
 
 class LetsAppBar extends StatelessWidget implements PreferredSizeWidget {
   const LetsAppBar({
@@ -30,13 +31,13 @@ class LetsAppBar extends StatelessWidget implements PreferredSizeWidget {
     if (leadingWidget == null && automaticallyImplyLeading) {
       if (onLeadingTap != null) {
         leadingWidget = IconButton(
-          icon: const Icon(Icons.menu),
+          icon: const Icon(LetsIcons.menu, size: LetsIcons.size),
           color: palette.onBar,
           onPressed: onLeadingTap,
         );
       } else if (canPop) {
         leadingWidget = IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(LetsIcons.back, size: LetsIcons.size),
           color: palette.onBar,
           onPressed: () => Navigator.of(context).pop(),
         );

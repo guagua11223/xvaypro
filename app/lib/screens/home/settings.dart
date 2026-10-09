@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../extensions/localization.dart';
+import '../../theme/lets_colors.dart';
+import '../../theme/lets_icons.dart';
 import '../../utils/runtime_platform.dart';
 
 import 'settings/about.dart';
@@ -24,7 +26,9 @@ class SettingList extends StatefulWidget {
 class _SettingListState extends State<SettingList> {
   @override
   Widget build(BuildContext context) {
+    final palette = LetsColors.of(context);
     return Scaffold(
+      backgroundColor: palette.page,
       appBar: AppBar(
         title: Text(context.loc.settings),
       ),
@@ -33,6 +37,7 @@ class _SettingListState extends State<SettingList> {
         child: Wrap(
           children: [
             ListTile(
+              leading: const LetsIcon(LetsIcons.general),
               title: Text(context.loc.general),
               subtitle: Text(context.loc.auto_startup_tray_icon_etc_),
               onTap: () {
@@ -56,6 +61,7 @@ class _SettingListState extends State<SettingList> {
               ),
             ),
             ListTile(
+              leading: const LetsIcon(LetsIcons.proxy),
               title: Text(context.loc.socks_and_http),
               subtitle: Text(
                 context
@@ -76,6 +82,7 @@ class _SettingListState extends State<SettingList> {
                 RuntimePlatform.isMacOS ||
                 RuntimePlatform.isAndroid)
               ListTile(
+                leading: const LetsIcon(LetsIcons.systemProxy),
                 title: Text(context.loc.system_proxy),
                 subtitle: Text(
                   context.loc.provided_by_os_not_all_apps_respect_this_setting,
@@ -90,6 +97,7 @@ class _SettingListState extends State<SettingList> {
                 },
               ),
             ListTile(
+              leading: const LetsIcon(LetsIcons.tun),
               title: Text("Tun2socks"),
               subtitle: Text(context.loc.vitual_network_adaptor),
               onTap: () {
@@ -111,6 +119,7 @@ class _SettingListState extends State<SettingList> {
               ),
             ),
             ListTile(
+              leading: const LetsIcon(LetsIcons.cores),
               title: Text(context.loc.cores),
               subtitle: Text(context.loc.path_of_core_exectuable_assets_etc_),
               onTap: () {
@@ -121,6 +130,7 @@ class _SettingListState extends State<SettingList> {
               },
             ),
             ListTile(
+              leading: const LetsIcon(LetsIcons.assets),
               title: Text(context.loc.assets),
               subtitle: Text(context.loc.assets_remote_auto_update_etc_),
               onTap: () {
@@ -142,6 +152,7 @@ class _SettingListState extends State<SettingList> {
               ),
             ),
             ListTile(
+              leading: const LetsIcon(LetsIcons.override),
               title: Text(context.loc.profile_override),
               subtitle: Text(
                 context.loc.inject_configuration_into_v2ray_xray_profile,
@@ -167,8 +178,9 @@ class _SettingListState extends State<SettingList> {
               ),
             ),
             ListTile(
+              leading: const LetsIcon(LetsIcons.about),
               title: Text(context.loc.about),
-              subtitle: const Text("AnyPortal"),
+              subtitle: const Text("飞连"),
               onTap: () {
                 Navigator.push(
                   context,

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:system_theme/system_theme.dart';
 
+import '../theme/lets_colors.dart';
 import 'platform_version.dart';
 import 'prefs.dart';
 import 'runtime_platform.dart';
@@ -38,13 +39,15 @@ ThemeData getPlatformThemeData() {
       colorSchemeSeed: getColorSchemeSeed(),
       useMaterial3: true,
       scaffoldBackgroundColor: isTransparentBG ? Colors.transparent : null,
-      cardTheme: const CardThemeData(
-        color: Color.fromARGB(240, 255, 255, 255),
-        shadowColor: Color.fromARGB(172, 0, 0, 0),
+      cardTheme: CardThemeData(
+        color: const Color.fromARGB(240, 255, 255, 255),
+        shadowColor: const Color.fromARGB(172, 0, 0, 0),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+        ),
       ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: isTransparentBG ? Colors.transparent : null,
-      ),
+      appBarTheme: LetsColors.appBarTheme(dark: false, transparent: isTransparentBG),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: isTransparentBG ? Colors.transparent : null,
         indicatorColor: const Color.fromARGB(240, 255, 255, 255),
@@ -66,9 +69,16 @@ ThemeData getPlatformThemeData() {
       ),
       useMaterial3: true,
       scaffoldBackgroundColor: const Color(0xFFF4F5F7),
-      appBarTheme: const AppBarTheme(
-        foregroundColor: Colors.white,
+      iconTheme: const IconThemeData(size: 22),
+      cardTheme: CardThemeData(
+        color: const Color(0xFFF7F8FA),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+        ),
       ),
+      dividerTheme: const DividerThemeData(color: Color(0xFFD5D8DE), thickness: 1),
+      appBarTheme: LetsColors.appBarTheme(dark: false),
     );
   }
 }
@@ -88,16 +98,17 @@ ThemeData getPlatformDarkThemeData() {
           : isTransparentBG
           ? Colors.transparent
           : null,
-      cardTheme: const CardThemeData(
-        color: Color.fromARGB(16, 255, 255, 255),
-        shadowColor: Color.fromARGB(64, 0, 0, 0),
+      cardTheme: CardThemeData(
+        color: const Color.fromARGB(16, 255, 255, 255),
+        shadowColor: const Color.fromARGB(64, 0, 0, 0),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+        ),
       ),
-      appBarTheme: AppBarTheme(
-        backgroundColor: isBlackDark
-            ? Colors.black
-            : isTransparentBG
-            ? Colors.transparent
-            : null,
+      appBarTheme: LetsColors.appBarTheme(
+        dark: true,
+        transparent: isTransparentBG && !isBlackDark,
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: isBlackDark
@@ -127,9 +138,16 @@ ThemeData getPlatformDarkThemeData() {
       scaffoldBackgroundColor: isBlackDark
           ? const Color(0xFF0E1014)
           : const Color(0xFF12141A),
-      appBarTheme: AppBarTheme(
-        backgroundColor: isBlackDark ? Colors.black : null,
+      iconTheme: const IconThemeData(size: 22),
+      cardTheme: CardThemeData(
+        color: const Color(0xFF1C1F27),
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+        ),
       ),
+      dividerTheme: const DividerThemeData(color: Color(0xFF2C313C), thickness: 1),
+      appBarTheme: LetsColors.appBarTheme(dark: true),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: isBlackDark
             ? const Color.fromARGB(16, 255, 255, 255)

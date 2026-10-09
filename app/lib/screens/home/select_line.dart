@@ -4,6 +4,7 @@ import 'package:drift/drift.dart' hide Column;
 
 import '../../extensions/localization.dart';
 import '../../theme/lets_colors.dart';
+import '../../theme/lets_icons.dart';
 import '../../utils/db.dart';
 import '../../utils/logger.dart';
 import '../../utils/prefs.dart';
@@ -107,7 +108,7 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
           IconButton(
             tooltip: context.loc.profiles,
             color: palette.onBar,
-            icon: const Icon(Icons.edit_note),
+            icon: const Icon(LetsIcons.edit, size: LetsIcons.size),
             onPressed: () async {
               await Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const ProfileList()),
@@ -162,7 +163,7 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                             children: [
                               const SizedBox(height: 80),
                               Icon(
-                                Icons.public_off,
+                                LetsIcons.region,
                                 size: 48,
                                 color: palette.muted.withValues(alpha: 0.5),
                               ),
@@ -281,19 +282,19 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                                                     style: TextStyle(
                                                       fontSize: 13,
                                                       color: latency == -1
-                                                          ? Colors.red
+                                                          ? palette.muted
                                                           : LetsColors.accent,
                                                     ),
                                                   ),
                                                 const SizedBox(width: 8),
                                                 Icon(
                                                   selected
-                                                      ? Icons.check_circle
-                                                      : Icons
-                                                            .radio_button_unchecked,
+                                                      ? Icons.check_circle_outline
+                                                      : Icons.radio_button_unchecked,
+                                                  size: LetsIcons.size,
                                                   color: selected
                                                       ? LetsColors.accent
-                                                      : LetsColors.divider,
+                                                      : palette.line,
                                                 ),
                                               ],
                                             ),

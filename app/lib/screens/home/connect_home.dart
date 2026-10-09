@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../extensions/localization.dart';
 import '../../theme/lets_colors.dart';
+import '../../theme/lets_icons.dart';
 import '../../utils/db.dart';
 import '../../utils/prefs.dart';
 import '../../utils/profile_selection.dart';
@@ -170,10 +171,7 @@ class _ConnectHomeState extends State<ConnectHome> {
                               ),
                             ),
                           ),
-                          Icon(
-                            Icons.chevron_right,
-                            color: palette.muted,
-                          ),
+                          LetsIcon(LetsIcons.chevron, color: palette.muted),
                         ],
                       );
                     },
@@ -295,10 +293,9 @@ class _ConnectHomeState extends State<ConnectHome> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(
-                                  Icons.list_alt,
+                                const LetsIcon(
+                                  LetsIcons.profiles,
                                   color: LetsColors.onAccent,
-                                  size: 20,
                                 ),
                                 const SizedBox(width: 6),
                                 Text(

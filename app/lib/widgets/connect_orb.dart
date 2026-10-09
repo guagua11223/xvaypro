@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/lets_colors.dart';
+import '../theme/lets_icons.dart';
 
 class ConnectOrb extends StatefulWidget {
   const ConnectOrb({
@@ -100,12 +101,8 @@ class _ConnectOrbState extends State<ConnectOrb>
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    widget.isToggling
-                        ? Icons.sync
-                        : widget.isActive
-                        ? Icons.power_settings_new
-                        : Icons.power_settings_new,
-                    size: 36,
+                    widget.isToggling ? LetsIcons.sync : LetsIcons.power,
+                    size: 32,
                     color: accent,
                   ),
                   const SizedBox(height: 8),

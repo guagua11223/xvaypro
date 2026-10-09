@@ -104,7 +104,7 @@ class _HomePageState extends State<HomePage> with WindowListener, TrayListener {
       backgroundColor: LetsColors.of(context).page,
       drawer: Drawer(
         width: MediaQuery.sizeOf(context).width * 0.86,
-        backgroundColor: LetsColors.white,
+        backgroundColor: LetsColors.of(context).surface,
         child: HomeDrawerPanel(onNavigate: _openPage),
       ),
       body: ConnectHome(

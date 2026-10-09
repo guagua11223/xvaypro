@@ -10,6 +10,7 @@ import '../screens/home/select_line.dart';
 import '../screens/home/settings.dart';
 import '../screens/home/settings/about.dart';
 import '../theme/lets_colors.dart';
+import '../theme/lets_icons.dart';
 import '../utils/prefs.dart';
 import '../utils/vpn_manager.dart';
 
@@ -55,7 +56,7 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
               Align(
                 alignment: Alignment.centerLeft,
                 child: IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const LetsIcon(LetsIcons.back),
                   onPressed: () => Navigator.of(context).maybePop(),
                 ),
               ),
@@ -75,9 +76,9 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                       CircleAvatar(
                         radius: 32,
                         backgroundColor: LetsColors.accent.withValues(alpha: 0.12),
-                        child: const Icon(
-                          Icons.person,
-                          size: 32,
+                        child: const LetsIcon(
+                          LetsIcons.account,
+                          size: 28,
                           color: LetsColors.accent,
                         ),
                       ),
@@ -119,7 +120,7 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.chevron_right),
+                        icon: const LetsIcon(LetsIcons.chevron),
                         onPressed: () => widget.onNavigate(const SettingList()),
                       ),
                     ],
@@ -133,37 +134,37 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 children: [
                   _DrawerItem(
-                    icon: Icons.account_circle_outlined,
+                    icon: LetsIcons.account,
                     label: '飞连账户',
                     onTap: () => widget.onNavigate(const AccountScreen()),
                   ),
                   _DrawerItem(
-                    icon: Icons.public,
+                    icon: LetsIcons.region,
                     label: context.loc.switch_region,
                     onTap: () => widget.onNavigate(const SelectLineScreen()),
                   ),
                   _DrawerItem(
-                    icon: Icons.description_outlined,
+                    icon: LetsIcons.profiles,
                     label: context.loc.profiles,
                     onTap: () => widget.onNavigate(const ProfileList()),
                   ),
                   _DrawerItem(
-                    icon: Icons.dashboard_outlined,
+                    icon: LetsIcons.dashboard,
                     label: context.loc.dashboard,
                     onTap: () => widget.onNavigate(const Dashboard()),
                   ),
                   _DrawerItem(
-                    icon: Icons.mail_outline,
+                    icon: LetsIcons.logs,
                     label: context.loc.logs,
                     onTap: () => widget.onNavigate(const LogViewer()),
                   ),
                   _DrawerItem(
-                    icon: Icons.settings_outlined,
+                    icon: LetsIcons.settings,
                     label: context.loc.settings,
                     onTap: () => widget.onNavigate(const SettingList()),
                   ),
                   _DrawerItem(
-                    icon: Icons.info_outline,
+                    icon: LetsIcons.about,
                     label: context.loc.about,
                     onTap: () => widget.onNavigate(const AboutScreen()),
                   ),
@@ -226,7 +227,7 @@ class _DrawerItem extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(24, 10, 16, 10),
         child: Row(
           children: [
-            Icon(icon, size: 22, color: color),
+            LetsIcon(icon, color: color),
             const SizedBox(width: 15),
             Text(
               label,

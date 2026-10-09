@@ -28,6 +28,26 @@ class LetsColors {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return dark ? LetsPalette.dark : LetsPalette.light;
   }
+
+  static AppBarTheme appBarTheme({required bool dark, bool transparent = false}) {
+    final palette = dark ? LetsPalette.dark : LetsPalette.light;
+    final foreground = transparent ? palette.text : palette.onBar;
+    return AppBarTheme(
+      backgroundColor: transparent ? Colors.transparent : palette.bar,
+      foregroundColor: foreground,
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      centerTitle: true,
+      toolbarHeight: 64,
+      iconTheme: IconThemeData(color: foreground, size: 22),
+      actionsIconTheme: IconThemeData(color: foreground, size: 22),
+      titleTextStyle: TextStyle(
+        color: foreground,
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
 }
 
 class LetsPalette {
