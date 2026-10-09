@@ -1,12 +1,14 @@
 package nodeproc
 
 import (
+	"context"
 	"log"
 	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"xvay/houduan/internal/config"
 	"xvay/houduan/internal/protocol"
@@ -49,6 +51,9 @@ func EnsureDefault(db *store.Store, cfg config.Config) error {
 
 // Sync writes Xray and Hysteria configs for every enabled node and restarts the local units.
 func Sync(db *store.Store, cfg config.Config) error {
+	if err := ensureUnits(cfg.DataDir); err != nil {
+		log.Printf("node units: %v", err)
+	}
 	nodes, err := db.ListNodes()
 	if err != nil {
 		return err
@@ -114,7 +119,9 @@ func tryRestart(unit string) {
 	if _, err := exec.LookPath("systemctl"); err != nil {
 		return
 	}
-	cmd := exec.Command("systemctl", "restart", unit)
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "systemctl", "restart", unit)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		log.Printf("restart %s: %v %s", unit, err, out)
 	}

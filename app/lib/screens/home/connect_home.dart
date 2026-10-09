@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../extensions/localization.dart';
 import '../../theme/lets_colors.dart';
+import '../../utils/db.dart';
 import '../../utils/prefs.dart';
 import '../../utils/profile_selection.dart';
 import '../../utils/xvay_account.dart';
@@ -32,6 +33,7 @@ class _ConnectHomeState extends State<ConnectHome> {
   DateTime? _connectedSince;
   Timer? _ticker;
   Duration _elapsed = Duration.zero;
+  bool _preparing = false;
 
   @override
   void initState() {
@@ -78,24 +80,47 @@ class _ConnectHomeState extends State<ConnectHome> {
   }
 
   Future<void> _handleToggle() async {
-    if (vPNMan.isTogglingAll) return;
-    if (!vPNMan.isCoreActive && prefs.getInt('app.selectedProfileId') == null) {
-      if (mounted) {
-        showSnackBarNow(
-          context,
-          Text(context.loc.please_select_a_profile),
-        );
-        await Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SelectLineScreen()),
-        );
+    if (vPNMan.isTogglingAll || _preparing) return;
+    if (vPNMan.isCoreActive) {
+      await toggleVpnConnection(context);
+      if (!vPNMan.isCoreActive) {
+        await XvayAccount().disconnect();
       }
       return;
     }
+    setState(() => _preparing = true);
+    try {
+      await ensureBackendProfile();
+      final selectedId = prefs.getInt('app.selectedProfileId');
+      int? nodeId;
+      if (selectedId != null) {
+        final selected = await (db.select(
+          db.profile,
+        )..where((row) => row.id.equals(selectedId))).getSingleOrNull();
+        nodeId = nodeIdFromProfileKey(selected?.key);
+      }
+      await XvayAccount().connect(nodeId: nodeId);
+    } catch (error) {
+      if (mounted) {
+        setState(() => _preparing = false);
+        showSnackBarNow(context, Text(_errorText(error)));
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _preparing = false);
     await toggleVpnConnection(context);
   }
 
+  String _errorText(Object error) {
+    final text = error.toString();
+    const prefix = 'Exception: ';
+    if (text.startsWith(prefix)) return text.substring(prefix.length);
+    return text;
+  }
+
   String _orbLabel(BuildContext context) {
-    if (vPNMan.isTogglingAll) {
+    if (vPNMan.isTogglingAll || _preparing) {
       return context.loc.home_connecting;
     }
     return vPNMan.isCoreActive
@@ -166,9 +191,11 @@ class _ConnectHomeState extends State<ConnectHome> {
                     children: [
                       ConnectOrb(
                         isActive: vPNMan.isCoreActive,
-                        isToggling: vPNMan.isTogglingAll,
+                        isToggling: vPNMan.isTogglingAll || _preparing,
                         label: _orbLabel(context),
-                        onPressed: vPNMan.isTogglingAll ? null : _handleToggle,
+                        onPressed: vPNMan.isTogglingAll || _preparing
+                            ? null
+                            : _handleToggle,
                       ),
                       if (vPNMan.isCoreActive) ...[
                         const SizedBox(height: 8),

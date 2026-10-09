@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 	"net/http"
@@ -27,6 +28,7 @@ func main() {
 	if err := nodeproc.Sync(db, cfg); err != nil {
 		log.Printf("sync nodes: %v", err)
 	}
+	go nodeproc.Run(context.Background(), db)
 
 	addr := net.JoinHostPort(cfg.Host, strconv.Itoa(cfg.Port))
 	server := &http.Server{

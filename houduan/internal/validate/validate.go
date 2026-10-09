@@ -16,7 +16,7 @@ import (
 var (
 	emailPattern = regexp.MustCompile(`^[^\s@]+@[^\s@]+\.[^\s@]+$`)
 	flows        = map[string]bool{"": true, "xtls-rprx-vision": true, "xtls-rprx-vision-udp443": true}
-	statuses     = map[string]bool{"active": true, "disabled": true}
+	statuses     = map[string]bool{"active": true, "disabled": true, "expired": true}
 )
 
 func ParseEmail(value any) (string, error) {
@@ -58,7 +58,7 @@ func ParseTime(value any) (int64, error) {
 	if text == "" {
 		return 0, errs.New(400, "VALIDATION", "时间不正确")
 	}
-	for _, layout := range []string{time.RFC3339, "2006-01-02", "2006-01-02 15:04:05"} {
+	for _, layout := range []string{time.RFC3339, "2006-01-02", "2006-01-02 15:04:05", "2006-01-02T15:04:05"} {
 		if parsed, err := time.Parse(layout, text); err == nil {
 			return parsed.UnixMilli(), nil
 		}
@@ -83,7 +83,7 @@ func ParseBytes(value any, fallback *int64) (int64, error) {
 func ParseStatus(value any) (string, error) {
 	status := asString(value)
 	if !statuses[status] {
-		return "", errs.New(400, "VALIDATION", "状态只能是 active 或 disabled")
+		return "", errs.New(400, "VALIDATION", "状态只能是 active、disabled 或 expired")
 	}
 	return status, nil
 }

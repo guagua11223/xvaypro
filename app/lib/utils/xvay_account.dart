@@ -1,9 +1,12 @@
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:drift/drift.dart' as drift;
 import 'package:http/http.dart' as http;
 
 import '../config/backend.dart';
 import '../models/core.dart';
+import '../models/profile.dart';
 import '../models/profile_group.dart';
 import 'db.dart';
 import 'db/update_profile_group.dart';
@@ -45,6 +48,52 @@ class XvayAccount {
       throw Exception('账号信息缺少内容');
     }
     return Map<String, dynamic>.from(data);
+  }
+
+  Future<Map<String, dynamic>> connect({int? nodeId, String region = 'auto'}) async {
+    final current = token;
+    if (current == null || current.isEmpty) {
+      throw Exception('尚未登录');
+    }
+    final body = <String, dynamic>{
+      'region': region,
+      'deviceId': await deviceId(),
+    };
+    if (nodeId != null) {
+      body['nodeId'] = nodeId;
+    }
+    final response = await _client.post(
+      Uri.parse('$kBackendBase/api/app/connect'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $current',
+      },
+      body: jsonEncode(body),
+    );
+    final payload = _decode(response);
+    final data = payload['data'];
+    if (data is! Map || data['profile'] is! Map) {
+      throw Exception('连接响应缺少节点配置');
+    }
+    await applyConnectProfile(Map<String, dynamic>.from(data['profile'] as Map));
+    return Map<String, dynamic>.from(data);
+  }
+
+  Future<void> disconnect() async {
+    final current = token;
+    if (current == null || current.isEmpty) return;
+    try {
+      await _client.post(
+        Uri.parse('$kBackendBase/api/app/disconnect'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $current',
+        },
+        body: jsonEncode({'deviceId': await deviceId()}),
+      );
+    } catch (error) {
+      logger.w('disconnect: $error');
+    }
   }
 
   Future<void> logout() async {
@@ -163,6 +212,67 @@ Future<void> syncSubscription(Map<String, dynamic> user) async {
     autoUpdateInterval: 86400,
   );
   await selectFirstProfile();
+}
+
+const _deviceIdKey = 'xvay.deviceId';
+
+Future<String> deviceId() async {
+  final saved = prefs.getString(_deviceIdKey);
+  if (saved != null && saved.length >= 8) return saved;
+  final random = Random.secure();
+  final id = List.generate(
+    16,
+    (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0'),
+  ).join();
+  await prefs.setString(_deviceIdKey, id);
+  return id;
+}
+
+int? nodeIdFromProfileKey(String? key) {
+  if (key == null) return null;
+  final match = RegExp(r'^n(\d+)-(reality|hysteria2)$').firstMatch(key);
+  if (match == null) return null;
+  return int.tryParse(match.group(1)!);
+}
+
+Future<void> applyConnectProfile(Map<String, dynamic> profile) async {
+  final name = profile['name'] as String? ?? '飞连';
+  final key = profile['key'] as String? ?? name;
+  final coreTypeName = profile['coreType'] as String? ?? 'xray';
+  final format = profile['format'] as String? ?? 'json';
+  final rawConfig = profile['coreConfig'];
+  final coreCfg = rawConfig is Map ? jsonEncode(rawConfig) : rawConfig?.toString() ?? '{}';
+  final coreType = await (db.select(
+    db.coreType,
+  )..where((row) => row.name.equals(coreTypeName))).getSingleOrNull();
+  if (coreType == null) {
+    throw Exception('当前客户端不能启动 $coreTypeName');
+  }
+  final existing = await (db.select(
+    db.profile,
+  )..where((row) => row.key.equals(key))).getSingleOrNull();
+  final companion = ProfileCompanion(
+    name: drift.Value(name),
+    key: drift.Value(key),
+    coreCfg: drift.Value(coreCfg),
+    coreCfgFmt: drift.Value(format),
+    updatedAt: drift.Value(DateTime.now()),
+    type: const drift.Value(ProfileType.local),
+    profileGroupId: drift.Value(existing?.profileGroupId ?? 1),
+    coreTypeId: drift.Value(coreType.id),
+  );
+  final int profileId;
+  if (existing == null) {
+    profileId = await db.into(db.profile).insert(companion);
+  } else {
+    profileId = existing.id;
+    await (db.update(db.profile)..where((row) => row.id.equals(profileId))).write(
+      companion,
+    );
+  }
+  await prefs.setInt('app.selectedProfileId', profileId);
+  await prefs.setString('cache.app.selectedProfileName', name);
+  prefs.notifyListeners();
 }
 
 Future<void> selectFirstProfile() async {

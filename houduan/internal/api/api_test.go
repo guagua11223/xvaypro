@@ -179,6 +179,123 @@ func TestAppAndNodeFlow(t *testing.T) {
 	}
 }
 
+func TestConnectButtonPicksNode(t *testing.T) {
+	cfg := config.Config{
+		DataDir:       t.TempDir(),
+		DatabasePath:  ":memory:",
+		PublicBaseURL: "http://127.0.0.1:8787",
+		AdminToken:    "admin-token",
+		TrialBytes:    1024,
+		TrialDays:     7,
+		SessionTTLMs:  3_600_000,
+		NodeOfflineMs: 180_000,
+	}
+	db, err := store.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	handler := api.New(cfg, db)
+
+	reg := call(t, handler, http.MethodPost, "/api/app/register", "", map[string]any{
+		"email": "tap@example.com", "password": "password1",
+	})
+	token := reg.Data["token"].(string)
+	userID := int64(reg.Data["user"].(map[string]any)["id"].(float64))
+
+	empty := call(t, handler, http.MethodPost, "/api/app/connect", token, map[string]any{
+		"region": "auto", "deviceId": "device-one",
+	})
+	if empty.Status != http.StatusNotFound {
+		t.Fatalf("empty connect %d %s", empty.Status, empty.Raw)
+	}
+
+	tokyo := call(t, handler, http.MethodPost, "/api/admin/nodes", "admin-token", map[string]any{
+		"name": "东京", "host": "tyo.example.com", "region": "东京", "countryCode": "jp", "sortOrder": 2,
+	})
+	singapore := call(t, handler, http.MethodPost, "/api/admin/nodes", "admin-token", map[string]any{
+		"name": "新加坡", "host": "sin.example.com", "region": "新加坡", "countryCode": "sg", "sortOrder": 1,
+	})
+	tokyoID := int64(tokyo.Data["id"].(float64))
+	singaporeID := int64(singapore.Data["id"].(float64))
+	callWith(t, handler, http.MethodPost, "/api/node/"+strconv.FormatInt(singaporeID, 10)+"/heartbeat", "", map[string]string{
+		"X-Node-Secret": singapore.Data["secret"].(string),
+	}, map[string]any{"online": false})
+
+	auto := call(t, handler, http.MethodPost, "/api/app/connect", token, map[string]any{
+		"region": "auto", "deviceId": "device-one",
+	})
+	if auto.Status != http.StatusOK {
+		t.Fatalf("auto connect %d %s", auto.Status, auto.Raw)
+	}
+	if auto.Data["protocol"] != "reality" {
+		t.Fatalf("protocol: %v", auto.Data["protocol"])
+	}
+	picked := auto.Data["node"].(map[string]any)
+	if int64(picked["id"].(float64)) != tokyoID || picked["online"] != true {
+		t.Fatalf("expected online tokyo, got %v", picked)
+	}
+	profile := auto.Data["profile"].(map[string]any)
+	if profile["coreType"] != "xray" || profile["key"] != "n"+strconv.FormatInt(tokyoID, 10)+"-reality" {
+		t.Fatalf("profile: %v", profile)
+	}
+	core := profile["coreConfig"].(map[string]any)
+	outbound := core["outbounds"].([]any)[0].(map[string]any)
+	if outbound["protocol"] != "vless" {
+		t.Fatalf("outbound: %v", outbound["protocol"])
+	}
+	if strings.Contains(auto.Raw, "privateKey") {
+		t.Fatal("connect response leaked the reality private key")
+	}
+
+	byRegion := call(t, handler, http.MethodPost, "/api/app/connect", token, map[string]any{
+		"region": "sg", "deviceId": "device-one",
+	})
+	got := byRegion.Data["node"].(map[string]any)
+	if int64(got["id"].(float64)) != singaporeID {
+		t.Fatalf("region pick: %v", got)
+	}
+
+	byID := call(t, handler, http.MethodPost, "/api/app/connect", token, map[string]any{
+		"nodeId": tokyoID, "deviceId": "device-one",
+	})
+	if int64(byID.Data["node"].(map[string]any)["id"].(float64)) != tokyoID {
+		t.Fatalf("node id pick: %s", byID.Raw)
+	}
+
+	missing := call(t, handler, http.MethodPost, "/api/app/connect", token, map[string]any{
+		"region": "frankfurt", "deviceId": "device-one",
+	})
+	if missing.Status != http.StatusNotFound {
+		t.Fatalf("missing region %d", missing.Status)
+	}
+
+	patched := call(t, handler, http.MethodPatch, "/api/admin/users/"+strconv.FormatInt(userID, 10), "admin-token", map[string]any{
+		"deviceLimit": 1,
+	})
+	if patched.Status != http.StatusOK {
+		t.Fatalf("patch limit %d %s", patched.Status, patched.Raw)
+	}
+	second := call(t, handler, http.MethodPost, "/api/app/connect", token, map[string]any{
+		"region": "auto", "deviceId": "device-two",
+	})
+	if second.Status != http.StatusForbidden {
+		t.Fatalf("device limit %d %s", second.Status, second.Raw)
+	}
+	off := call(t, handler, http.MethodPost, "/api/app/disconnect", token, map[string]any{
+		"deviceId": "device-one",
+	})
+	if off.Status != http.StatusOK || off.Data["disconnected"] != true {
+		t.Fatalf("disconnect %s", off.Raw)
+	}
+	again := call(t, handler, http.MethodPost, "/api/app/connect", token, map[string]any{
+		"region": "auto", "deviceId": "device-two",
+	})
+	if again.Status != http.StatusOK {
+		t.Fatalf("connect after disconnect %d %s", again.Status, again.Raw)
+	}
+}
+
 type result struct {
 	Status int
 	Raw    string

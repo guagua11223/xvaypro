@@ -99,6 +99,55 @@ CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS connect_sessions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  device_id TEXT NOT NULL,
+  node_id INTEGER NOT NULL,
+  protocol TEXT NOT NULL,
+  started_at INTEGER NOT NULL,
+  stopped_at INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_connect_user ON connect_sessions(user_id, stopped_at);
+
+CREATE TABLE IF NOT EXISTS user_profiles (
+  user_id INTEGER PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+  display_name TEXT NOT NULL DEFAULT '',
+  phone TEXT NOT NULL DEFAULT '',
+  plan_id INTEGER NOT NULL DEFAULT 0,
+  agent_id INTEGER NOT NULL DEFAULT 0,
+  device TEXT NOT NULL DEFAULT '',
+  platform TEXT NOT NULL DEFAULT '',
+  region TEXT NOT NULL DEFAULT '',
+  last_login_at INTEGER NOT NULL DEFAULT 0,
+  demo INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS node_meta (
+  node_id INTEGER PRIMARY KEY REFERENCES nodes(id) ON DELETE CASCADE,
+  group_id INTEGER NOT NULL DEFAULT 0,
+  core_type TEXT NOT NULL DEFAULT '',
+  line_key TEXT NOT NULL DEFAULT '',
+  line_type TEXT NOT NULL DEFAULT '',
+  latency INTEGER NOT NULL DEFAULT 0,
+  line_status TEXT NOT NULL DEFAULT '',
+  url TEXT NOT NULL DEFAULT ''
+);
+
+CREATE TABLE IF NOT EXISTS catalog (
+  kind TEXT NOT NULL,
+  id INTEGER NOT NULL,
+  body TEXT NOT NULL,
+  PRIMARY KEY (kind, id)
+);
+
+CREATE TABLE IF NOT EXISTS admin_sessions (
+  token_hash TEXT PRIMARY KEY,
+  admin_id INTEGER NOT NULL,
+  created_at INTEGER NOT NULL,
+  expires_at INTEGER NOT NULL
+);
 `
 
 type Store struct {

@@ -32,13 +32,20 @@ func Load() Config {
 		DataDir:          dataDir,
 		DatabasePath:     env("DATABASE_PATH", dataDir+"/xvay.sqlite"),
 		PublicBaseURL:    strings.TrimRight(env("PUBLIC_BASE_URL", "http://127.0.0.1:8787"), "/"),
-		AdminToken:       os.Getenv("ADMIN_TOKEN"),
+		AdminToken:       adminToken(),
 		TrialBytes:       numberEnv("TRIAL_BYTES", 10*1024*1024*1024),
 		TrialDays:        numberEnv("TRIAL_DAYS", 7),
 		SessionTTLMs:     numberEnv("SESSION_TTL_MS", 30*24*3600*1000),
 		NodeOfflineMs:    numberEnv("NODE_OFFLINE_MS", 180_000),
 		AcceptAppTraffic: os.Getenv("ACCEPT_APP_TRAFFIC") == "1",
 	}
+}
+
+func adminToken() string {
+	if value := os.Getenv("ADMIN_TOKEN"); value != "" {
+		return value
+	}
+	return "admin123"
 }
 
 func env(key, fallback string) string {
