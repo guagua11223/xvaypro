@@ -50,7 +50,6 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
 
     final injectLog = prefs.getBool('inject.log')!;
     final injectApi = prefs.getBool('inject.api')!;
-    final injectFakeDns = prefs.getBool('inject.dns.fakedns')!;
     final injectDnsLocal = prefs.getBool('inject.dns.local')!;
     final logLevel = LogLevel.values[prefs.getInt('inject.log.level')!];
     final serverAddress = prefs.getString('app.server.address')!;
@@ -200,8 +199,25 @@ class ConfigInjectorV2Ray extends ConfigInjectorBase {
     ///   - this will block dns fallback!
     /// - if original config does not have a proper dns config
     ///   - this is a proper one and thus necessary
-    if (injectFakeDns) {
-      dnsServers.add("fakedns");
+    // routeOnly 打开时嗅探结果不能改写目标。fakedns 给出的 198.18.0.0/15
+    // 会原样送出去，浏览器就没有网。没有真实 DNS 时补上公网解析。
+    final hasRealDns = dnsServers.any((server) {
+      if (server is String) {
+        return server != "fakedns" && server != "localhost";
+      }
+      if (server is Map) {
+        final address = server["address"];
+        return address is String &&
+            address != "fakedns" &&
+            address != "localhost";
+      }
+      return false;
+    });
+    if (!hasRealDns) {
+      dnsServers
+        ..removeWhere((server) => server == "fakedns")
+        ..insert(0, "1.1.1.1")
+        ..insert(0, "8.8.8.8");
     }
 
     /// bind proxy server domain to local dns server

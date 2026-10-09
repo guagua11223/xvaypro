@@ -470,7 +470,7 @@ public class TProxyService extends VpnService {
         String session = "";
         VpnService.Builder builder = new VpnService.Builder();
         builder.setBlocking(false);
-        builder.setMtu(8500);
+        builder.setMtu(1500);
         if (prefs.getBoolean("flutter.tun.ipv4", true)) {
             String addr = "172.19.0.1";
             int prefix = 30;

@@ -9,7 +9,7 @@ func BuildXrayClient(node Node, user User) map[string]any {
 	}
 	userConfig := map[string]any{
 		"id":         user.UUID,
-		"encryption": VLESSEncryption,
+		"encryption": "none",
 	}
 	if node.RealityFlow != "" {
 		userConfig["flow"] = node.RealityFlow
@@ -106,7 +106,7 @@ func BuildXrayServer(node Node, users []User) map[string]any {
 				"protocol": "vless",
 				"settings": map[string]any{
 					"clients":    clients,
-					"decryption": VLESSDecryption,
+					"decryption": "none",
 				},
 				"streamSettings": map[string]any{
 					"network":  "tcp",

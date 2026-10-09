@@ -304,9 +304,10 @@ int? nodeIdFromProfileKey(String? key) {
   return int.tryParse(match.group(1)!);
 }
 
-void applyVlessKeys(Map<String, dynamic> profile, Map<String, dynamic> keys) {
-  final publicKey = keys['encryption'] ?? keys['publicKey'] ?? keys['password'];
-  if (publicKey is! String || publicKey.isEmpty) return;
+void applyVlessKeys(Map<String, dynamic> profile, Map<String, dynamic> _) {
+  // 手机里的 xray 是 v1.251015.0，只接受 none。写入 mlkem 字符串后核心拒绝加载，
+  // 虚拟网卡仍显示已连接，浏览器流量会被整段丢掉。
+  const publicKey = 'none';
   final raw = profile['coreConfig'];
   if (raw is! Map) return;
   final config = Map<String, dynamic>.from(raw);

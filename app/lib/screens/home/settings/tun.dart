@@ -138,7 +138,7 @@ class _TunScreenState extends State<TunScreen> {
     }
 
     await file.writeAsString("""tunnel:
-  mtu: 8500
+  mtu: 1500
   # multi-queue: true
   
 socks5:
