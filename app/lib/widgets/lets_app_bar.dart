@@ -13,6 +13,7 @@ class LetsAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.automaticallyImplyLeading = true,
   });
 
+
   final String title;
   final Widget? leading;
   final List<Widget>? actions;
