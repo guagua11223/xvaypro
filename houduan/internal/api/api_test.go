@@ -254,7 +254,7 @@ func TestConnectButtonPicksNode(t *testing.T) {
 	}
 	vnext := outbound["settings"].(map[string]any)["vnext"].([]any)[0].(map[string]any)
 	account := vnext["users"].([]any)[0].(map[string]any)
-	if account["encryption"] != keys["publicKey"] {
+	if account["encryption"] != keys["encryption"] {
 		t.Fatalf("encryption: %v", account["encryption"])
 	}
 

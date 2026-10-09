@@ -305,7 +305,7 @@ int? nodeIdFromProfileKey(String? key) {
 }
 
 void applyVlessKeys(Map<String, dynamic> profile, Map<String, dynamic> keys) {
-  final publicKey = keys['publicKey'] ?? keys['password'];
+  final publicKey = keys['encryption'] ?? keys['publicKey'] ?? keys['password'];
   if (publicKey is! String || publicKey.isEmpty) return;
   final raw = profile['coreConfig'];
   if (raw is! Map) return;
