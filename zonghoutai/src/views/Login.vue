@@ -38,7 +38,7 @@ async function submit() {
     <section class="auth-brand">
       <div>
         <div class="brand-mark">X</div>
-        <h1>飞连 总后台</h1>
+        <h1>讯连宝 总后台</h1>
         <p>面向 AnyPortal 客户端的运营中台。在这里配置线路、内核和 App 默认参数，并查看用户、代理商与分佣。</p>
         <div class="brand-points">
           <div>数据配置：线路节点、分组、内核、资源、套餐、App 下发</div>

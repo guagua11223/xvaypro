@@ -8,7 +8,7 @@ import (
 )
 
 const xrayUnit = `[Unit]
-Description=飞连 Xray node %i
+Description=讯连宝 Xray node %i
 After=network-online.target
 Wants=network-online.target
 
@@ -23,7 +23,7 @@ WantedBy=multi-user.target
 `
 
 const hy2Unit = `[Unit]
-Description=飞连 Hysteria2 node %i
+Description=讯连宝 Hysteria2 node %i
 After=network-online.target
 Wants=network-online.target
 

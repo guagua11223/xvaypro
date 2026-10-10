@@ -459,7 +459,7 @@ func (s *Server) adminPutSettings(w http.ResponseWriter, r *http.Request) error 
 	if value, ok := body["profileName"]; ok && value != nil {
 		text := asTrimmed(value)
 		if text == "" {
-			text = "飞连"
+			text = "讯连宝"
 		}
 		patch["profile_name"] = text
 	}

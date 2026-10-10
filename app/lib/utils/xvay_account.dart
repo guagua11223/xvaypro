@@ -301,7 +301,7 @@ Future<void> syncSubscription(Map<String, dynamic> user) async {
   final raw = user['subscriptionUrl'] as String?;
   if (raw == null || raw.isEmpty) return;
   final url = reachableBackendUrl(raw);
-  final name = (user['email'] as String?) ?? '飞连';
+  final name = (user['email'] as String?) ?? '讯连宝';
   final remotes = await db.select(db.profileGroupRemote).get();
   ProfileGroupData? existing;
   for (final remote in remotes) {
@@ -372,7 +372,7 @@ void applyVlessKeys(Map<String, dynamic> profile, Map<String, dynamic> _) {
 }
 
 Future<void> applyConnectProfile(Map<String, dynamic> profile) async {
-  final name = profile['name'] as String? ?? '飞连';
+  final name = profile['name'] as String? ?? '讯连宝';
   final key = profile['key'] as String? ?? name;
   final coreTypeName = profile['coreType'] as String? ?? 'xray';
   final format = profile['format'] as String? ?? 'json';

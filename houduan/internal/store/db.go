@@ -302,7 +302,7 @@ func sqliteDSN(path string) (string, error) {
 
 func (s *Store) seedSettings(cfg config.Config) error {
 	defaults := map[string]string{
-		"profile_name":         "飞连",
+		"profile_name":         "讯连宝",
 		"support_url":          "",
 		"profile_web_page_url": "",
 		"auto_update_interval": "86400",

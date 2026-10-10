@@ -46,13 +46,13 @@ window.XVAY = {
       excerptEn: "Pinning yesterday's fast line is a common reason today feels slow.",
       bodyZh: [
         "很多人会把某条线路当成固定选择。它昨天快，不代表这个时段还快。线路质量取决于你现在的网络、出口是否拥挤，以及目标网站离哪边更近。",
-        "飞连 默认会自己选一条。你只有在视频发涩、网页打转时才需要动手：打开线路列表，挑延迟数字更低的一条，而不是挑名字看起来高级的一条。",
+        "讯连宝 默认会自己选一条。你只有在视频发涩、网页打转时才需要动手：打开线路列表，挑延迟数字更低的一条，而不是挑名字看起来高级的一条。",
         "如果换了三条仍然慢，先用普通网络打开一个国内或本地页面。本地本身不通时，换线路没有帮助。",
         "旅行时也一样。酒店网络经常限制长时间连接，掉线后让客户端重选一次，比手动指定家乡那条线路更稳。"
       ],
       bodyEn: [
         "People pin a line because it was fast yesterday. That says little about this hour. Quality depends on your current network, how crowded the exit is, and where the site you want actually sits.",
-        "飞连 picks a line for you. Step in only when video stutters or pages spin: open the list and choose a lower latency, not a fancier name.",
+        "讯连宝 picks a line for you. Step in only when video stutters or pages spin: open the list and choose a lower latency, not a fancier name.",
         "If three lines are still slow, open a local page without the VPN. When the local network is the problem, another line will not fix it.",
         "Hotel networks often drop long sessions. After a drop, let the app choose again instead of forcing the line you use at home."
       ]
@@ -111,13 +111,13 @@ window.XVAY = {
       excerptZh: "到期就停。想继续，再选一次。",
       excerptEn: "It stops at the end. You choose again if you want more.",
       bodyZh: [
-        "很多网络工具把人留住的办法是默认续费，取消入口再藏深一点。飞连 反过来：到期即停。",
+        "很多网络工具把人留住的办法是默认续费，取消入口再藏深一点。讯连宝 反过来：到期即停。",
         "短周期因此才有意义。你可能只需要出国的那两周，或者项目联调的那几天。用完就结束，不用记着去取消。",
         "账户页会写明到期时间。没有「下期将扣款」这种状态，因为根本不会有下一期，除非你再点一次开通。",
         "这是产品规则，不是优惠活动。之后如果规则变了，会先写在服务条款里，不会悄悄打开自动续费。"
       ],
       bodyEn: [
-        "A lot of tools keep people by renewing quietly and hiding the cancel button. 飞连 stops when the term ends.",
+        "A lot of tools keep people by renewing quietly and hiding the cancel button. 讯连宝 stops when the term ends.",
         "Short plans only make sense this way. You might need the two weeks you're away, or a few days of a project. When it's over, it's over.",
         "The account page shows the expiry. There is no \"next charge\" state, because there is no next charge unless you start another term.",
         "This is a product rule, not a promotion. If it ever changes, the terms will say so first. Auto-renewal will not appear quietly."
@@ -136,13 +136,13 @@ window.XVAY = {
         "出发前在家里的网络上登录一次，确认试用或会员还在有效期内。到了酒店再注册，往往会卡在邮件或验证上。",
         "手机和电脑都装好。其中一台连不上时，另一台还能用，也能打开帮助中心。",
         "不要在出发当天换密码。这个演示版没有邮箱找回，正式产品也会建议你在稳定网络里改密码。",
-        "到了之后如果酒店门户页（captive portal）先挡住网络，先用普通连接打开门户并完成登录，再打开 飞连。"
+        "到了之后如果酒店门户页（captive portal）先挡住网络，先用普通连接打开门户并完成登录，再打开 讯连宝。"
       ],
       bodyEn: [
         "Sign in once on your home network and check that the trial or plan is still active. Registering on hotel Wi-Fi often stalls on email or verification.",
         "Install it on both phone and computer. If one cannot connect, the other still can, and can open the help center.",
         "Don't change the password on departure day. This demo has no email recovery, and even a production app is easier to recover on a stable network.",
-        "If a hotel captive portal blocks access, finish that page on the normal connection, then open 飞连."
+        "If a hotel captive portal blocks access, finish that page on the normal connection, then open 讯连宝."
       ]
     }
   ],
@@ -152,7 +152,7 @@ window.XVAY = {
       titleEn: "Privacy policy",
       updated: "2026-10-01",
       sections: [
-        { hZh: "我们是谁", hEn: "Who we are", pZh: ["飞连 提供网络连接客户端和这个官网。下面说明官网演示版实际会碰到哪些信息。"], pEn: ["飞连 provides a connection app and this website. This page describes what the demo site actually touches."] },
+        { hZh: "我们是谁", hEn: "Who we are", pZh: ["讯连宝 提供网络连接客户端和这个官网。下面说明官网演示版实际会碰到哪些信息。"], pEn: ["讯连宝 provides a connection app and this website. This page describes what the demo site actually touches."] },
         { hZh: "账户信息", hEn: "Account data", pZh: ["注册时你填写的名字、邮箱和密码，会保存在这台浏览器的本地存储里。我们用它们完成登录、显示会员到期时间和设备列表。", "密码在保存前会做一次本地摘要，不明文出现在账户页上。这仍然是演示级保护，不是生产环境的密钥体系。"], pEn: ["The name, email, and password you enter are stored in this browser. They are used to sign you in and to show plan expiry and devices.", "The password is stored as a local hash and is not shown back on the account page. That is demo-grade protection, not a production key system."] },
         { hZh: "我们不收集的内容", hEn: "What we don't collect", pZh: ["这个演示站不接收你的浏览记录、DNS 查询或连接目的地，也没有服务器在背后保存它们。", "帮助中心的留言和客服对话同样只留在本机，刷新缓存或换浏览器就会消失。"], pEn: ["This demo does not receive your browsing history, DNS queries, or connection destinations, and no server stores them.", "Help-center messages and the assistant chat stay on this device. Clearing site data or switching browsers removes them."] },
         { hZh: "你的选择", hEn: "Your choices", pZh: ["你可以在账户页删除本机账户，或直接清除浏览器里这个站点的数据。删除后会员、试用和设备列表都会一起消失。"], pEn: ["You can delete the local account on the account page, or clear this site's data in the browser. Plans, trials, and devices go with it."] }
@@ -163,7 +163,7 @@ window.XVAY = {
       titleEn: "Terms of service",
       updated: "2026-10-01",
       sections: [
-        { hZh: "服务是什么", hEn: "The service", pZh: ["飞连 帮助你通过客户端建立加密连接，并在官网管理账户与会员时长。当前这个网站是可交互的产品演示，开通会员不会产生真实扣款。"], pEn: ["飞连 lets the app open an encrypted connection and lets this site manage the account and plan length. This website is an interactive demo. Starting a plan does not charge a real payment."] },
+        { hZh: "服务是什么", hEn: "The service", pZh: ["讯连宝 帮助你通过客户端建立加密连接，并在官网管理账户与会员时长。当前这个网站是可交互的产品演示，开通会员不会产生真实扣款。"], pEn: ["讯连宝 lets the app open an encrypted connection and lets this site manage the account and plan length. This website is an interactive demo. Starting a plan does not charge a real payment."] },
         { hZh: "使用方式", hEn: "Acceptable use", pZh: ["请不要用本服务攻击他人系统、发送垃圾信息或从事违法活动。我们会在正式服务里对滥用的账户做限制。"], pEn: ["Don't use the service to attack other systems, send spam, or break the law. Production accounts that abuse the service can be limited."] },
         { hZh: "会员时长", hEn: "Plan length", pZh: ["时长从你在账户页确认开通时起算，到期自动停止，不会自动续费。试用为 72 小时，和付费会员互不自动转换。"], pEn: ["A plan starts when you confirm it on the account page and stops when it ends. It does not auto-renew. The 72-hour trial does not convert into a paid plan."] },
         { hZh: "责任", hEn: "Liability", pZh: ["演示环境下的连接、下载包和订单号仅用于展示界面。请不要把它当成已经交付的安装程序或已经生效的付费合同。"], pEn: ["Connections, download packages, and order numbers in this demo are here to show the interface. They are not a shipped installer or a paid contract."] }

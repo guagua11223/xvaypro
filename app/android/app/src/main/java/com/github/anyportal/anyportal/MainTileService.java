@@ -111,12 +111,12 @@ public class MainTileService extends TileService {
         }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            tile.setSubtitle("飞连");
+            tile.setSubtitle("讯连宝");
         }
 
         // Get selected profile from shared preferences
         SharedPreferences prefs = getSharedPreferences("FlutterSharedPreferences", MODE_PRIVATE);
-        String selectedProfileName = prefs.getString("flutter.cache.app.selectedProfileName", "飞连");
+        String selectedProfileName = prefs.getString("flutter.cache.app.selectedProfileName", "讯连宝");
         // Update tile subtitle with the selected profile
         tile.setLabel(selectedProfileName);
         tile.updateTile();

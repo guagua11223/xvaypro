@@ -50,11 +50,11 @@
   }
 
   const OS = {
-    mac: { zh: "macOS", en: "Mac", file: "飞连-1.4.2-mac.txt", size: "86 MB" },
-    windows: { zh: "Windows", en: "Windows", file: "飞连-1.4.2-windows.txt", size: "72 MB" },
-    ios: { zh: "iOS", en: "iOS", file: "飞连-1.4.2-ios.txt", size: "App Store" },
-    android: { zh: "Android", en: "Android", file: "飞连-1.4.2-android.txt", size: "48 MB" },
-    linux: { zh: "Linux", en: "Linux", file: "飞连-1.4.2-linux.txt", size: "64 MB" }
+    mac: { zh: "macOS", en: "Mac", file: "讯连宝-1.4.2-mac.txt", size: "86 MB" },
+    windows: { zh: "Windows", en: "Windows", file: "讯连宝-1.4.2-windows.txt", size: "72 MB" },
+    ios: { zh: "iOS", en: "iOS", file: "讯连宝-1.4.2-ios.txt", size: "App Store" },
+    android: { zh: "Android", en: "Android", file: "讯连宝-1.4.2-android.txt", size: "48 MB" },
+    linux: { zh: "Linux", en: "Linux", file: "讯连宝-1.4.2-linux.txt", size: "64 MB" }
   };
 
   function logo() {
@@ -145,9 +145,9 @@
     root.innerHTML = `
       <a class="skip" href="#main" data-zh="跳到内容" data-en="Skip to content">跳到内容</a>
       <header class="header${page() !== "home" ? " is-solid" : ""}">
-        ${showPromo ? `<div class="topbar"><span class="hide-sm" data-zh="飞连 支持 macOS、Windows、iOS、Android 与 Linux" data-en="飞连 runs on macOS, Windows, iOS, Android, and Linux">飞连 支持 macOS、Windows、iOS、Android 与 Linux</span><span class="show-sm" data-zh="电脑和手机都能用" data-en="Phone and desktop">电脑和手机都能用</span><button type="button" data-action="dismiss-promo" aria-label="close">×</button></div>` : ""}
+        ${showPromo ? `<div class="topbar"><span class="hide-sm" data-zh="讯连宝 支持 macOS、Windows、iOS、Android 与 Linux" data-en="讯连宝 runs on macOS, Windows, iOS, Android, and Linux">讯连宝 支持 macOS、Windows、iOS、Android 与 Linux</span><span class="show-sm" data-zh="电脑和手机都能用" data-en="Phone and desktop">电脑和手机都能用</span><button type="button" data-action="dismiss-promo" aria-label="close">×</button></div>` : ""}
         <div class="header-inner">
-          <a class="brand" href="index.html">${logo()} 飞连 <small>VPN</small></a>
+          <a class="brand" href="index.html">${logo()} 讯连宝 <small>VPN</small></a>
           <button class="menu-toggle" type="button" data-action="toggle-menu" aria-label="menu">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h16M3 11h16M3 16h16"/></svg>
           </button>
@@ -198,7 +198,7 @@
       <footer class="footer">
         <div class="wrap footer-grid">
           <div>
-            <a class="brand" href="index.html">${logo()} 飞连 <small>VPN</small></a>
+            <a class="brand" href="index.html">${logo()} 讯连宝 <small>VPN</small></a>
             <p data-zh="一点连接，稳稳在线。到期即停，不会自动续费。" data-en="Tap once, stay online. Plans end when they end.">一点连接，稳稳在线。到期即停，不会自动续费。</p>
           </div>
           ${cols.map(([zh, en, links]) => `
@@ -215,7 +215,7 @@
           </div>
         </div>
         <div class="wrap fine">
-          <span>© 2026 飞连</span>
+          <span>© 2026 讯连宝</span>
           <span data-zh="本站为产品界面演示，开通与下载不会产生真实扣款或安装包。" data-en="This site is a product demo. Plans and downloads do not charge you or ship an installer.">本站为产品界面演示，开通与下载不会产生真实扣款或安装包。</span>
         </div>
       </footer>`;
@@ -522,7 +522,7 @@
   function downloadPlatform(id) {
     const spec = OS[id] || OS.mac;
     const text = [
-      "飞连 VPN",
+      "讯连宝 VPN",
       `platform: ${spec.en}`,
       `version: 1.4.2`,
       "",
@@ -563,7 +563,7 @@
     const root = document.createElement("div");
     root.innerHTML = `
       <section class="chat-panel" id="chat-panel">
-        <div class="chat-hd"><strong>飞连</strong><button type="button" data-action="toggle-chat" aria-label="close">×</button></div>
+        <div class="chat-hd"><strong>讯连宝</strong><button type="button" data-action="toggle-chat" aria-label="close">×</button></div>
         <div class="chat-log" id="chat-log"></div>
         <div class="chat-suggestions" id="chat-suggestions"></div>
         <form class="chat-form" id="chat-form">

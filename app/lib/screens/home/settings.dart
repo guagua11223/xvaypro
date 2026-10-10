@@ -180,7 +180,7 @@ class _SettingListState extends State<SettingList> {
             ListTile(
               leading: const LetsIcon(LetsIcons.about),
               title: Text(context.loc.about),
-              subtitle: const Text("飞连"),
+              subtitle: const Text("讯连宝"),
               onTap: () {
                 Navigator.push(
                   context,

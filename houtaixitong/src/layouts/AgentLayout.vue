@@ -25,7 +25,7 @@ async function onLogout() {
     <el-aside class="admin-aside" :width="collapsed ? '64px' : '220px'">
       <div class="logo">
         <i>X</i>
-        <span v-show="!collapsed">飞连 经销商</span>
+        <span v-show="!collapsed">讯连宝 经销商</span>
       </div>
       <el-menu
         :default-active="route.path"

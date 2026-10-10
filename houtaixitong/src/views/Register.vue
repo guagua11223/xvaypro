@@ -76,7 +76,7 @@ async function submit() {
         <h1>加入代理团队</h1>
         <p>填写上级邀请码后，账号会挂到对方名下。不填邀请码则作为独立代理注册。</p>
       </div>
-      <div>飞连 · 代理商</div>
+      <div>讯连宝 · 代理商</div>
     </section>
     <section class="auth-panel">
       <div class="auth-card">
