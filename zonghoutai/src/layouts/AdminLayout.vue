@@ -3,13 +3,16 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { logout, refreshBackend, resetDb, session } from '@/stores/db'
+import { ROLE_LABEL, adminRole, canVisit } from '@/ops'
 
 const route = useRoute()
 const router = useRouter()
 const collapsed = ref(false)
 
 const title = computed(() => route.meta.title || '总后台')
-const roleLabel = computed(() => (session.user?.role === 'super' ? '超级管理员' : '运营'))
+const roleLabel = computed(() => ROLE_LABEL[adminRole()] || '运营')
+const showConfig = computed(() => canVisit('/config/nodes'))
+const showCatalog = computed(() => canVisit('/users'))
 
 function toggleCollapse() {
   collapsed.value = !collapsed.value
@@ -60,7 +63,7 @@ function onLogout() {
           <el-icon><Odometer /></el-icon>
           <span>概览</span>
         </el-menu-item>
-        <el-sub-menu index="config">
+        <el-sub-menu v-if="showConfig" index="config">
           <template #title>
             <el-icon><Setting /></el-icon>
             <span>数据配置</span>
@@ -77,21 +80,21 @@ function onLogout() {
             <el-icon><User /></el-icon>
             <span>会员运营</span>
           </template>
-          <el-menu-item index="/members">会员管理</el-menu-item>
-          <el-menu-item index="/distributors">经销商</el-menu-item>
-          <el-menu-item index="/orders">订单</el-menu-item>
-          <el-menu-item index="/money">提现与退款</el-menu-item>
-          <el-menu-item index="/rules">规则与系统</el-menu-item>
+          <el-menu-item v-if="canVisit('/members')" index="/members">会员管理</el-menu-item>
+          <el-menu-item v-if="canVisit('/distributors')" index="/distributors">经销商</el-menu-item>
+          <el-menu-item v-if="canVisit('/orders')" index="/orders">订单</el-menu-item>
+          <el-menu-item v-if="canVisit('/money')" index="/money">提现与退款</el-menu-item>
+          <el-menu-item v-if="canVisit('/rules')" index="/rules">规则与系统</el-menu-item>
         </el-sub-menu>
-        <el-menu-item index="/users">
+        <el-menu-item v-if="showCatalog" index="/users">
           <el-icon><User /></el-icon>
           <span>用户查看</span>
         </el-menu-item>
-        <el-menu-item index="/agents">
+        <el-menu-item v-if="showCatalog" index="/agents">
           <el-icon><Avatar /></el-icon>
           <span>代理商查看</span>
         </el-menu-item>
-        <el-menu-item index="/commission">
+        <el-menu-item v-if="showCatalog" index="/commission">
           <el-icon><Money /></el-icon>
           <span>代理分佣</span>
         </el-menu-item>
@@ -113,7 +116,7 @@ function onLogout() {
           </span>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item @click="onReset">重置演示数据</el-dropdown-item>
+              <el-dropdown-item v-if="adminRole() === 'super'" @click="onReset">重置演示数据</el-dropdown-item>
               <el-dropdown-item divided @click="onLogout">退出登录</el-dropdown-item>
             </el-dropdown-menu>
           </template>

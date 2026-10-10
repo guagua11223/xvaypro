@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { session } from '@/stores/db'
+import { canVisit } from '@/ops'
 
 import AdminLayout from '@/layouts/AdminLayout.vue'
 import Login from '@/views/Login.vue'
@@ -54,6 +55,7 @@ router.beforeEach((to) => {
   const loggedIn = Boolean(session.user?.token)
   if (!to.meta.public && !loggedIn) return '/login'
   if (loggedIn && (to.path === '/login' || to.path === '/register')) return '/dashboard'
+  if (loggedIn && !to.meta.public && !canVisit(to.path)) return '/dashboard'
   return true
 })
 

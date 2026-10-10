@@ -302,6 +302,10 @@ func unauthorized(message string) error {
 	return errs.New(http.StatusUnauthorized, "UNAUTHORIZED", message)
 }
 
+func conflict(message string) error {
+	return errs.New(http.StatusConflict, "CONFLICT", message)
+}
+
 func forbidden(message string) error {
 	return errs.New(http.StatusForbidden, "FORBIDDEN", message)
 }

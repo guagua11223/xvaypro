@@ -164,6 +164,7 @@ func New(cfg config.Config, db *store.Store) *Server {
 		{http.MethodPost, "/api/admin/system/email-config", s.adminEmailConfig},
 		{http.MethodGet, "/api/admin/system/logs", s.adminSystemLogs},
 		{http.MethodGet, "/api/admin/staff", s.adminStaff},
+		{http.MethodPost, "/api/admin/staff", s.adminCreateStaff},
 		{http.MethodPost, "/api/admin/staff/:id/role", s.adminStaffRole},
 		{http.MethodGet, "/api/admin/announcements", s.adminAnnouncements},
 		{http.MethodPost, "/api/admin/announcements", s.adminCreateAnnouncement},

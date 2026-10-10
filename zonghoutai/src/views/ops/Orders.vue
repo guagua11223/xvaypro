@@ -7,14 +7,25 @@ import { adminRequest, COMMISSION_STATUS, PAY_STATUS, REFUND_STATUS, SERVICE_STA
 import { formatMoney, formatTime } from '@/utils/format'
 
 const loading = ref(false)
+const range = ref([])
 const summary = ref({ total: 0, paidAmount: 0, orders: [] })
 
 onMounted(load)
 
+function queryString() {
+  const params = new URLSearchParams()
+  if (range.value?.length === 2) {
+    params.set('from', String(range.value[0]))
+    params.set('to', String(Number(range.value[1]) + 86400000 - 1))
+  }
+  return params.toString()
+}
+
 async function load() {
   loading.value = true
   try {
-    summary.value = await adminRequest('/api/admin/commerce/orders')
+    const query = queryString()
+    summary.value = await adminRequest('/api/admin/commerce/orders' + (query ? `?${query}` : ''))
   } catch (error) {
     ElMessage.error(error.message)
   } finally {
@@ -23,7 +34,8 @@ async function load() {
 }
 
 async function download() {
-  const response = await fetch(`${API_BASE}/api/admin/commerce/orders?export=1`, {
+  const query = queryString()
+  const response = await fetch(`${API_BASE}/api/admin/commerce/orders?export=1${query ? `&${query}` : ''}`, {
     headers: { Authorization: `Bearer ${session.user?.token || ''}` },
   })
   const blob = await response.blob()
@@ -44,8 +56,9 @@ async function download() {
         <p>共 {{ summary.total }} 笔，已支付 {{ formatMoney(summary.paidAmount) }}。分佣基数 = 实付金额 - 四方手续费。</p>
       </div>
       <div class="filters">
+        <el-date-picker v-model="range" type="daterange" value-format="x" start-placeholder="开始日期" end-placeholder="结束日期" />
+        <el-button type="primary" @click="load">查询</el-button>
         <el-button @click="download">导出</el-button>
-        <el-button type="primary" @click="load">刷新</el-button>
       </div>
     </div>
     <el-table v-loading="loading" :data="summary.orders || []" size="small">

@@ -1,9 +1,11 @@
 <script setup>
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { adminRequest } from '@/ops'
+import { ROLE_LABEL, adminRequest, adminRole } from '@/ops'
 
-const tab = ref('commission')
+const role = adminRole()
+const full = role === 'super' || role === 'operator'
+const tab = ref(full ? 'commission' : 'content')
 const commission = reactive({
   poolRate: 50, level1Rate: 60, level2Rate: 30, level3Rate: 10,
   threeLevel: true, commissionCap: 0, rateCap: 100, distributorRate: 55, settleDay: 1, example: {},
@@ -19,17 +21,20 @@ const logs = ref([])
 const notice = reactive({ title: '', body: '', noticeType: 'notice', startsAt: 0, endsAt: 0, status: '1' })
 const ad = reactive({ slot: 'home_banner', title: '', imageUrl: '', linkUrl: '', sortOrder: 0, status: 1 })
 const service = reactive({ channel: 'wechat', account: '', qrUrl: '', sortOrder: 0, enabled: 1 })
+const staffForm = reactive({ username: '', password: '', role: 'support' })
 
 onMounted(async () => {
-  Object.assign(commission, await adminRequest('/api/admin/commission-settings'))
-  Object.assign(pay, await adminRequest('/api/admin/payment/fourth'))
-  Object.assign(mail, await adminRequest('/api/admin/system/email-config'))
+  if (full) {
+    Object.assign(commission, await adminRequest('/api/admin/commission-settings'))
+    Object.assign(pay, await adminRequest('/api/admin/payment/fourth'))
+    Object.assign(mail, await adminRequest('/api/admin/system/email-config'))
+    staff.value = (await adminRequest('/api/admin/staff')).staff || []
+    logs.value = (await adminRequest('/api/admin/system/logs')).logs || []
+  }
   notices.value = (await adminRequest('/api/admin/notices')).announcements || []
   ads.value = (await adminRequest('/api/admin/ads')).ads || []
   services.value = (await adminRequest('/api/admin/customer-services')).services || []
   tickets.value = (await adminRequest('/api/admin/tickets')).tickets || []
-  staff.value = (await adminRequest('/api/admin/staff')).staff || []
-  logs.value = (await adminRequest('/api/admin/system/logs')).logs || []
 })
 
 async function backup() {
@@ -79,6 +84,14 @@ async function setRole(row) {
   await adminRequest(`/api/admin/staff/${row.id}/role`, { method: 'POST', body: { role: row.role } })
   ElMessage.success('角色已更新')
 }
+
+async function createStaff() {
+  await adminRequest('/api/admin/staff', { method: 'POST', body: { ...staffForm } })
+  staff.value = (await adminRequest('/api/admin/staff')).staff || []
+  staffForm.username = ''
+  staffForm.password = ''
+  ElMessage.success('账号已创建，可用该账号登录')
+}
 </script>
 
 <template>
@@ -91,7 +104,7 @@ async function setRole(row) {
       <el-button @click="backup">备份数据库</el-button>
     </div>
     <el-tabs v-model="tab">
-      <el-tab-pane label="分佣" name="commission">
+      <el-tab-pane v-if="full" label="分佣" name="commission">
         <div class="filters">
           <span>分佣池 %</span><el-input-number v-model="commission.poolRate" :min="0" :max="100" />
           <span>一级</span><el-input-number v-model="commission.level1Rate" :min="0" :max="100" />
@@ -107,7 +120,7 @@ async function setRole(row) {
         </div>
         <p>示例：一级 {{ commission.example?.level1 ?? '—' }}，二级 {{ commission.example?.level2 ?? '—' }}，三级 {{ commission.example?.level3 ?? '—' }}</p>
       </el-tab-pane>
-      <el-tab-pane label="四方支付" name="pay">
+      <el-tab-pane v-if="full" label="四方支付" name="pay">
         <el-form label-width="140px" style="max-width: 560px">
           <el-form-item label="商户号"><el-input v-model="pay.fourth_mch_id" /></el-form-item>
           <el-form-item label="网关"><el-input v-model="pay.fourth_gateway" /></el-form-item>
@@ -116,7 +129,7 @@ async function setRole(row) {
           <el-button type="primary" @click="savePay">保存</el-button>
         </el-form>
       </el-tab-pane>
-      <el-tab-pane label="邮件" name="mail">
+      <el-tab-pane v-if="full" label="邮件" name="mail">
         <el-form label-width="140px" style="max-width: 560px">
           <el-form-item label="主机"><el-input v-model="mail.email_host" /></el-form-item>
           <el-form-item label="端口"><el-input v-model="mail.email_port" /></el-form-item>
@@ -168,16 +181,21 @@ async function setRole(row) {
           </el-table-column>
         </el-table>
       </el-tab-pane>
-      <el-tab-pane label="权限日志" name="staff">
+      <el-tab-pane v-if="full" label="权限日志" name="staff">
+        <div class="filters">
+          <el-input v-model="staffForm.username" placeholder="新账号" style="width: 140px" />
+          <el-input v-model="staffForm.password" placeholder="密码至少 6 位" show-password style="width: 160px" />
+          <el-select v-model="staffForm.role" style="width: 140px">
+            <el-option v-for="(name, key) in ROLE_LABEL" :key="key" :label="name" :value="key" :disabled="key === 'super' && role !== 'super'" />
+          </el-select>
+          <el-button type="primary" @click="createStaff">创建账号</el-button>
+        </div>
         <el-table :data="staff" size="small">
           <el-table-column prop="username" label="管理员" width="140" />
           <el-table-column label="角色" width="180">
             <template #default="{ row }">
-              <el-select v-model="row.role" style="width: 140px">
-                <el-option label="超级管理员" value="super" />
-                <el-option label="运营" value="operator" />
-                <el-option label="财务" value="finance" />
-                <el-option label="客服" value="support" />
+              <el-select v-model="row.role" style="width: 140px" :disabled="row.role === 'super' && role !== 'super'">
+                <el-option v-for="(name, key) in ROLE_LABEL" :key="key" :label="name" :value="key" :disabled="key === 'super' && role !== 'super'" />
               </el-select>
             </template>
           </el-table-column>

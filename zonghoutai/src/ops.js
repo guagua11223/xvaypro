@@ -15,3 +15,25 @@ export const SERVICE_STATUS = ['未激活', '正常', '停用', '到期', '退�
 export function label(list, value) {
   return list[Number(value)] || '—'
 }
+
+export const ROLE_LABEL = {
+  super: '超级管理员',
+  operator: '运营',
+  finance: '财务',
+  support: '客服',
+}
+
+const ROLE_PATHS = {
+  finance: ['/dashboard', '/members', '/distributors', '/orders', '/money'],
+  support: ['/dashboard', '/members', '/orders', '/rules'],
+}
+
+export function adminRole() {
+  return session.user?.role || 'super'
+}
+
+export function canVisit(path) {
+  const role = adminRole()
+  if (role === 'super' || role === 'operator') return true
+  return (ROLE_PATHS[role] || []).includes(path)
+}

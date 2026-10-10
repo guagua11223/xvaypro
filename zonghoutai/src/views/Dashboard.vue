@@ -2,26 +2,18 @@
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { agentName, db, labelOf, NODE_STATUS, refreshBackend, userName } from '@/stores/db'
-import { adminRequest } from '@/ops'
+import { db, labelOf, NODE_STATUS, refreshBackend } from '@/stores/db'
+import { COMMISSION_STATUS, PAY_STATUS, WITHDRAW_STATUS, adminRequest, label } from '@/ops'
 import { formatMoney, formatTime } from '@/utils/format'
 
 const router = useRouter()
 const stats = ref({})
+const recentMembers = computed(() => stats.value.recentMembers || [])
+const recentOrders = computed(() => stats.value.recentOrders || [])
+const recentCommissions = computed(() => stats.value.recentCommissions || [])
+const recentWithdrawals = computed(() => stats.value.recentWithdrawals || [])
 
 const onlineNodes = computed(() => db.nodes.filter((item) => item.status === 'online').length)
-const activeUsers = computed(() => db.users.filter((item) => item.status === 'active').length)
-const activeAgents = computed(() => db.agents.filter((item) => item.status === 'active').length)
-const pending = computed(() => db.commissions.filter((item) => item.status === 'pending'))
-const pendingAmount = computed(() => pending.value.reduce((sum, item) => sum + item.commission, 0))
-
-const recentUsers = computed(() =>
-  [...db.users].sort((a, b) => new Date(b.registeredAt) - new Date(a.registeredAt)).slice(0, 5),
-)
-
-const recentCommissions = computed(() =>
-  [...db.commissions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5),
-)
 
 onMounted(() => {
   refreshBackend().catch((error) => ElMessage.error(error.message || '加载概览失败'))
@@ -41,28 +33,28 @@ onMounted(() => {
       <div class="stat-card"><span>总会员</span><strong>{{ stats.members || 0 }}</strong><em>今日新增 {{ stats.todayMembers || 0 }}</em></div>
       <div class="stat-card"><span>今日订单</span><strong>{{ formatMoney(stats.todayOrderAmount) }}</strong><em>累计 {{ formatMoney(stats.orderAmount) }}</em></div>
       <div class="stat-card"><span>今日佣金</span><strong>{{ formatMoney(stats.todayCommission) }}</strong><em>累计 {{ formatMoney(stats.commissionTotal) }}</em></div>
-      <div class="stat-card"><span>待审核提现</span><strong>{{ stats.pendingWithdraw || 0 }}</strong><em>今日新增经销商 {{ stats.todayDistributors || 0 }}</em></div>
+      <div class="stat-card"><span>待审核提现</span><strong>{{ stats.pendingWithdraw || 0 }}</strong><em>今日打款 {{ formatMoney(stats.todayWithdraw) }}</em></div>
     </div>
     <div class="stat-grid">
       <div class="stat-card">
+        <span>待结算佣金</span>
+        <strong>{{ formatMoney(stats.pendingCommission) }}</strong>
+        <em>已结算 {{ formatMoney(stats.settledCommission) }}</em>
+      </div>
+      <div class="stat-card">
+        <span>钱包可提现</span>
+        <strong>{{ formatMoney(stats.walletBalance) }}</strong>
+        <em>冻结 {{ formatMoney(stats.walletFrozen) }}</em>
+      </div>
+      <div class="stat-card">
+        <span>负余额</span>
+        <strong>{{ formatMoney(stats.negativeBalance) }}</strong>
+        <em>退款扣回后不足的部分</em>
+      </div>
+      <div class="stat-card">
         <span>在线线路</span>
         <strong>{{ onlineNodes }} / {{ db.nodes.length }}</strong>
-        <em>对应 App 选线列表</em>
-      </div>
-      <div class="stat-card">
-        <span>正常用户</span>
-        <strong>{{ activeUsers }}</strong>
-        <em>共 {{ db.users.length }} 个账号</em>
-      </div>
-      <div class="stat-card">
-        <span>在营代理</span>
-        <strong>{{ activeAgents }}</strong>
-        <em>共 {{ db.agents.length }} 个代理商</em>
-      </div>
-      <div class="stat-card">
-        <span>待结算佣金</span>
-        <strong>{{ formatMoney(pendingAmount) }}</strong>
-        <em>{{ pending.length }} 笔待处理</em>
+        <em>今日订单 {{ stats.todayOrderCount || 0 }} 笔 · 今日经销商 {{ stats.todayDistributors || 0 }}</em>
       </div>
     </div>
     <div class="two-col">
@@ -88,37 +80,62 @@ onMounted(() => {
         </div>
       </el-card>
       <el-card shadow="never">
-        <template #header>最近注册用户</template>
-        <el-table :data="recentUsers" size="small">
-          <el-table-column prop="username" label="用户" />
-          <el-table-column label="代理" width="110">
-            <template #default="{ row }">{{ agentName(row.agentId) }}</template>
+        <template #header>最近会员</template>
+        <el-table :data="recentMembers" size="small">
+          <el-table-column prop="username" label="会员" />
+          <el-table-column prop="userType" label="类型" width="90" />
+          <el-table-column label="钱包" width="70">
+            <template #default="{ row }">{{ row.walletEnabled ? '开通' : '关闭' }}</template>
           </el-table-column>
           <el-table-column label="注册时间" width="150">
-            <template #default="{ row }">{{ formatTime(row.registeredAt) }}</template>
+            <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+    </div>
+    <div class="two-col">
+      <el-card shadow="never">
+        <template #header>最近订单</template>
+        <el-table :data="recentOrders" size="small">
+          <el-table-column prop="orderNo" label="订单号" min-width="140" />
+          <el-table-column prop="username" label="会员" width="100" />
+          <el-table-column label="金额" width="90">
+            <template #default="{ row }">{{ formatMoney(row.amount) }}</template>
+          </el-table-column>
+          <el-table-column label="支付" width="80">
+            <template #default="{ row }">{{ label(PAY_STATUS, row.payStatus) }}</template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+      <el-card shadow="never">
+        <template #header>最近提现</template>
+        <el-table :data="recentWithdrawals" size="small">
+          <el-table-column prop="username" label="会员" />
+          <el-table-column label="金额" width="90">
+            <template #default="{ row }">{{ formatMoney(row.amount) }}</template>
+          </el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="{ row }">{{ label(WITHDRAW_STATUS, row.status) }}</template>
           </el-table-column>
         </el-table>
       </el-card>
     </div>
     <el-card shadow="never">
-      <template #header>最近分佣</template>
+      <template #header>最近佣金</template>
       <el-table :data="recentCommissions" size="small">
-        <el-table-column prop="orderNo" label="订单号" width="160" />
-        <el-table-column label="代理商">
-          <template #default="{ row }">{{ agentName(row.agentId) }}</template>
+        <el-table-column prop="fromUsername" label="来源会员" min-width="120" />
+        <el-table-column label="模式" width="100">
+          <template #default="{ row }">{{ row.mode === 1 ? '经销商' : '系统三级' }}</template>
         </el-table-column>
-        <el-table-column label="用户">
-          <template #default="{ row }">{{ userName(row.userId) }}</template>
-        </el-table-column>
+        <el-table-column prop="level" label="层级" width="70" />
         <el-table-column label="佣金" width="120">
-          <template #default="{ row }">{{ formatMoney(row.commission) }}</template>
+          <template #default="{ row }">{{ formatMoney(row.amount) }}</template>
         </el-table-column>
         <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="row.status === 'settled' ? 'success' : row.status === 'pending' ? 'warning' : 'info'" size="small">
-              {{ row.status === 'settled' ? '已结算' : row.status === 'pending' ? '待结算' : '已驳回' }}
-            </el-tag>
-          </template>
+          <template #default="{ row }">{{ label(COMMISSION_STATUS, row.status) }}</template>
+        </el-table-column>
+        <el-table-column label="时间" width="150">
+          <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
         </el-table-column>
       </el-table>
     </el-card>

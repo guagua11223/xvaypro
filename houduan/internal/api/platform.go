@@ -58,6 +58,31 @@ func (s *Server) adminStats(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	members, err := s.db.ListMembers("", 6)
+	if err != nil {
+		return err
+	}
+	recentMembers := make([]map[string]any, 0, len(members))
+	for _, item := range members {
+		recentMembers = append(recentMembers, s.memberJSON(item, false))
+	}
+	orders, err := s.db.ListCommerceOrders(0, 0, 0, 6)
+	if err != nil {
+		return err
+	}
+	named, _ := s.namedOrders(orders)
+	comms, err := s.db.ListCommissionRows(0, 6)
+	if err != nil {
+		return err
+	}
+	cash, err := s.db.ListMemberWithdrawals(0, 6)
+	if err != nil {
+		return err
+	}
+	stats["recentMembers"] = recentMembers
+	stats["recentOrders"] = named
+	stats["recentCommissions"] = s.commissionViews(comms)
+	stats["recentWithdrawals"] = cash
 	writeOK(w, http.StatusOK, stats)
 	return nil
 }
@@ -283,8 +308,21 @@ func (s *Server) adminMemberRecords(w http.ResponseWriter, r *http.Request) erro
 	if err != nil {
 		return err
 	}
+	member, _, err := s.db.LoadMember(id)
+	if err != nil {
+		return err
+	}
+	wallet, err := s.db.MemberWallet(id)
+	if err != nil {
+		return err
+	}
+	named, _ := s.namedOrders(orders)
 	writeOK(w, http.StatusOK, map[string]any{
-		"orders": orderListJSON(orders), "commissions": commissionJSON(comms), "withdrawals": withdraws,
+		"orders": named, "commissions": s.commissionViews(comms), "withdrawals": withdraws,
+		"wallet": map[string]any{
+			"enabled": member.WalletEnabled, "balance": wallet.Balance, "frozen": wallet.Frozen,
+			"totalIncome": wallet.TotalIncome, "totalWithdraw": wallet.TotalWithdraw, "negativeBalance": wallet.NegativeBalance,
+		},
 	})
 	return nil
 }
@@ -363,10 +401,11 @@ func (s *Server) exportOrders(w http.ResponseWriter, from, to int64) error {
 	w.Header().Set("Content-Disposition", "attachment; filename=orders.csv")
 	_, _ = w.Write([]byte{0xEF, 0xBB, 0xBF})
 	cw := csv.NewWriter(w)
-	_ = cw.Write([]string{"订单号", "用户ID", "金额", "手续费", "分佣基数", "支付状态", "分佣状态", "退款状态", "下单时间"})
+	_ = cw.Write([]string{"订单号", "用户ID", "用户", "金额", "手续费", "分佣基数", "支付状态", "分佣状态", "退款状态", "下单时间"})
 	for _, order := range list {
+		name, _ := s.usernameOf(order.UserID)
 		_ = cw.Write([]string{
-			order.OrderNo, strconv.FormatInt(order.UserID, 10),
+			order.OrderNo, strconv.FormatInt(order.UserID, 10), name,
 			strconv.FormatFloat(order.Amount, 'f', 2, 64),
 			strconv.FormatFloat(order.GatewayFee, 'f', 2, 64),
 			strconv.FormatFloat(order.CommissionBase, 'f', 2, 64),
@@ -729,6 +768,65 @@ func (s *Server) adminSystemLogs(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func (s *Server) adminCreateStaff(w http.ResponseWriter, r *http.Request) error {
+	if err := s.allowRole(r); err != nil {
+		return err
+	}
+	actorRole, actorID := s.staffRole(r)
+	body, err := readJSON(r)
+	if err != nil {
+		return err
+	}
+	username := strings.TrimSpace(store.AsString(body["username"]))
+	password := store.AsString(body["password"])
+	nickname := strings.TrimSpace(store.AsString(body["nickname"]))
+	role := store.AsString(body["role"])
+	if role == "" {
+		role = "support"
+	}
+	switch role {
+	case "super", "operator", "finance", "support":
+	default:
+		return badRequest("角色只能是超级管理员、运营、财务或客服")
+	}
+	if role == "super" && actorRole != "super" {
+		return forbidden("只有超级管理员可以创建超级管理员")
+	}
+	if len(username) < 3 || len(username) > 20 {
+		return badRequest("用户名长度为 3-20 位")
+	}
+	if len(password) < 6 || len(password) > 128 {
+		return badRequest("密码至少 6 位")
+	}
+	if nickname == "" {
+		nickname = username
+	}
+	admins, err := s.db.ListCatalog("admins")
+	if err != nil {
+		return err
+	}
+	for _, item := range admins {
+		if store.AsString(item["username"]) == username {
+			return conflict("用户名已存在")
+		}
+	}
+	hash, err := auth.HashPassword(password)
+	if err != nil {
+		return err
+	}
+	created, err := s.db.InsertCatalog("admins", map[string]any{
+		"username": username, "passwordHash": hash, "nickname": nickname,
+		"role": role, "phone": strings.TrimSpace(store.AsString(body["phone"])),
+		"createdAt": time.Now().UTC().Format(time.RFC3339),
+	})
+	if err != nil {
+		return err
+	}
+	_ = s.db.AddLog("admin", actorID, "create_staff", username+" "+role, clientIP(r))
+	writeOK(w, http.StatusCreated, store.PublicAdmin(created))
+	return nil
+}
+
 func (s *Server) adminStaff(w http.ResponseWriter, r *http.Request) error {
 	if err := s.allowRole(r); err != nil {
 		return err
@@ -762,6 +860,24 @@ func (s *Server) adminStaffRole(w http.ResponseWriter, r *http.Request) error {
 	case "super", "operator", "finance", "support":
 	default:
 		return badRequest("角色只能是超级管理员、运营、财务或客服")
+	}
+	current, found, err := s.db.GetCatalog("admins", id)
+	if err != nil {
+		return err
+	}
+	if !found {
+		return notFound("管理员不存在")
+	}
+	actorRole, actorID := s.staffRole(r)
+	currentRole := store.AsString(current["role"])
+	if currentRole == "" {
+		currentRole = "operator"
+	}
+	if (role == "super" || currentRole == "super") && actorRole != "super" {
+		return forbidden("只有超级管理员可以调整超级管理员")
+	}
+	if actorID == id && actorID != 0 && role != currentRole && actorRole != "super" {
+		return forbidden("不能修改自己的角色")
 	}
 	updated, err := s.db.UpdateCatalog("admins", id, map[string]any{"role": role})
 	if err != nil {

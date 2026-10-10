@@ -7,6 +7,16 @@ import (
 	"xvay/houduan/internal/store"
 )
 
+func countPaidToday(orders []store.CommerceOrder, day int64) int {
+	n := 0
+	for _, order := range orders {
+		if order.PayStatus == 1 && order.PayTime >= day {
+			n++
+		}
+	}
+	return n
+}
+
 func (s *Server) distributorLogin(w http.ResponseWriter, r *http.Request) error {
 	body, err := readJSON(r)
 	if err != nil {
@@ -118,11 +128,18 @@ func (s *Server) distributorDashboard(w http.ResponseWriter, r *http.Request) er
 	if err != nil {
 		return err
 	}
+	pending, err := s.db.SumUserCommission(member.ID, 0)
+	if err != nil {
+		return err
+	}
 	rate, _, _ := s.db.DistributorRate(member.ID)
 	writeOK(w, http.StatusOK, map[string]any{
 		"members": len(members), "todayMembers": todayMembers, "todayOrderAmount": storeRound(todayAmount),
+		"todayOrderCount": countPaidToday(orders, day),
 		"todayCommission": storeRound(todayCommission), "totalCommission": wallet.TotalIncome,
-		"balance": wallet.Balance, "frozen": wallet.Frozen, "rate": rate, "inviteCode": member.InviteCode,
+		"pendingCommission": storeRound(pending),
+		"balance":           wallet.Balance, "frozen": wallet.Frozen, "negativeBalance": wallet.NegativeBalance,
+		"totalWithdraw": wallet.TotalWithdraw, "rate": rate, "inviteCode": member.InviteCode,
 	})
 	return nil
 }
@@ -197,7 +214,8 @@ func (s *Server) distributorOrders(w http.ResponseWriter, r *http.Request) error
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, map[string]any{"orders": orderListJSON(orders)})
+	named, paid := s.namedOrders(orders)
+	writeOK(w, http.StatusOK, map[string]any{"orders": named, "total": len(named), "paidAmount": paid})
 	return nil
 }
 
@@ -210,7 +228,7 @@ func (s *Server) distributorCommissions(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, map[string]any{"commissions": commissionJSON(rows)})
+	writeOK(w, http.StatusOK, map[string]any{"commissions": s.commissionViews(rows)})
 	return nil
 }
 
@@ -239,7 +257,13 @@ func (s *Server) distributorWithdrawals(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		return err
 	}
-	writeOK(w, http.StatusOK, map[string]any{"balance": wallet.Balance, "frozen": wallet.Frozen, "withdrawals": list})
+	fee, _ := s.db.ConfigFloat("withdraw_fee_rate", 0)
+	minAmount, _ := s.db.ConfigFloat("withdraw_min", 0)
+	writeOK(w, http.StatusOK, map[string]any{
+		"balance": wallet.Balance, "frozen": wallet.Frozen, "negativeBalance": wallet.NegativeBalance,
+		"totalIncome": wallet.TotalIncome, "totalWithdraw": wallet.TotalWithdraw,
+		"feeRate": fee, "minAmount": minAmount, "withdrawals": list,
+	})
 	return nil
 }
 

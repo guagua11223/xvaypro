@@ -263,6 +263,15 @@ func (s *Store) ListLogs(kind string, limit int) ([]map[string]any, error) {
 	return list, rows.Err()
 }
 
+const withdrawStatusSQL = `(CASE
+		WHEN status IN ('2', 'paid') THEN 2
+		WHEN status IN ('1', 'approved', 'success') THEN 1
+		WHEN status IN ('3', 'rejected') THEN 3
+		WHEN status IN ('4', 'cancelled', 'canceled') THEN 4
+		WHEN status IN ('0', 'pending', '') THEN 0
+		ELSE CAST(status AS INTEGER)
+	END)`
+
 func (s *Store) MemberStats(now time.Time) (map[string]any, error) {
 	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location()).UnixMilli()
 	out := map[string]any{}
@@ -275,10 +284,16 @@ func (s *Store) MemberStats(now time.Time) (map[string]any, error) {
 		{"todayOrderAmount", `SELECT COALESCE(SUM(amount), 0) FROM orders WHERE pay_status = 1 AND pay_time >= ?`, []any{start}},
 		{"orderAmount", `SELECT COALESCE(SUM(amount), 0) FROM orders WHERE pay_status = 1`, nil},
 		{"orderCount", `SELECT COUNT(*) FROM orders`, nil},
-		{"todayWithdraw", `SELECT COALESCE(SUM(amount), 0) FROM withdrawals WHERE status = 2 AND pay_time >= ?`, []any{start}},
-		{"pendingWithdraw", `SELECT COUNT(*) FROM withdrawals WHERE status = 0`, nil},
+		{"todayOrderCount", `SELECT COUNT(*) FROM orders WHERE pay_status = 1 AND pay_time >= ?`, []any{start}},
+		{"todayWithdraw", `SELECT COALESCE(SUM(amount), 0) FROM withdrawals WHERE ` + withdrawStatusSQL + ` = 2 AND pay_time >= ?`, []any{start}},
+		{"pendingWithdraw", `SELECT COUNT(*) FROM withdrawals WHERE ` + withdrawStatusSQL + ` = 0`, nil},
 		{"todayCommission", `SELECT COALESCE(SUM(amount), 0) FROM commissions WHERE status <> 2 AND created_at >= ?`, []any{start}},
 		{"commissionTotal", `SELECT COALESCE(SUM(amount), 0) FROM commissions WHERE status <> 2`, nil},
+		{"pendingCommission", `SELECT COALESCE(SUM(amount), 0) FROM commissions WHERE status = 0`, nil},
+		{"settledCommission", `SELECT COALESCE(SUM(amount), 0) FROM commissions WHERE status = 1`, nil},
+		{"walletBalance", `SELECT COALESCE(SUM(balance), 0) FROM wallets`, nil},
+		{"walletFrozen", `SELECT COALESCE(SUM(frozen), 0) FROM wallets`, nil},
+		{"negativeBalance", `SELECT COALESCE(SUM(negative_balance), 0) FROM wallets`, nil},
 		{"todayDistributors", `SELECT COUNT(*) FROM distributors WHERE status = 0 AND created_at >= ?`, []any{start}},
 	}
 	for _, q := range queries {

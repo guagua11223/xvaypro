@@ -39,14 +39,14 @@ async function submit() {
       <div>
         <div class="brand-mark">X</div>
         <h1>讯连宝 总后台</h1>
-        <p>面向 AnyPortal 客户端的运营中台。在这里配置线路、内核和 App 默认参数，并查看用户、代理商与分佣。</p>
+        <p>查看真实会员、订单、佣金和钱包。财务与客服只能进入自己负责的页面。</p>
         <div class="brand-points">
           <div>数据配置：线路节点、分组、内核、资源、套餐、App 下发</div>
           <div>用户查看：套餐、流量、设备与所属代理</div>
           <div>代理体系：代理商档案与按等级分佣结算</div>
         </div>
       </div>
-      <div>AnyPortal · v0.6.31</div>
+      <div>讯连宝 · 总后台</div>
     </section>
     <section class="auth-panel">
       <div class="auth-card">
@@ -61,11 +61,7 @@ async function submit() {
           </el-form-item>
           <el-button native-type="submit" type="primary" style="width: 100%" :loading="loading">登录</el-button>
         </el-form>
-        <p class="hint" style="margin-top: 16px">
-          还没有账号？
-          <router-link to="/register">注册运营账号</router-link>
-        </p>
-        <div class="demo-box">默认账号 admin / admin123。App 演示用户 linxiao@example.com / Xv@y2026。数据来自 {{ API_BASE }}/api/。</div>
+        <div class="demo-box">使用已分配的后台账号。财务、客服账号由超级管理员创建。数据来自 {{ API_BASE }}/api/。</div>
       </div>
     </section>
   </div>

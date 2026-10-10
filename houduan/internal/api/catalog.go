@@ -53,52 +53,7 @@ func (s *Server) adminLogin(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) adminRegister(w http.ResponseWriter, r *http.Request) error {
-	body, err := readJSON(r)
-	if err != nil {
-		return err
-	}
-	username := strings.TrimSpace(store.AsString(body["username"]))
-	password := store.AsString(body["password"])
-	nickname := strings.TrimSpace(store.AsString(body["nickname"]))
-	phone := strings.TrimSpace(store.AsString(body["phone"]))
-	if len(username) < 3 || len(username) > 20 {
-		return errs.New(http.StatusBadRequest, "VALIDATION", "用户名长度为 3-20 位")
-	}
-	if len(password) < 6 || len(password) > 128 {
-		return errs.New(http.StatusBadRequest, "VALIDATION", "密码至少 6 位")
-	}
-	if nickname == "" {
-		nickname = username
-	}
-	admins, err := s.db.ListCatalog("admins")
-	if err != nil {
-		return err
-	}
-	for _, item := range admins {
-		if store.AsString(item["username"]) == username {
-			return errs.New(http.StatusConflict, "CONFLICT", "用户名已存在")
-		}
-	}
-	hash, err := auth.HashPassword(password)
-	if err != nil {
-		return err
-	}
-	created, err := s.db.InsertCatalog("admins", map[string]any{
-		"username": username, "passwordHash": hash, "nickname": nickname,
-		"role": "operator", "phone": phone, "createdAt": time.Now().UTC().Format(time.RFC3339),
-	})
-	if err != nil {
-		return err
-	}
-	token, err := s.db.CreateAdminSession(store.AsInt64(created["id"]), time.Duration(s.cfg.SessionTTLMs)*time.Millisecond)
-	if err != nil {
-		return err
-	}
-	writeOK(w, http.StatusCreated, map[string]any{
-		"token": token,
-		"user":  store.PublicAdmin(created),
-	})
-	return nil
+	return forbidden("后台账号由超级管理员在权限里创建")
 }
 
 func (s *Server) adminCatalog(w http.ResponseWriter, r *http.Request) error {

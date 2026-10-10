@@ -479,6 +479,12 @@ func (s *Store) SettleMemberDue(now time.Time) (int, error) {
 	return n, err
 }
 
+func (s *Store) SumUserCommission(userID int64, status int) (float64, error) {
+	var amount float64
+	err := s.db.QueryRow(`SELECT COALESCE(SUM(amount), 0) FROM commissions WHERE user_id = ? AND status = ?`, userID, status).Scan(&amount)
+	return amount, err
+}
+
 func (s *Store) MemberWallet(userID int64) (MemberWallet, error) {
 	var w MemberWallet
 	err := s.db.QueryRow(`SELECT user_id, balance, frozen, total_income, total_withdraw, negative_balance FROM wallets WHERE user_id = ?`, userID).
@@ -540,14 +546,15 @@ func (s *Store) AuditWithdrawal(id int64, action string, now int64) error {
 	return s.tx(func(tx *sql.Tx) error {
 		var userID int64
 		var amount float64
-		var status int
-		err := tx.QueryRow(`SELECT user_id, amount, status FROM withdrawals WHERE id = ?`, id).Scan(&userID, &amount, &status)
+		var statusText string
+		err := tx.QueryRow(`SELECT user_id, amount, status FROM withdrawals WHERE id = ?`, id).Scan(&userID, &amount, &statusText)
 		if err == sql.ErrNoRows {
 			return errs.New(404, "NOT_FOUND", "提现不存在")
 		}
 		if err != nil {
 			return err
 		}
+		status := withdrawalStatusCode(statusText)
 		switch action {
 		case "approve":
 			if status != 0 {

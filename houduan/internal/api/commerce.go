@@ -117,10 +117,17 @@ func (s *Server) userWallet(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	cash, err := s.db.ListMemberWithdrawals(user.ID, 20)
+	if err != nil {
+		return err
+	}
+	fee, _ := s.db.ConfigFloat("withdraw_fee_rate", 0)
+	minAmount, _ := s.db.ConfigFloat("withdraw_min", 0)
 	writeOK(w, http.StatusOK, map[string]any{
 		"balance": wallet.Balance, "frozen": wallet.Frozen, "totalIncome": wallet.TotalIncome,
 		"totalWithdraw": wallet.TotalWithdraw, "negativeBalance": wallet.NegativeBalance,
-		"commissions": commissionJSON(rows),
+		"feeRate": fee, "minAmount": minAmount,
+		"commissions": s.commissionViews(rows), "withdrawals": cash,
 	})
 	return nil
 }
@@ -509,6 +516,42 @@ func orderJSON(o store.CommerceOrder, username, packageName string) map[string]a
 	}
 }
 
+func (s *Server) commissionViews(rows []store.CommissionRow) []map[string]any {
+	out := commissionJSON(rows)
+	names := map[int64]string{}
+	for i, row := range rows {
+		name, ok := names[row.FromUserID]
+		if !ok {
+			name, _ = s.usernameOf(row.FromUserID)
+			names[row.FromUserID] = name
+		}
+		out[i]["fromUsername"] = name
+	}
+	return out
+}
+
+func (s *Server) namedOrders(list []store.CommerceOrder) ([]map[string]any, float64) {
+	names := map[int64]string{}
+	out := make([]map[string]any, 0, len(list))
+	var paid float64
+	for _, order := range list {
+		name, ok := names[order.UserID]
+		if !ok {
+			name, _ = s.usernameOf(order.UserID)
+			names[order.UserID] = name
+		}
+		pkgName := ""
+		if pkg, err := s.db.PackageForFulfillment(order.PackageID, order.Amount); err == nil {
+			pkgName = pkg.Name
+		}
+		out = append(out, orderJSON(order, name, pkgName))
+		if order.PayStatus == 1 {
+			paid += order.Amount
+		}
+	}
+	return out, storeRound(paid)
+}
+
 func commissionJSON(rows []store.CommissionRow) []map[string]any {
 	out := make([]map[string]any, 0, len(rows))
 	for _, row := range rows {
@@ -526,27 +569,8 @@ func (s *Server) writeOrders(w http.ResponseWriter, userID, from, to int64) erro
 	if err != nil {
 		return err
 	}
-	names := map[int64]string{}
-	out := make([]map[string]any, 0, len(list))
-	for _, order := range list {
-		name, ok := names[order.UserID]
-		if !ok {
-			name, _ = s.usernameOf(order.UserID)
-			names[order.UserID] = name
-		}
-		pkgName := ""
-		if pkg, err := s.db.PackageForFulfillment(order.PackageID, order.Amount); err == nil {
-			pkgName = pkg.Name
-		}
-		out = append(out, orderJSON(order, name, pkgName))
-	}
-	var amount float64
-	for _, order := range list {
-		if order.PayStatus == 1 {
-			amount += order.Amount
-		}
-	}
-	writeOK(w, http.StatusOK, map[string]any{"total": len(list), "paidAmount": storeRound(amount), "orders": out})
+	out, amount := s.namedOrders(list)
+	writeOK(w, http.StatusOK, map[string]any{"total": len(list), "paidAmount": amount, "orders": out})
 	return nil
 }
 

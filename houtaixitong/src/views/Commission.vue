@@ -25,7 +25,7 @@ onMounted(async () => {
     <h3>旗下订单</h3>
     <el-table :data="orders" size="small">
       <el-table-column prop="orderNo" label="订单号" min-width="150" />
-      <el-table-column prop="userId" label="会员" width="80" />
+      <el-table-column prop="username" label="会员" min-width="120" />
       <el-table-column label="金额" width="100"><template #default="{ row }">{{ formatMoney(row.amount) }}</template></el-table-column>
       <el-table-column label="手续费" width="90"><template #default="{ row }">{{ formatMoney(row.gatewayFee) }}</template></el-table-column>
       <el-table-column label="分佣基数" width="100"><template #default="{ row }">{{ formatMoney(row.commissionBase) }}</template></el-table-column>
@@ -33,7 +33,7 @@ onMounted(async () => {
     </el-table>
     <h3>佣金明细</h3>
     <el-table :data="rows" size="small">
-      <el-table-column prop="fromUserId" label="来源会员" width="100" />
+      <el-table-column label="来源会员" min-width="120"><template #default="{ row }">{{ row.fromUsername || row.fromUserId }}</template></el-table-column>
       <el-table-column prop="level" label="层级" width="70" />
       <el-table-column label="比例" width="80"><template #default="{ row }">{{ row.rate }}%</template></el-table-column>
       <el-table-column label="基数" width="100"><template #default="{ row }">{{ formatMoney(row.baseAmount) }}</template></el-table-column>

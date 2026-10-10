@@ -56,6 +56,12 @@ class _AccountScreenState extends State<AccountScreen> {
     super.dispose();
   }
 
+  String _moneyStatus(dynamic value, List<String> names) {
+    final index = value is int ? value : int.tryParse('$value') ?? -1;
+    if (index < 0 || index >= names.length) return '';
+    return names[index];
+  }
+
   List<Map<String, dynamic>> _list(dynamic raw) {
     if (raw is! List) return [];
     return raw
@@ -467,6 +473,11 @@ class _AccountScreenState extends State<AccountScreen> {
           ),
         ),
         const SizedBox(height: 8),
+        Text(
+          '最低提现 ¥${_wallet['minAmount'] ?? 0}，手续费 ${_wallet['feeRate'] ?? 0}%。待结算佣金在冻结里，结算后才能提现。',
+          style: TextStyle(fontSize: 12, height: 1.4, color: palette.muted),
+        ),
+        const SizedBox(height: 8),
         TextField(
           controller: _withdraw,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -487,7 +498,24 @@ class _AccountScreenState extends State<AccountScreen> {
                 for (final row in _list(_wallet['commissions']))
                   _kv(
                     palette,
-                    '${row['fromUsername'] ?? row['fromUserId'] ?? ''} · ${row['level'] ?? ''}级',
+                    '${row['fromUsername'] ?? row['fromUserId'] ?? ''} · ${row['level'] ?? ''}级 · ${_moneyStatus(row['status'], const ['待结算', '已结算', '已退回'])}',
+                    '¥${row['amount'] ?? 0}',
+                  ),
+              ],
+            ),
+          ),
+        ],
+        if (_list(_wallet['withdrawals']).isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _heading(palette, '提现记录'),
+          _card(
+            palette,
+            Column(
+              children: [
+                for (final row in _list(_wallet['withdrawals']))
+                  _kv(
+                    palette,
+                    '${_moneyStatus(row['status'], const ['待审核', '审核通过', '已打款', '已拒绝', '已取消'])}',
                     '¥${row['amount'] ?? 0}',
                   ),
               ],

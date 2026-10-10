@@ -27,7 +27,8 @@ onMounted(async () => {
       <div class="stat-card"><span>旗下人数</span><strong>{{ data.members || 0 }}</strong><em>今日新增 {{ data.todayMembers || 0 }}</em></div>
       <div class="stat-card"><span>今日订单</span><strong>{{ formatMoney(data.todayOrderAmount) }}</strong></div>
       <div class="stat-card"><span>今日佣金</span><strong>{{ formatMoney(data.todayCommission) }}</strong><em>累计 {{ formatMoney(data.totalCommission) }}</em></div>
-      <div class="stat-card"><span>可提现</span><strong>{{ formatMoney(data.balance) }}</strong><em>冻结 {{ formatMoney(data.frozen) }} · 比例 {{ data.rate || 0 }}%</em></div>
+      <div class="stat-card"><span>可提现</span><strong>{{ formatMoney(data.balance) }}</strong><em>冻结 {{ formatMoney(data.frozen) }} · 负余额 {{ formatMoney(data.negativeBalance) }}</em></div>
+      <div class="stat-card"><span>待结算</span><strong>{{ formatMoney(data.pendingCommission) }}</strong><em>今日订单 {{ data.todayOrderCount || 0 }} 笔 · 比例 {{ data.rate || 0 }}%</em></div>
     </div>
   </div>
 </template>

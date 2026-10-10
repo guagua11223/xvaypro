@@ -648,6 +648,72 @@ func TestRegisterInviteLinksParent(t *testing.T) {
 	}
 }
 
+func TestStaffRolesUseRealStats(t *testing.T) {
+	cfg := config.Config{
+		DataDir: t.TempDir(), DatabasePath: ":memory:", AdminToken: "admin-token",
+		PublicBaseURL: "http://127.0.0.1:8787", TrialBytes: 1024, TrialDays: 7, SessionTTLMs: 3_600_000,
+	}
+	db, err := store.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	handler := api.New(cfg, db)
+	reg := call(t, handler, http.MethodPost, "/api/app/register", "", map[string]any{
+		"username": "stat-user", "password": "password1",
+	})
+	if reg.Status != http.StatusCreated {
+		t.Fatalf("register %d %s", reg.Status, reg.Raw)
+	}
+	stats := call(t, handler, http.MethodGet, "/api/admin/stats", "admin-token", nil)
+	if stats.Status != http.StatusOK || stats.Data["members"].(float64) < 1 {
+		t.Fatalf("stats %d %s", stats.Status, stats.Raw)
+	}
+	recent, _ := stats.Data["recentMembers"].([]any)
+	if len(recent) < 1 || recent[0].(map[string]any)["username"] == "" {
+		t.Fatalf("recent members %s", stats.Raw)
+	}
+	open := call(t, handler, http.MethodPost, "/api/admin/register", "", map[string]any{
+		"username": "outsider", "password": "password1", "nickname": "outsider",
+	})
+	if open.Status != http.StatusForbidden {
+		t.Fatalf("public register %d %s", open.Status, open.Raw)
+	}
+	created := call(t, handler, http.MethodPost, "/api/admin/staff", "admin-token", map[string]any{
+		"username": "finance1", "password": "password1", "role": "finance",
+	})
+	if created.Status != http.StatusCreated || created.Data["role"] != "finance" {
+		t.Fatalf("create staff %d %s", created.Status, created.Raw)
+	}
+	login := call(t, handler, http.MethodPost, "/api/admin/login", "", map[string]any{
+		"username": "finance1", "password": "password1",
+	})
+	if login.Status != http.StatusOK {
+		t.Fatalf("finance login %d %s", login.Status, login.Raw)
+	}
+	token := login.Data["token"].(string)
+	if call(t, handler, http.MethodGet, "/api/admin/stats", token, nil).Status != http.StatusOK {
+		t.Fatal("finance should read stats")
+	}
+	if call(t, handler, http.MethodGet, "/api/admin/commerce/orders", token, nil).Status != http.StatusOK {
+		t.Fatal("finance should read orders")
+	}
+	banned := call(t, handler, http.MethodPost, "/api/admin/members/1/ban", token, map[string]any{"reason": "no"})
+	if banned.Status != http.StatusForbidden {
+		t.Fatalf("finance ban %d %s", banned.Status, banned.Raw)
+	}
+	again := call(t, handler, http.MethodPost, "/api/admin/staff", token, map[string]any{
+		"username": "support1", "password": "password1", "role": "support",
+	})
+	if again.Status != http.StatusForbidden {
+		t.Fatalf("finance create staff %d %s", again.Status, again.Raw)
+	}
+	wallet := call(t, handler, http.MethodGet, "/api/wallet", reg.Data["token"].(string), nil)
+	if wallet.Status != http.StatusOK || wallet.Data["balance"] == nil || wallet.Data["withdrawals"] == nil {
+		t.Fatalf("wallet %d %s", wallet.Status, wallet.Raw)
+	}
+}
+
 func TestPackagesUseAdminPlans(t *testing.T) {
 	cfg := config.Config{
 		DataDir: t.TempDir(), DatabasePath: ":memory:",

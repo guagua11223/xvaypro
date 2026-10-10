@@ -27,7 +27,7 @@ async function submit() {
     <div class="page-head">
       <div>
         <h2>提现</h2>
-        <p>可提现 {{ formatMoney(data.balance) }}，冻结 {{ formatMoney(data.frozen) }}。冻结金额要等到月结算日才可提现。</p>
+        <p>可提现 {{ formatMoney(data.balance) }}，冻结 {{ formatMoney(data.frozen) }}，负余额 {{ formatMoney(data.negativeBalance) }}。手续费 {{ data.feeRate || 0 }}%，最低 {{ formatMoney(data.minAmount) }}。冻结金额要到结算日才进入可提现。</p>
       </div>
       <div class="filters">
         <el-input-number v-model="amount" :min="1" />
