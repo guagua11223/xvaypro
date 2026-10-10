@@ -1,8 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../theme/lets_colors.dart';
+import '../../theme/lets_icons.dart';
 import '../../utils/xvay_account.dart';
+import '../../widgets/lets_app_bar.dart';
+import 'auth_widgets.dart';
+import 'login.dart';
+import 'register.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -13,13 +19,8 @@ class AccountScreen extends StatefulWidget {
 
 class _AccountScreenState extends State<AccountScreen> {
   final _account = XvayAccount();
-  final _name = TextEditingController();
-  final _password = TextEditingController();
-  final _invite = TextEditingController();
   final _email = TextEditingController();
   final _code = TextEditingController();
-  bool _register = false;
-  bool _recover = false;
   bool _busy = false;
   String? _message;
   Map<String, dynamic> _profile = {};
@@ -40,9 +41,6 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   void dispose() {
-    _name.dispose();
-    _password.dispose();
-    _invite.dispose();
     _email.dispose();
     _code.dispose();
     super.dispose();
@@ -50,7 +48,10 @@ class _AccountScreenState extends State<AccountScreen> {
 
   List<Map<String, dynamic>> _list(dynamic raw) {
     if (raw is! List) return [];
-    return raw.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+    return raw
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
   }
 
   Future<void> _refresh() async {
@@ -83,43 +84,81 @@ class _AccountScreenState extends State<AccountScreen> {
           builder: (context) => AlertDialog(
             title: const Text('账号防丢失'),
             content: const Text('还没有绑定邮箱。绑定后可以用邮箱找回账号和重置密码。'),
-            actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('知道了'))],
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('知道了'),
+              ),
+            ],
           ),
         );
       }
     } catch (error) {
-      if (mounted) setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      if (mounted)
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<void> _submit() async {
-    setState(() => _busy = true);
-    try {
-      if (_register) {
-        await _account.register(_name.text, _password.text, _invite.text);
-      } else {
-        await _account.login(_name.text, _password.text);
-      }
-      await _refresh();
-    } catch (error) {
-      if (mounted) setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+  Future<void> _openAuth(Widget page) async {
+    final ok = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => page),
+    );
+    if (ok == true && mounted) await _refresh();
   }
+
+  bool get _hasUnpaid => _orders.any(commerceOrderPending);
 
   Future<void> _buy(Map<String, dynamic> item) async {
+    if (_hasUnpaid) {
+      setState(() => _message = '有待支付订单，请先完成支付');
+      return;
+    }
     setState(() => _busy = true);
     try {
-      final data = await _account.apiPost('/api/orders', {'packageId': item['id']});
+      final data = await _account.apiPost('/api/orders', {
+        'packageId': item['id'],
+      });
       final order = data['order'];
       final no = order is Map ? order['orderNo'] : '';
       if (mounted) setState(() => _message = '订单 $no 已创建，等待四方支付到账');
       await _refresh();
     } catch (error) {
-      if (mounted) setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      if (mounted)
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _pay(Map<String, dynamic> item) async {
+    setState(() => _busy = true);
+    try {
+      final data = await _account.apiPost('/api/pay/create', {
+        'orderId': item['id'],
+      });
+      final url = payLink(data);
+      if (!mounted) return;
+      if (url == null) {
+        setState(
+          () => _message =
+              '订单 ${item['orderNo']} 待支付 ¥${item['amount']}，支付网关未返回链接',
+        );
+        return;
+      }
+      final opened = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!mounted) return;
+      setState(
+        () => _message = opened ? '已打开支付页面，完成后请刷新' : '无法打开支付页面',
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -127,45 +166,28 @@ class _AccountScreenState extends State<AccountScreen> {
 
   Future<void> _sendCode(String scene) async {
     try {
-      await _account.apiPost('/api/auth/email/send-code', {'email': _email.text.trim(), 'scene': scene}, auth: scene != 'bind_email');
+      await _account.apiPost('/api/auth/email/send-code', {
+        'email': _email.text.trim(),
+        'scene': scene,
+      }, auth: scene != 'bind_email');
       if (mounted) setState(() => _message = '验证码已发送，5 分钟内有效');
     } catch (error) {
-      if (mounted) setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      if (mounted)
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
     }
   }
 
   Future<void> _bind() async {
     try {
-      await _account.apiPost('/api/user/email/bind', {'email': _email.text.trim(), 'code': _code.text.trim()});
+      await _account.apiPost('/api/user/email/bind', {
+        'email': _email.text.trim(),
+        'code': _code.text.trim(),
+      });
       if (mounted) setState(() => _message = '邮箱已绑定');
       await _refresh();
     } catch (error) {
-      if (mounted) setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
-    }
-  }
-
-  Future<void> _find() async {
-    try {
-      final data = await _account.apiPost('/api/auth/find-account', {
-        'email': _email.text.trim(),
-        'code': _code.text.trim(),
-      }, auth: false);
-      if (mounted) setState(() => _message = '关联账号 ${data['userId']}（${data['username']}）');
-    } catch (error) {
-      if (mounted) setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
-    }
-  }
-
-  Future<void> _reset() async {
-    try {
-      await _account.apiPost('/api/auth/reset-password-by-email', {
-        'email': _email.text.trim(),
-        'code': _code.text.trim(),
-        'password': _password.text,
-      }, auth: false);
-      if (mounted) setState(() => _message = '密码已重置，请登录');
-    } catch (error) {
-      if (mounted) setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      if (mounted)
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
     }
   }
 
@@ -174,125 +196,609 @@ class _AccountScreenState extends State<AccountScreen> {
     final palette = LetsColors.of(context);
     return Scaffold(
       backgroundColor: palette.page,
-      appBar: AppBar(
-        title: const Text('我的'),
-        backgroundColor: palette.bar,
-        foregroundColor: palette.onBar,
-        elevation: 0,
+      appBar: LetsAppBar(
+        title: '我的',
+        actions: [
+          if (_loggedIn)
+            IconButton(
+              tooltip: '刷新',
+              onPressed: _busy ? null : _refresh,
+              color: palette.onBar,
+              icon: const Icon(Icons.refresh, size: LetsIcons.size),
+            ),
+        ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
         children: [
-          if (_message != null) Text(_message!, style: const TextStyle(color: LetsColors.textSecondary)),
-          if (!_loggedIn) ..._guest() else ..._home(),
+          if (_busy)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 12),
+              child: LinearProgressIndicator(
+                minHeight: 2,
+                color: LetsColors.accent,
+                backgroundColor: Colors.transparent,
+              ),
+            ),
+          if (_message != null) ...[
+            _note(palette, _message!),
+            const SizedBox(height: 12),
+          ],
+          if (!_loggedIn) ..._guest(palette) else ..._home(palette),
         ],
       ),
     );
   }
 
-  List<Widget> _guest() {
+  List<Widget> _guest(LetsPalette palette) {
     return [
-      Text(_recover ? '找回账号' : (_register ? '注册' : '登录'), style: const TextStyle(fontSize: 22)),
-      const SizedBox(height: 8),
-      const Text('用户名和密码即可注册，不需要实名、微信或手机授权。'),
-      const SizedBox(height: 12),
-      TextField(controller: _name, decoration: const InputDecoration(labelText: '用户名或邮箱')),
-      TextField(controller: _password, obscureText: true, decoration: const InputDecoration(labelText: '密码')),
-      if (_register) TextField(controller: _invite, decoration: const InputDecoration(labelText: '邀请码，可选')),
-      if (_recover) ...[
-        TextField(controller: _email, decoration: const InputDecoration(labelText: '绑定邮箱')),
-        TextField(controller: _code, decoration: const InputDecoration(labelText: '验证码')),
-      ],
-      const SizedBox(height: 12),
-      if (!_recover)
-        FilledButton(onPressed: _busy ? null : _submit, child: Text(_register ? '注册' : '登录')),
-      TextButton(
-        onPressed: () => setState(() => _register = !_register),
-        child: Text(_register ? '已有账号，去登录' : '没有账号，去注册'),
+      Text(
+        '登录后查看流量、套餐和订单。',
+        style: TextStyle(fontSize: 14, height: 1.4, color: palette.muted),
       ),
-      TextButton(onPressed: () => setState(() => _recover = !_recover), child: Text(_recover ? '返回登录' : '找回账号')),
-      if (_recover) ...[
-        TextButton(onPressed: () => _sendCode('find_account'), child: const Text('发送找回验证码')),
-        TextButton(onPressed: _find, child: const Text('查看关联账号')),
-        TextButton(onPressed: () => _sendCode('reset_password'), child: const Text('发送重置验证码')),
-        TextButton(onPressed: _reset, child: const Text('重置密码')),
-      ],
+      const SizedBox(height: 16),
+      AuthPrimaryButton(
+        label: '登录',
+        onPressed: () => _openAuth(const LoginScreen()),
+      ),
+      const SizedBox(height: 12),
+      AuthSecondaryButton(
+        label: '注册',
+        onPressed: () => _openAuth(const RegisterScreen()),
+      ),
     ];
   }
 
-  List<Widget> _home() {
+  List<Widget> _home(LetsPalette palette) {
     final gb = _profile['trafficRemainGb'];
     final seconds = _profile['remainSeconds'];
     final days = seconds is num ? (seconds.toInt() / 86400).floor() : 0;
+    final traffic = gb is num ? gb.toStringAsFixed(2) : '0.00';
+    final inviteCode = '${_inviteInfo['inviteCode'] ?? ''}';
+    final inviteUrl = '${_inviteInfo['inviteUrl'] ?? ''}';
     return [
+      _card(
+        palette,
+        Row(
+          children: [
+            CircleAvatar(
+              radius: 28,
+              backgroundColor: LetsColors.accent.withValues(alpha: 0.12),
+              child: Text(
+                _initial(),
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: LetsColors.accent,
+                ),
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${_profile['username'] ?? ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${_profile['userType'] ?? '普通用户'} · ID ${_profile['id'] ?? ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, color: palette.muted),
+                  ),
+                ],
+              ),
+            ),
+            IconButton(
+              tooltip: '复制 ID',
+              onPressed: () => _copy('${_profile['id'] ?? ''}', '已复制 ID'),
+              icon: Icon(Icons.copy_outlined, color: palette.muted, size: 20),
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 12),
       Row(
         children: [
-          CircleAvatar(child: Text(_initial())),
+          Expanded(child: _stat(palette, '剩余流量', '$traffic GB')),
           const SizedBox(width: 12),
+          Expanded(child: _stat(palette, '剩余时长', '$days 天')),
+        ],
+      ),
+      const SizedBox(height: 20),
+      _heading(palette, '购买节点'),
+      if (_hasUnpaid)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+          child: Text(
+            '有待支付订单，请先完成支付后再购买。',
+            style: TextStyle(fontSize: 13, height: 1.4, color: palette.muted),
+          ),
+        ),
+      if (_packages.isEmpty)
+        _empty(palette, '暂时没有可购买的套餐')
+      else
+        ..._packages.map(
+          (item) => _packageTile(palette, item, enabled: !_hasUnpaid),
+        ),
+      if (_profile['walletEnabled'] == 1) ...[
+        const SizedBox(height: 8),
+        _heading(palette, '钱包'),
+        _card(
+          palette,
+          Column(
+            children: [
+              _kv(palette, '推荐获利', '¥${_wallet['totalIncome'] ?? 0}'),
+              _kv(palette, '可提现', '¥${_wallet['balance'] ?? 0}'),
+              _kv(palette, '冻结', '¥${_wallet['frozen'] ?? 0}', last: true),
+            ],
+          ),
+        ),
+      ],
+      const SizedBox(height: 8),
+      _heading(palette, '推荐有奖'),
+      _card(
+        palette,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _copyLine(palette, '推荐码', inviteCode),
+            if (inviteUrl.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              _copyLine(palette, '推荐链接', inviteUrl),
+            ],
+            if ('${_inviteInfo['mode'] ?? ''}'.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                '${_inviteInfo['mode']}',
+                style: TextStyle(fontSize: 12, color: palette.muted),
+              ),
+            ],
+          ],
+        ),
+      ),
+      const SizedBox(height: 8),
+      _heading(palette, '我的订单'),
+      if (_orders.isEmpty)
+        _empty(palette, '还没有订单')
+      else
+        _card(
+          palette,
+          Column(
+            children: [
+              for (var i = 0; i < _shownOrders.length; i++)
+                _orderRow(
+                  palette,
+                  _shownOrders[i],
+                  last: i == _shownOrders.length - 1,
+                ),
+            ],
+          ),
+        ),
+      if (_notices.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        _heading(palette, '公告'),
+        ..._notices.map(
+          (item) => Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: _card(
+              palette,
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '${item['title']}',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: palette.text,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '${item['body']}',
+                    style: TextStyle(
+                      fontSize: 13,
+                      height: 1.45,
+                      color: palette.muted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
+      if (_services.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        _heading(palette, '客服'),
+        _card(
+          palette,
+          Column(
+            children: [
+              for (var i = 0; i < _services.length; i++)
+                _copyLine(
+                  palette,
+                  '${_services[i]['channel']}',
+                  '${_services[i]['account']}',
+                  last: i == _services.length - 1,
+                ),
+            ],
+          ),
+        ),
+      ],
+      const SizedBox(height: 8),
+      _heading(palette, '账号防丢失'),
+      _card(
+        palette,
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '绑定邮箱后，可以用邮箱找回账号和重置密码。',
+              style: TextStyle(fontSize: 13, height: 1.4, color: palette.muted),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _email,
+              keyboardType: TextInputType.emailAddress,
+              decoration: _fieldDecoration(palette, '邮箱'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _code,
+              decoration: _fieldDecoration(palette, '验证码'),
+            ),
+            const SizedBox(height: 12),
+            _secondaryButton(
+              label: '发送绑定验证码',
+              onPressed: () => _sendCode('bind_email'),
+            ),
+            const SizedBox(height: 8),
+            _primaryButton(label: '绑定邮箱', onPressed: _busy ? null : _bind),
+          ],
+        ),
+      ),
+      const SizedBox(height: 16),
+      _secondaryButton(
+        label: '退出登录',
+        onPressed: () async {
+          await _account.logout();
+          if (mounted) {
+            setState(() {
+              _profile = {};
+              _message = null;
+            });
+          }
+        },
+      ),
+    ];
+  }
+
+  void _copy(String text, String tip) {
+    if (text.isEmpty) return;
+    Clipboard.setData(ClipboardData(text: text));
+    setState(() => _message = tip);
+  }
+
+  Widget _note(LetsPalette palette, String text) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: LetsColors.accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(LetsColors.radiusInput),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(fontSize: 13, height: 1.4, color: palette.text),
+      ),
+    );
+  }
+
+  Widget _card(LetsPalette palette, Widget child) {
+    return Material(
+      color: palette.surface,
+      borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+      child: Padding(padding: const EdgeInsets.all(16), child: child),
+    );
+  }
+
+  Widget _heading(LetsPalette palette, String text) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 8),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+          color: palette.text,
+        ),
+      ),
+    );
+  }
+
+  Widget _empty(LetsPalette palette, String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: _card(
+        palette,
+        Text(text, style: TextStyle(fontSize: 13, color: palette.muted)),
+      ),
+    );
+  }
+
+  Widget _stat(LetsPalette palette, String label, String value) {
+    return _card(
+      palette,
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: TextStyle(fontSize: 12, color: palette.muted)),
+          const SizedBox(height: 6),
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Map<String, dynamic>> get _shownOrders => visibleOrders(_orders);
+
+  Widget _packageTile(
+    LetsPalette palette,
+    Map<String, dynamic> item, {
+    required bool enabled,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Opacity(
+        opacity: enabled ? 1 : 0.45,
+        child: Material(
+          color: palette.surface,
+          borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+            onTap: !enabled || _busy ? null : () => _buy(item),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${item['name']}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '${item['trafficGb']} GB · ${item['durationDays']} 天',
+                          style: TextStyle(fontSize: 13, color: palette.muted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Text(
+                    '¥${item['price']}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: LetsColors.accent,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _kv(
+    LetsPalette palette,
+    String label,
+    String value, {
+    bool last = false,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: last ? 0 : 10),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 14, color: palette.muted),
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: palette.text,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _copyLine(
+    LetsPalette palette,
+    String label,
+    String value, {
+    bool last = true,
+  }) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: last ? 0 : 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 72,
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 13, color: palette.muted),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value.isEmpty ? '—' : value,
+              style: TextStyle(fontSize: 13, height: 1.4, color: palette.text),
+            ),
+          ),
+          if (value.isNotEmpty)
+            InkWell(
+              onTap: () => _copy(value, '已复制$label'),
+              child: Padding(
+                padding: const EdgeInsets.only(left: 8),
+                child: Icon(
+                  Icons.copy_outlined,
+                  size: 18,
+                  color: palette.muted,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _orderRow(
+    LetsPalette palette,
+    Map<String, dynamic> item, {
+    required bool last,
+  }) {
+    final status = _payName(item['payStatus']);
+    return Padding(
+      padding: EdgeInsets.only(bottom: last ? 0 : 12),
+      child: Row(
+        children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('${_profile['username'] ?? ''}', style: const TextStyle(fontSize: 18)),
-                Text('${_profile['userType'] ?? '普通用户'} · ID ${_profile['id'] ?? ''}'),
+                Text(
+                  '${item['orderNo']}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 13, color: palette.text),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '¥${item['amount']}',
+                  style: TextStyle(fontSize: 12, color: palette.muted),
+                ),
               ],
             ),
           ),
-          IconButton(
-            onPressed: () {
-              Clipboard.setData(ClipboardData(text: '${_profile['id'] ?? ''}'));
-              setState(() => _message = '已复制 ID');
-            },
-            icon: const Icon(Icons.copy),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                status,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: status == '已支付' ? LetsColors.accent : palette.muted,
+                ),
+              ),
+              if (commerceOrderPending(item)) ...[
+                const SizedBox(height: 6),
+                SizedBox(
+                  height: 32,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: LetsColors.accent,
+                      foregroundColor: LetsColors.onAccent,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: _busy ? null : () => _pay(item),
+                    child: const Text('支付', style: TextStyle(fontSize: 13)),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),
-      const SizedBox(height: 12),
-      Text('剩余流量 ${gb is num ? gb.toStringAsFixed(2) : '0.00'} GB'),
-      Text('剩余 $days 天'),
-      const SizedBox(height: 16),
-      const Text('购买节点', style: TextStyle(fontSize: 16)),
-      ..._packages.map((item) => ListTile(
-            title: Text('${item['name']}'),
-            subtitle: Text('${item['trafficGb']} GB · ${item['durationDays']} 天'),
-            trailing: Text('¥${item['price']}'),
-            onTap: _busy ? null : () => _buy(item),
-          )),
-      if (_profile['walletEnabled'] == 1) ...[
-        const Text('钱包', style: TextStyle(fontSize: 16)),
-        Text('推荐获利 ¥${_wallet['totalIncome'] ?? 0}'),
-        Text('可提现 ¥${_wallet['balance'] ?? 0}  冻结 ¥${_wallet['frozen'] ?? 0}'),
-      ],
-      const SizedBox(height: 8),
-      const Text('推荐有奖', style: TextStyle(fontSize: 16)),
-      Text('推荐码 ${_inviteInfo['inviteCode'] ?? ''}'),
-      Text('${_inviteInfo['inviteUrl'] ?? ''}'),
-      Text('${_inviteInfo['mode'] ?? ''}'),
-      const SizedBox(height: 8),
-      const Text('我的订单', style: TextStyle(fontSize: 16)),
-      ..._orders.take(8).map((item) => ListTile(
-            title: Text('${item['orderNo']}'),
-            subtitle: Text('¥${item['amount']} · ${_payName(item['payStatus'])}'),
-          )),
-      const SizedBox(height: 8),
-      const Text('公告', style: TextStyle(fontSize: 16)),
-      ..._notices.map((item) => ListTile(title: Text('${item['title']}'), subtitle: Text('${item['body']}'))),
-      const Text('客服', style: TextStyle(fontSize: 16)),
-      ..._services.map((item) => Text('${item['channel']}  ${item['account']}')),
-      const SizedBox(height: 12),
-      const Text('账号防丢失', style: TextStyle(fontSize: 16)),
-      TextField(controller: _email, decoration: const InputDecoration(labelText: '邮箱')),
-      TextField(controller: _code, decoration: const InputDecoration(labelText: '验证码')),
-      TextButton(onPressed: () => _sendCode('bind_email'), child: const Text('发送绑定验证码')),
-      TextButton(onPressed: _bind, child: const Text('绑定邮箱')),
-      TextButton(
-        onPressed: () async {
-          await _account.logout();
-          if (mounted) setState(() => _profile = {});
-        },
-        child: const Text('退出登录'),
+    );
+  }
+
+  Widget _primaryButton({
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: LetsColors.accent,
+          foregroundColor: LetsColors.onAccent,
+          disabledBackgroundColor: LetsColors.accent.withValues(alpha: 0.4),
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        onPressed: onPressed,
+        child: Text(label, style: const TextStyle(fontSize: 16)),
       ),
-    ];
+    );
+  }
+
+  Widget _secondaryButton({
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    final palette = LetsColors.of(context);
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: palette.text,
+          side: BorderSide(color: palette.line),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+        ),
+        onPressed: onPressed,
+        child: Text(label, style: const TextStyle(fontSize: 15)),
+      ),
+    );
   }
 
   String _initial() {
@@ -325,4 +831,26 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
     );
   }
+}
+
+bool commerceOrderPending(Map<String, dynamic> item) {
+  final value = item['payStatus'];
+  return value is num && value.toInt() == 0;
+}
+
+List<Map<String, dynamic>> visibleOrders(List<Map<String, dynamic>> orders) {
+  final pending = orders.where(commerceOrderPending).toList();
+  final rest = orders.where((item) => !commerceOrderPending(item)).take(8);
+  return [...pending, ...rest];
+}
+
+String? payLink(Map<String, dynamic> data) {
+  for (final key in ['payUrl', 'url', 'gateway']) {
+    final value = data[key];
+    if (value is String &&
+        (value.startsWith('http://') || value.startsWith('https://'))) {
+      return value;
+    }
+  }
+  return null;
 }

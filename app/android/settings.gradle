@@ -39,4 +39,64 @@ if (packageConfig.exists()) {
             pluginBuild.setText(file("patches/system_theme.build.gradle").getText("UTF-8"), "UTF-8")
         }
     }
+
+    // file_picker 10.2.4 imports its own classes across files. Kotlin 2.4 then
+    // fails :file_picker:compileDebugKotlin with unresolved FilePickerDelegate
+    // and FileInfo. Drop those same-package imports before the project loads.
+    def picker = config.packages.find { it.name == "file_picker" }
+    if (picker != null) {
+        def pickerUri = picker.rootUri.toString()
+        def pickerDir = pickerUri.startsWith("file:") ? new File(URI.create(pickerUri)) : new File(packageConfig.parentFile, pickerUri)
+        def pickerBuild = new File(pickerDir, "android/build.gradle")
+        if (pickerBuild.exists() && pickerBuild.getText("UTF-8").contains("compileSdk 34")) {
+            pickerBuild.setText(pickerBuild.getText("UTF-8").replace("compileSdk 34", "compileSdk 36"), "UTF-8")
+        }
+        def kotlinDir = new File(pickerDir, "android/src/main/kotlin/com/mr/flutter/plugin/filepicker")
+        def delegateFile = new File(kotlinDir, "FilePickerDelegate.kt")
+        def utilsFile = new File(kotlinDir, "FileUtils.kt")
+        if (delegateFile.exists() && delegateFile.getText("UTF-8").contains("FilePickerPlugin::class.java.hashCode()")) {
+            def delegate = delegateFile.getText("UTF-8")
+            delegate = delegate.replace("import com.mr.flutter.plugin.filepicker.FileUtils.processFiles\n", "")
+            delegate = delegate.replace(
+                    "processFiles(activity, data, compressionQuality, loadDataToMemory, type.orEmpty())",
+                    "with(FileUtils) {\n                    processFiles(activity, data, compressionQuality, loadDataToMemory, type.orEmpty())\n                }"
+            )
+            delegate = delegate.replace(
+                    "val REQUEST_CODE = (FilePickerPlugin::class.java.hashCode() + 43) and 0x0000ffff",
+                    "const val REQUEST_CODE = 43"
+            )
+            delegate = delegate.replace(
+                    "val SAVE_FILE_CODE = (FilePickerPlugin::class.java.hashCode() + 83) and 0x0000ffff",
+                    "const val SAVE_FILE_CODE = 83"
+            )
+            delegateFile.setText(delegate, "UTF-8")
+        }
+        if (utilsFile.exists() && utilsFile.getText("UTF-8").contains("FilePickerDelegate.Companion.REQUEST_CODE")) {
+            def utils = utilsFile.getText("UTF-8")
+            utils = utils.replace("import com.mr.flutter.plugin.filepicker.FilePickerDelegate.Companion.REQUEST_CODE\n", "")
+            utils = utils.replace("import com.mr.flutter.plugin.filepicker.FilePickerDelegate.Companion.SAVE_FILE_CODE\n", "")
+            utils = utils.replace("import com.mr.flutter.plugin.filepicker.FilePickerDelegate.Companion.finishWithAlreadyActiveError\n", "")
+            utils = utils.replace("REQUEST_CODE", "FilePickerDelegate.REQUEST_CODE")
+            utils = utils.replace("SAVE_FILE_CODE", "FilePickerDelegate.SAVE_FILE_CODE")
+            utils = utils.replace("finishWithAlreadyActiveError", "FilePickerDelegate.finishWithAlreadyActiveError")
+            utilsFile.setText(utils, "UTF-8")
+        }
+    }
+
+    // workmanager_android skips the Kotlin plugin on AGP 9 and expects
+    // built-in Kotlin. This project sets android.builtInKotlin=false, so the
+    // plugin class is never compiled.
+    def workmanager = config.packages.find { it.name == "workmanager_android" }
+    if (workmanager != null) {
+        def workUri = workmanager.rootUri.toString()
+        def workDir = workUri.startsWith("file:") ? new File(URI.create(workUri)) : new File(packageConfig.parentFile, workUri)
+        def workBuild = new File(workDir, "android/build.gradle")
+        if (workBuild.exists()) {
+            def workText = workBuild.getText("UTF-8")
+            def gated = "if (agpMajor < 9) {\n    apply plugin: 'kotlin-android'\n}"
+            if (workText.contains(gated)) {
+                workBuild.setText(workText.replace(gated, "apply plugin: 'kotlin-android'"), "UTF-8")
+            }
+        }
+    }
 }

@@ -99,6 +99,15 @@ func (s *Store) CreateCommerceOrder(userID, packageID, now int64) (CommerceOrder
 	if err != nil {
 		return CommerceOrder{}, err
 	}
+	var pending int
+	if err := s.db.QueryRow(
+		`SELECT COUNT(1) FROM orders WHERE user_id = ? AND pay_status = 0`, userID,
+	).Scan(&pending); err != nil {
+		return CommerceOrder{}, err
+	}
+	if pending > 0 {
+		return CommerceOrder{}, errs.New(400, "PENDING_ORDER", "有待支付订单，请先完成支付")
+	}
 	orderNo := fmt.Sprintf("XV%s%06d", time.UnixMilli(now).Format("20060102"), now%1000000)
 	var order CommerceOrder
 	err = s.db.QueryRow(`INSERT INTO orders (

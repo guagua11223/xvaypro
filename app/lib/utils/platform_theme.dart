@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:system_theme/system_theme.dart';
 
 import '../theme/lets_colors.dart';
-import 'platform_version.dart';
 import 'prefs.dart';
 import 'runtime_platform.dart';
 import 'theme_manager.dart';
@@ -12,9 +11,8 @@ import 'theme_manager.dart';
 bool getIsTransparentBG() {
   bool isTransparentBG = false;
   if (RuntimePlatform.isWindows) {
-    final windowsVersionNumber = getPlatformVersionNumber();
-    isTransparentBG =
-        windowsVersionNumber != null && windowsVersionNumber >= 22000;
+    // Windows uses the same solid page as Android. Mica makes the layout look broken.
+    isTransparentBG = false;
   } else if (RuntimePlatform.isMacOS) {
     /// macos window theme can not be controlled by app
     isTransparentBG =
@@ -33,7 +31,7 @@ Color getColorSchemeSeed() {
 ThemeData getPlatformThemeData() {
   bool isTransparentBG = getIsTransparentBG();
 
-  if (RuntimePlatform.isWindows || RuntimePlatform.isMacOS) {
+  if (RuntimePlatform.isMacOS) {
     return ThemeData(
       // colorSchemeSeed: SystemTheme.accentColor.accent,
       colorSchemeSeed: getColorSchemeSeed(),
@@ -47,7 +45,10 @@ ThemeData getPlatformThemeData() {
           borderRadius: BorderRadius.circular(LetsColors.radiusCard),
         ),
       ),
-      appBarTheme: LetsColors.appBarTheme(dark: false, transparent: isTransparentBG),
+      appBarTheme: LetsColors.appBarTheme(
+        dark: false,
+        transparent: isTransparentBG,
+      ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: isTransparentBG ? Colors.transparent : null,
         indicatorColor: const Color.fromARGB(240, 255, 255, 255),
@@ -77,7 +78,10 @@ ThemeData getPlatformThemeData() {
           borderRadius: BorderRadius.circular(LetsColors.radiusCard),
         ),
       ),
-      dividerTheme: const DividerThemeData(color: Color(0xFFD5D8DE), thickness: 1),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFFD5D8DE),
+        thickness: 1,
+      ),
       appBarTheme: LetsColors.appBarTheme(dark: false),
     );
   }
@@ -87,7 +91,7 @@ ThemeData getPlatformDarkThemeData() {
   final isBlackDark = prefs.getBool("app.brightness.dark.black")!;
   bool isTransparentBG = getIsTransparentBG();
 
-  if (RuntimePlatform.isWindows || RuntimePlatform.isMacOS) {
+  if (RuntimePlatform.isMacOS) {
     return ThemeData(
       brightness: Brightness.dark,
       // colorSchemeSeed: SystemTheme.accentColor.accent,
@@ -146,7 +150,10 @@ ThemeData getPlatformDarkThemeData() {
           borderRadius: BorderRadius.circular(LetsColors.radiusCard),
         ),
       ),
-      dividerTheme: const DividerThemeData(color: Color(0xFF2C313C), thickness: 1),
+      dividerTheme: const DividerThemeData(
+        color: Color(0xFF2C313C),
+        thickness: 1,
+      ),
       appBarTheme: LetsColors.appBarTheme(dark: true),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: isBlackDark
