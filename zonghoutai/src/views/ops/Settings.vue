@@ -11,6 +11,17 @@ const commission = reactive({
   threeLevel: true, commissionCap: 0, rateCap: 100, distributorRate: 55, settleDay: 1, example: {},
 })
 const pay = reactive({ fourth_mch_id: '', fourth_gateway: '', fourth_key: '', fourth_notify_secret: '' })
+const epay = reactive({
+  epay_account: '',
+  epay_api_key: '',
+  epay_api_base: 'https://api.epay.com/capi/openapi',
+  epay_merchant_name: '飞连',
+  epay_currency: 'CNY',
+  epay_payment_currency: '',
+  epay_payment_country: '',
+  epay_language: 'CN',
+  notifyUrl: '',
+})
 const mail = reactive({ email_host: '', email_port: '465', email_user: '', email_password: '', email_from: '' })
 const notices = ref([])
 const ads = ref([])
@@ -27,6 +38,7 @@ onMounted(async () => {
   if (full) {
     Object.assign(commission, await adminRequest('/api/admin/commission-settings'))
     Object.assign(pay, await adminRequest('/api/admin/payment/fourth'))
+    Object.assign(epay, await adminRequest('/api/admin/payment/epay'))
     Object.assign(mail, await adminRequest('/api/admin/system/email-config'))
     staff.value = (await adminRequest('/api/admin/staff')).staff || []
     logs.value = (await adminRequest('/api/admin/system/logs')).logs || []
@@ -50,6 +62,11 @@ async function saveCommission() {
 async function savePay() {
   Object.assign(pay, await adminRequest('/api/admin/payment/fourth', { method: 'POST', body: { ...pay } }))
   ElMessage.success('四方支付已保存')
+}
+
+async function saveEpay() {
+  Object.assign(epay, await adminRequest('/api/admin/payment/epay', { method: 'POST', body: { ...epay } }))
+  ElMessage.success('EPAY 支付已保存')
 }
 
 async function saveMail() {
@@ -119,6 +136,27 @@ async function createStaff() {
           <el-button type="primary" @click="saveCommission">保存</el-button>
         </div>
         <p>示例：一级 {{ commission.example?.level1 ?? '—' }}，二级 {{ commission.example?.level2 ?? '—' }}，三级 {{ commission.example?.level3 ?? '—' }}</p>
+      </el-tab-pane>
+      <el-tab-pane v-if="full" label="EPAY支付" name="epay">
+        <el-form label-width="140px" style="max-width: 640px">
+          <p style="margin: 0 0 12px; color: #64748b">
+            对接
+            <a href="https://www.epay.com/zh-CN" target="_blank" rel="noreferrer">epay.com</a>
+            收银台代收。请在 EPAY 后台开通 API、配置 IP 白名单，并把下方回调地址填入商户通知。
+          </p>
+          <el-form-item label="EPAY账号"><el-input v-model="epay.epay_account" placeholder="登录邮箱账号" /></el-form-item>
+          <el-form-item label="收款API Key"><el-input v-model="epay.epay_api_key" placeholder="已配置时显示为 ******" show-password /></el-form-item>
+          <el-form-item label="API地址"><el-input v-model="epay.epay_api_base" placeholder="https://api.epay.com/capi/openapi" /></el-form-item>
+          <el-form-item label="商户名称"><el-input v-model="epay.epay_merchant_name" /></el-form-item>
+          <el-form-item label="订单币种"><el-input v-model="epay.epay_currency" placeholder="CNY" /></el-form-item>
+          <el-form-item label="付款币种"><el-input v-model="epay.epay_payment_currency" placeholder="可选，如 USD" /></el-form-item>
+          <el-form-item label="付款国家"><el-input v-model="epay.epay_payment_country" placeholder="可选，如 CN" /></el-form-item>
+          <el-form-item label="语言"><el-input v-model="epay.epay_language" placeholder="CN" /></el-form-item>
+          <el-form-item label="回调地址">
+            <el-input :model-value="epay.notifyUrl" readonly />
+          </el-form-item>
+          <el-button type="primary" @click="saveEpay">保存</el-button>
+        </el-form>
       </el-tab-pane>
       <el-tab-pane v-if="full" label="四方支付" name="pay">
         <el-form label-width="140px" style="max-width: 560px">

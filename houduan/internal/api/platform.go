@@ -719,6 +719,62 @@ func (s *Server) adminFourthPay(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func (s *Server) adminEpay(w http.ResponseWriter, r *http.Request) error {
+	if err := s.allowRole(r); err != nil {
+		return err
+	}
+	keys := []string{
+		"epay_account", "epay_api_key", "epay_api_base", "epay_merchant_name",
+		"epay_currency", "epay_payment_currency", "epay_payment_country", "epay_language",
+	}
+	if r.Method == http.MethodGet {
+		cfg, err := s.db.ConfigMap(keys)
+		if err != nil {
+			return err
+		}
+		if cfg["epay_api_base"] == "" {
+			cfg["epay_api_base"] = "https://api.epay.com/capi/openapi"
+		}
+		if cfg["epay_merchant_name"] == "" {
+			cfg["epay_merchant_name"] = "飞连"
+		}
+		if cfg["epay_currency"] == "" {
+			cfg["epay_currency"] = "CNY"
+		}
+		if cfg["epay_language"] == "" {
+			cfg["epay_language"] = "CN"
+		}
+		out := maskSecrets(cfg)
+		out["notifyUrl"] = strings.TrimRight(s.cfg.PublicBaseURL, "/") + "/api/pay/notify/epay"
+		out["docs"] = "https://opendocs.epay.com/gateway/cn/introduction/guide.html"
+		writeOK(w, http.StatusOK, out)
+		return nil
+	}
+	body, err := readJSON(r)
+	if err != nil {
+		return err
+	}
+	values := map[string]string{}
+	for _, key := range keys {
+		raw := store.AsString(body[key])
+		if raw == "" || raw == "******" {
+			continue
+		}
+		values[key] = raw
+	}
+	if err := s.db.PutConfigs(values); err != nil {
+		return err
+	}
+	cfg, err := s.db.ConfigMap(keys)
+	if err != nil {
+		return err
+	}
+	out := maskSecrets(cfg)
+	out["notifyUrl"] = strings.TrimRight(s.cfg.PublicBaseURL, "/") + "/api/pay/notify/epay"
+	writeOK(w, http.StatusOK, out)
+	return nil
+}
+
 func (s *Server) adminEmailConfig(w http.ResponseWriter, r *http.Request) error {
 	if err := s.allowRole(r); err != nil {
 		return err

@@ -14,6 +14,7 @@ import (
 	"xvay/houduan/internal/auth"
 	"xvay/houduan/internal/errs"
 	"xvay/houduan/internal/pay"
+	"xvay/houduan/internal/pay/epaycom"
 	"xvay/houduan/internal/store"
 	"xvay/houduan/internal/validate"
 )
@@ -364,7 +365,11 @@ func (s *Server) payCreate(w http.ResponseWriter, r *http.Request) error {
 	if order.PayStatus != 0 {
 		return badRequest("订单不在待支付状态")
 	}
-	writeOK(w, http.StatusOK, s.payPayload(order))
+	payload, err := s.buildPayCheckout(order)
+	if err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, payload)
 	return nil
 }
 
@@ -385,6 +390,36 @@ func (s *Server) payNotifyFourth(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	writeOK(w, http.StatusOK, map[string]any{"orderNo": order.OrderNo, "payStatus": order.PayStatus})
+	return nil
+}
+
+func (s *Server) payNotifyEpay(w http.ResponseWriter, r *http.Request) error {
+	if err := r.ParseForm(); err != nil {
+		writeText(w, http.StatusBadRequest, "fail", nil)
+		return nil
+	}
+	cfg, err := s.epayConfig()
+	if err != nil {
+		writeText(w, http.StatusBadRequest, "fail", nil)
+		return nil
+	}
+	orderNo, _, fee, err := epaycom.VerifyNotify(cfg, r.Form)
+	if err != nil {
+		writeText(w, http.StatusBadRequest, "fail", nil)
+		return nil
+	}
+	if amount := strings.TrimSpace(r.Form.Get("amount")); amount != "" {
+		order, ok, findErr := s.db.FindCommerceOrderByNo(orderNo)
+		if findErr != nil || !ok || amount != epaycom.AmountString(order.Amount) {
+			writeText(w, http.StatusBadRequest, "fail", nil)
+			return nil
+		}
+	}
+	if _, err := s.db.MarkCommercePaid(orderNo, fee, time.Now().UnixMilli()); err != nil {
+		writeText(w, http.StatusBadRequest, "fail", nil)
+		return nil
+	}
+	writeText(w, http.StatusOK, "success", nil)
 	return nil
 }
 
@@ -436,12 +471,88 @@ func (s *Server) userTickets(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) payPayload(order store.CommerceOrder) map[string]any {
+	if cfg, err := s.epayConfig(); err == nil && cfg.Account != "" && cfg.APIKey != "" {
+		return map[string]any{
+			"orderNo": order.OrderNo, "amount": order.Amount, "channel": "epay",
+			"gateway": "https://www.epay.com/zh-CN",
+		}
+	}
 	gateway, _ := s.db.ConfigString("fourth_gateway")
 	mch, _ := s.db.ConfigString("fourth_mch_id")
 	return map[string]any{
 		"orderNo": order.OrderNo, "amount": order.Amount, "channel": "fourth",
 		"mchId": mch, "gateway": gateway,
 	}
+}
+
+func (s *Server) buildPayCheckout(order store.CommerceOrder) (map[string]any, error) {
+	cfg, err := s.epayConfig()
+	if err == nil && cfg.Account != "" && cfg.APIKey != "" {
+		base := strings.TrimRight(s.cfg.PublicBaseURL, "/")
+		created, err := epaycom.CreateCheckout(cfg, epaycom.Order{
+			No:         order.OrderNo,
+			Amount:     order.Amount,
+			NotifyURL:  base + "/api/pay/notify/epay",
+			SuccessURL: base + "/pay/success",
+			FailURL:    base + "/pay/fail",
+			Remark:     "飞连会员 " + order.OrderNo,
+		})
+		if err != nil {
+			return nil, errs.New(http.StatusBadGateway, "UPSTREAM", "EPAY 下单失败: "+err.Error())
+		}
+		return map[string]any{
+			"orderNo": order.OrderNo, "amount": order.Amount, "channel": "epay",
+			"payUrl": created.PayURL, "epayOrderNo": created.EpayOrderNo,
+			"gateway": "https://www.epay.com/zh-CN",
+		}, nil
+	}
+	payload := s.payPayload(order)
+	if store.AsString(payload["gateway"]) == "" {
+		return nil, errs.New(http.StatusServiceUnavailable, "UNAVAILABLE", "支付网关未配置，请在后台填写 EPAY 账号与 API Key")
+	}
+	return payload, nil
+}
+
+func (s *Server) epayConfig() (epaycom.Config, error) {
+	keys := []string{
+		"epay_account", "epay_api_key", "epay_api_base", "epay_merchant_name",
+		"epay_currency", "epay_payment_currency", "epay_payment_country", "epay_language",
+	}
+	cfgMap, err := s.db.ConfigMap(keys)
+	if err != nil {
+		return epaycom.Config{}, err
+	}
+	account := strings.TrimSpace(cfgMap["epay_account"])
+	apiKey := strings.TrimSpace(cfgMap["epay_api_key"])
+	if account == "" {
+		account = strings.TrimSpace(s.cfg.EpayAccount)
+	}
+	if apiKey == "" {
+		apiKey = strings.TrimSpace(s.cfg.EpayAPIKey)
+	}
+	apiBase := strings.TrimSpace(cfgMap["epay_api_base"])
+	if apiBase == "" {
+		apiBase = strings.TrimSpace(s.cfg.EpayAPIBase)
+	}
+	return epaycom.Config{
+		Account:         account,
+		APIKey:          apiKey,
+		APIBase:         apiBase,
+		MerchantName:    firstNonEmpty(cfgMap["epay_merchant_name"], s.cfg.EpayMerchantName),
+		Currency:        firstNonEmpty(cfgMap["epay_currency"], s.cfg.EpayCurrency),
+		PaymentCurrency: firstNonEmpty(cfgMap["epay_payment_currency"], s.cfg.EpayPaymentCurrency),
+		PaymentCountry:  strings.TrimSpace(cfgMap["epay_payment_country"]),
+		Language:        firstNonEmpty(cfgMap["epay_language"], "CN"),
+	}, nil
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if strings.TrimSpace(value) != "" {
+			return strings.TrimSpace(value)
+		}
+	}
+	return ""
 }
 
 func (s *Server) memberJSON(m store.Member, withQuota bool) map[string]any {

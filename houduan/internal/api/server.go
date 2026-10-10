@@ -77,6 +77,7 @@ func New(cfg config.Config, db *store.Store) *Server {
 		{http.MethodPost, "/api/auth/reset-password-by-email", s.resetPasswordByEmail},
 		{http.MethodPost, "/api/pay/create", s.payCreate},
 		{http.MethodPost, "/api/pay/notify/fourth", s.payNotifyFourth},
+		{http.MethodPost, "/api/pay/notify/epay", s.payNotifyEpay},
 		{http.MethodPost, "/api/pay/refund", s.payRefund},
 
 		{http.MethodPost, "/api/distributor/login", s.distributorLogin},
@@ -160,6 +161,8 @@ func New(cfg config.Config, db *store.Store) *Server {
 		{http.MethodPost, "/api/admin/tickets/:id/reply", s.adminReplyTicket},
 		{http.MethodGet, "/api/admin/payment/fourth", s.adminFourthPay},
 		{http.MethodPost, "/api/admin/payment/fourth", s.adminFourthPay},
+		{http.MethodGet, "/api/admin/payment/epay", s.adminEpay},
+		{http.MethodPost, "/api/admin/payment/epay", s.adminEpay},
 		{http.MethodGet, "/api/admin/system/email-config", s.adminEmailConfig},
 		{http.MethodPost, "/api/admin/system/email-config", s.adminEmailConfig},
 		{http.MethodGet, "/api/admin/system/logs", s.adminSystemLogs},

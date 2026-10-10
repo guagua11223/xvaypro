@@ -31,6 +31,13 @@ type Config struct {
 	PayMerchantID    string
 	PayKey           string
 	PayDebug         bool
+	// EPAY.com (https://www.epay.com/zh-CN) cashier gateway.
+	EpayAccount          string
+	EpayAPIKey           string
+	EpayAPIBase          string
+	EpayMerchantName     string
+	EpayCurrency         string
+	EpayPaymentCurrency  string
 }
 
 func Load() Config {
@@ -58,6 +65,12 @@ func Load() Config {
 		PayMerchantID:    env("PAY_MERCHANT_ID", ""),
 		PayKey:           env("PAY_KEY", ""),
 		PayDebug:         os.Getenv("PAY_DEBUG") == "1",
+		EpayAccount:         env("EPAY_ACCOUNT", ""),
+		EpayAPIKey:          env("EPAY_API_KEY", ""),
+		EpayAPIBase:         env("EPAY_API_BASE", "https://api.epay.com/capi/openapi"),
+		EpayMerchantName:    env("EPAY_MERCHANT_NAME", "飞连"),
+		EpayCurrency:        env("EPAY_CURRENCY", "CNY"),
+		EpayPaymentCurrency: env("EPAY_PAYMENT_CURRENCY", ""),
 	}
 }
 

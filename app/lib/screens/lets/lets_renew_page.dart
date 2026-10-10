@@ -64,18 +64,25 @@ class _LetsRenewPageState extends State<LetsRenewPage> {
       });
       final order = created['order'];
       if (order is! Map) throw Exception('下单失败');
-      final pay = await _account.apiPost('/api/pay/create', {
-        'orderId': order['id'],
-      });
-      final url = payLink(pay);
-      if (url != null) {
-        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
-        setState(() => _message = '已打开支付页面');
-      } else {
+      if (_payChannel == 'manual') {
         setState(
           () => _message =
-              '订单 ${order['orderNo']} 已创建 ¥${order['amount']}，等待支付到账',
+              '订单 ${order['orderNo']} 已创建 ¥${order['amount']}，请联系客服人工确认',
         );
+      } else {
+        final pay = await _account.apiPost('/api/pay/create', {
+          'orderId': order['id'],
+        });
+        final url = payLink(pay);
+        if (url != null) {
+          await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+          setState(() => _message = '已打开 EPAY 支付页面');
+        } else {
+          setState(
+            () => _message =
+                '订单 ${order['orderNo']} 已创建 ¥${order['amount']}，等待支付到账',
+          );
+        }
       }
       await LetsSession.instance.refresh();
     } catch (e) {
@@ -140,7 +147,7 @@ class _LetsRenewPageState extends State<LetsRenewPage> {
                     _PayOption(
                       selected: _payChannel == 'gateway',
                       title: '在线支付',
-                      subtitle: '跳转支付网关完成付款',
+                      subtitle: '跳转 EPAY 收银台完成付款',
                       onTap: () => setState(() => _payChannel = 'gateway'),
                     ),
                     const SizedBox(height: 10),

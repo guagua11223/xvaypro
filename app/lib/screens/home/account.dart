@@ -145,7 +145,7 @@ class _AccountScreenState extends State<AccountScreen> {
       });
       final order = data['order'];
       final no = order is Map ? order['orderNo'] : '';
-      if (mounted) setState(() => _message = '订单 $no 已创建，等待四方支付到账');
+      if (mounted) setState(() => _message = '订单 $no 已创建，请点击支付打开 EPAY 收银台');
       await _refresh();
     } catch (error) {
       if (mounted)
