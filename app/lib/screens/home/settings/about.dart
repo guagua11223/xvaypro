@@ -16,6 +16,7 @@ import '../../../utils/platform_file_mananger.dart';
 import '../../../utils/prefs.dart';
 import '../../../utils/runtime_platform.dart';
 import '../../../utils/show_snack_bar_now.dart';
+import '../../../theme/lets_icons.dart';
 import '../../../widgets/blockquote.dart';
 
 class AboutScreen extends StatefulWidget {
@@ -82,12 +83,8 @@ class _AboutScreenState extends State<AboutScreen> {
   Widget build(BuildContext context) {
     final fields = [
       Padding(
-        padding: const EdgeInsets.fromLTRB(0, 96, 0, 64),
-        child: SizedBox(
-          width: 128,
-          height: 128,
-          child: Image.asset('assets/icon/icon.png'),
-        ),
+        padding: const EdgeInsets.fromLTRB(0, 48, 0, 32),
+        child: const LetsMark(size: 96),
       ),
       const Padding(
         padding: EdgeInsets.fromLTRB(16, 0, 16, 0),
@@ -138,7 +135,7 @@ We hope you choose well between your home world and Wonderlands.""",
       ListTile(
         title: const Text("Github"),
         subtitle: const Text("https://github.com/anyportal/anyportal"),
-        trailing: const Icon(Icons.open_in_new),
+        trailing: const Icon(LetsIcons.open),
         onTap: () {
           try {
             launchUrl(Uri.parse("https://github.com/anyportal/anyportal"));
@@ -163,7 +160,7 @@ We hope you choose well between your home world and Wonderlands.""",
                 : Platform.resolvedExecutable,
           ),
           trailing: Icon(
-            RuntimePlatform.isAndroid ? Icons.copy : Icons.folder_open,
+            RuntimePlatform.isAndroid ? LetsIcons.copy : LetsIcons.folder,
           ),
           onTap: () {
             if (RuntimePlatform.isAndroid) {
@@ -182,7 +179,7 @@ We hope you choose well between your home world and Wonderlands.""",
             p.join(global.applicationDocumentsDirectory.path, "AnyPortal"),
           ),
           trailing: Icon(
-            RuntimePlatform.isAndroid ? Icons.copy : Icons.folder_open,
+            RuntimePlatform.isAndroid ? LetsIcons.copy : LetsIcons.folder,
           ),
           onTap: () {
             final folderPath = p.join(
@@ -201,7 +198,7 @@ We hope you choose well between your home world and Wonderlands.""",
           title: Text(context.loc.generated_assets),
           subtitle: Text(global.applicationSupportDirectory.path),
           trailing: Icon(
-            RuntimePlatform.isAndroid ? Icons.copy : Icons.folder_open,
+            RuntimePlatform.isAndroid ? LetsIcons.copy : LetsIcons.folder,
           ),
           onTap: () {
             final folderPath = global.applicationSupportDirectory.path;

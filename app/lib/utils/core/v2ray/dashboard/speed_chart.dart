@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../../../extensions/localization.dart';
+import '../../../../theme/lets_colors.dart';
 import '../../../format_byte.dart';
 import '../../base/plugin.dart';
 import '../data_notifier.dart';
@@ -17,10 +18,10 @@ class SpeedChart extends StatefulWidget {
 
 class _SpeedChartState extends State<SpeedChart> {
   final Map<TrafficStatType, Color> trafficColor = {
-    TrafficStatType.directUp: Colors.orange,
-    TrafficStatType.directDn: Colors.orange,
-    TrafficStatType.proxyUp: Colors.blue,
-    TrafficStatType.proxyDn: Colors.blue,
+    TrafficStatType.directUp: LetsColors.seriesDirect,
+    TrafficStatType.directDn: LetsColors.seriesDirect,
+    TrafficStatType.proxyUp: LetsColors.accent,
+    TrafficStatType.proxyDn: LetsColors.accent,
   };
 
   @override
@@ -125,19 +126,25 @@ class _SpeedChartState extends State<SpeedChart> {
                     children: <Widget>[
                       Text(
                         "${context.loc.proxy} ↑ ┄┄",
-                        style: TextStyle(color: Colors.blue, fontSize: 10),
+                        style: const TextStyle(color: LetsColors.accent, fontSize: 10),
                       ),
                       Text(
                         "${context.loc.proxy} ↓ ──",
-                        style: TextStyle(color: Colors.blue, fontSize: 10),
+                        style: const TextStyle(color: LetsColors.accent, fontSize: 10),
                       ),
                       Text(
                         "${context.loc.direct} ↑ ┄┄",
-                        style: TextStyle(color: Colors.orange, fontSize: 10),
+                        style: const TextStyle(
+                          color: LetsColors.seriesDirect,
+                          fontSize: 10,
+                        ),
                       ),
                       Text(
                         "${context.loc.direct} ↓ ──",
-                        style: TextStyle(color: Colors.orange, fontSize: 10),
+                        style: const TextStyle(
+                          color: LetsColors.seriesDirect,
+                          fontSize: 10,
+                        ),
                       ),
                     ],
                   ),

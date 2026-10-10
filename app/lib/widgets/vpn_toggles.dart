@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../theme/lets_icons.dart';
 import '../extensions/localization.dart';
 import '../utils/global.dart';
 import '../utils/logger.dart';
@@ -152,7 +153,7 @@ class VPNTogglesState extends State<VPNToggles> {
                       Set<WidgetState> states,
                     ) {
                       return !vPNMan.isTogglingSystemProxy && shouldOn && !isOn
-                          ? Icon(Icons.priority_high)
+                          ? const Icon(LetsIcons.warning)
                           : null;
                     }),
                   );
@@ -178,7 +179,7 @@ class VPNTogglesState extends State<VPNToggles> {
                     Set<WidgetState> states,
                   ) {
                     return !vPNMan.isTogglingTun && shouldOn && !isOn
-                        ? Icon(Icons.priority_high)
+                        ? const Icon(LetsIcons.warning)
                         : null;
                   }),
                 );

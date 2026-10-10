@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'package:skeletonizer/skeletonizer.dart';
 
+import '../theme/lets_icons.dart';
 import '../extensions/localization.dart';
 import '../utils/method_channel.dart';
 
@@ -220,7 +221,7 @@ class _InstalledAppScreenState extends State<InstalledAppScreen> {
               : Text(title),
           actions: [
             IconButton(
-              icon: Icon(isEditingSearchQuery ? Icons.close : Icons.search),
+              icon: Icon(isEditingSearchQuery ? LetsIcons.close : LetsIcons.search),
               onPressed: () {
                 final wasEditingSearchQuery = isEditingSearchQuery;
                 setState(() {

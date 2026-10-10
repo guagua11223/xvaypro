@@ -13,6 +13,7 @@ import '../utils/logger.dart';
 import '../utils/permission_manager.dart';
 import '../utils/runtime_platform.dart';
 import '../utils/show_snack_bar_now.dart';
+import '../theme/lets_icons.dart';
 import '../widgets/form/progress_button.dart';
 
 import 'asset.dart';
@@ -275,7 +276,7 @@ class _CoreScreenState extends State<CoreScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(LetsIcons.add),
             onPressed: () {
               Navigator.push(
                 context,
@@ -307,7 +308,7 @@ class _CoreScreenState extends State<CoreScreen> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.add),
+            icon: const Icon(LetsIcons.add),
             onPressed: () {
               Navigator.push(
                 context,
@@ -356,7 +357,7 @@ class _CoreScreenState extends State<CoreScreen> {
               ),
             ),
             IconButton(
-              icon: const Icon(Icons.folder_open),
+              icon: const Icon(LetsIcons.folder),
               onPressed: _selectWorkingDir,
             ),
           ],

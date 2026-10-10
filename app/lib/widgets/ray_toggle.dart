@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../theme/lets_icons.dart';
 import '../utils/logger.dart';
 import '../utils/show_snack_bar_now.dart';
 import '../utils/vpn_manager.dart';
@@ -67,8 +68,8 @@ class RayToggleState extends State<RayToggle> {
                   child: const CircularProgressIndicator(),
                 )
               : vPNMan.isCoreActive
-              ? const Icon(Icons.stop)
-              : const Icon(Icons.play_arrow),
+              ? const Icon(LetsIcons.stop)
+              : const Icon(LetsIcons.play),
         );
       },
     );

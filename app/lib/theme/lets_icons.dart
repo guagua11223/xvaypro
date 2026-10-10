@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 
 import 'lets_colors.dart';
 
-/// Outlined Material icons, one size. Filled glyphs are not used for navigation.
+/// One outlined icon family, one size.
 class LetsIcons {
   static const size = 22.0;
 
   static const menu = Icons.menu;
   static const back = Icons.arrow_back;
   static const chevron = Icons.chevron_right;
-  static const more = Icons.more_horiz;
+  static const more = Icons.more_horiz_outlined;
 
   static const account = Icons.account_circle_outlined;
   static const region = Icons.public_outlined;
@@ -29,9 +29,23 @@ class LetsIcons {
   static const override = Icons.build_outlined;
 
   static const power = Icons.power_settings_new_outlined;
-  static const sync = Icons.sync;
+  static const sync = Icons.sync_outlined;
   static const bolt = Icons.flash_on_outlined;
   static const shield = Icons.shield_outlined;
+
+  static const add = Icons.add;
+  static const close = Icons.close;
+  static const search = Icons.search;
+  static const check = Icons.check;
+  static const refresh = Icons.refresh;
+  static const copy = Icons.copy_outlined;
+  static const folder = Icons.folder_open_outlined;
+  static const selected = Icons.check_circle_outline;
+  static const unselected = Icons.radio_button_unchecked;
+  static const play = Icons.play_arrow_outlined;
+  static const stop = Icons.stop_outlined;
+  static const warning = Icons.priority_high;
+  static const open = Icons.open_in_new;
 }
 
 class LetsIcon extends StatelessWidget {
@@ -47,6 +61,25 @@ class LetsIcon extends StatelessWidget {
       icon,
       size: size,
       color: color ?? LetsColors.of(context).text,
+    );
+  }
+}
+
+class LetsMark extends StatelessWidget {
+  const LetsMark({super.key, this.size = 64});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(size * 0.22),
+      child: Image.asset(
+        'assets/icon/icon.png',
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+      ),
     );
   }
 }

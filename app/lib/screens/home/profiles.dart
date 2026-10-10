@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:smooth_highlight/smooth_highlight.dart';
 
 import '../../extensions/localization.dart';
+import '../../theme/lets_colors.dart';
 import '../../theme/lets_icons.dart';
 import '../../models/profile_group.dart';
 import '../../screens/profile_group.dart';
@@ -581,7 +582,7 @@ class _ProfileListState extends State<ProfileList> {
         actions: [
           SmoothHighlight(
             enabled: _highlightProfilesPopupMenuButton,
-            color: Colors.grey,
+            color: LetsColors.divider,
               child: PopupMenuButton(
                 icon: const Icon(LetsIcons.more),
               itemBuilder: (context) => ProfilesAction.values
@@ -643,12 +644,12 @@ class _ProfileListState extends State<ProfileList> {
                             } else if (value == -1) {
                               return Text.rich(
                                 TextSpan(text: "timeout"),
-                                style: TextStyle(color: Colors.red),
+                                style: const TextStyle(color: LetsColors.danger),
                               );
                             } else {
                               return Text.rich(
                                 TextSpan(text: "${value}ms"),
-                                style: TextStyle(color: Colors.blue),
+                                style: const TextStyle(color: LetsColors.accent),
                               );
                             }
                           },

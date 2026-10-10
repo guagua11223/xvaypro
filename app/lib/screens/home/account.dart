@@ -305,7 +305,7 @@ class _AccountScreenState extends State<AccountScreen> {
               tooltip: '刷新',
               onPressed: _busy ? null : _refresh,
               color: palette.onBar,
-              icon: const Icon(Icons.refresh, size: LetsIcons.size),
+              icon: const Icon(LetsIcons.refresh, size: LetsIcons.size),
             ),
         ],
       ),
@@ -413,7 +413,7 @@ class _AccountScreenState extends State<AccountScreen> {
             IconButton(
               tooltip: '复制 ID',
               onPressed: () => _copy('${_profile['id'] ?? ''}', '已复制 ID'),
-              icon: Icon(Icons.copy_outlined, color: palette.muted, size: 20),
+              icon: Icon(LetsIcons.copy, color: palette.muted, size: LetsIcons.size),
             ),
           ],
         ),
@@ -932,7 +932,7 @@ class _AccountScreenState extends State<AccountScreen> {
               child: Padding(
                 padding: const EdgeInsets.only(left: 8),
                 child: Icon(
-                  Icons.copy_outlined,
+                  LetsIcons.copy,
                   size: 18,
                   color: palette.muted,
                 ),

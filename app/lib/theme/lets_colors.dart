@@ -1,28 +1,36 @@
 import 'package:flutter/material.dart';
 
-/// One accent, cool gray surfaces. Radius: buttons are pills, cards are 16, inputs are 12.
+/// Connectivity palette. One cyan accent, navy ink, 8pt radius system:
+/// cards 16, inputs and buttons 12.
 class LetsColors {
-  static const accent = Color(0xFF2457D6);
-  static const accentPressed = Color(0xFF1C46B0);
-  static const onAccent = Color(0xFFF7F8FA);
+  static const accent = Color(0xFF0E7490);
+  static const accentPressed = Color(0xFF155E75);
+  static const onAccent = Color(0xFFF8FAFC);
 
-  static const pageBg = Color(0xFFF4F5F7);
-  static const surface = Color(0xFFF7F8FA);
-  static const ink = Color(0xFF1C2430);
-  static const textPrimary = Color(0xFF1C1E24);
-  static const textSecondary = Color(0xFF5C6370);
-  static const divider = Color(0xFFD5D8DE);
-  static const white = Color(0xFFF7F8FA);
+  static const pageBg = Color(0xFFF8FAFC);
+  static const surface = Color(0xFFFFFFFF);
+  static const ink = Color(0xFF0F172A);
+  static const textPrimary = Color(0xFF020617);
+  static const textSecondary = Color(0xFF475569);
+  static const divider = Color(0xFFE2E8F0);
+  static const white = Color(0xFFF8FAFC);
 
-  static const splash = Color(0xFF12141A);
-  static const pageBgDark = Color(0xFF12141A);
-  static const surfaceDark = Color(0xFF1C1F27);
-  static const textPrimaryDark = Color(0xFFF2F3F5);
-  static const textSecondaryDark = Color(0xFFA7ADB8);
-  static const dividerDark = Color(0xFF2C313C);
+  static const danger = Color(0xFFDC2626);
+  static const seriesDirect = Color(0xFF64748B);
+
+  static const splash = Color(0xFF020617);
+  static const pageBgDark = Color(0xFF020617);
+  static const surfaceDark = Color(0xFF0F172A);
+  static const textPrimaryDark = Color(0xFFF8FAFC);
+  static const textSecondaryDark = Color(0xFF94A3B8);
+  static const dividerDark = Color(0xFF1E293B);
 
   static const radiusCard = 16.0;
   static const radiusInput = 12.0;
+
+  static const buttonShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.all(Radius.circular(radiusInput)),
+  );
 
   static LetsPalette of(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
@@ -44,7 +52,7 @@ class LetsColors {
       titleTextStyle: TextStyle(
         color: foreground,
         fontSize: 18,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
       ),
     );
   }
@@ -85,7 +93,7 @@ class LetsPalette {
     text: LetsColors.textPrimaryDark,
     muted: LetsColors.textSecondaryDark,
     line: LetsColors.dividerDark,
-    bar: Color(0xFF161A22),
+    bar: LetsColors.pageBgDark,
     onBar: LetsColors.textPrimaryDark,
   );
 }

@@ -294,8 +294,8 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                                                 const SizedBox(width: 8),
                                                 Icon(
                                                   selected
-                                                      ? Icons.check_circle_outline
-                                                      : Icons.radio_button_unchecked,
+                                                      ? LetsIcons.selected
+                                                      : LetsIcons.unselected,
                                                   size: LetsIcons.size,
                                                   color: selected
                                                       ? LetsColors.accent

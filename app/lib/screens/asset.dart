@@ -13,6 +13,7 @@ import '../utils/logger.dart';
 import '../utils/platform_file_mananger.dart';
 import '../utils/runtime_platform.dart';
 import '../utils/show_snack_bar_now.dart';
+import '../theme/lets_icons.dart';
 import '../widgets/form/progress_button.dart';
 
 class AssetScreen extends StatefulWidget {
@@ -191,13 +192,13 @@ class _AssetScreenState extends State<AssetScreen> {
           ),
           if (_assetType == AssetType.local)
             IconButton(
-              icon: Icon(Icons.folder_open),
+              icon: const Icon(LetsIcons.folder),
               onPressed: _selectAssetPath,
             ),
           if (_assetType == AssetType.remote)
             IconButton(
               icon: Icon(
-                RuntimePlatform.isAndroid ? Icons.copy : Icons.folder_open,
+                RuntimePlatform.isAndroid ? LetsIcons.copy : LetsIcons.folder,
               ),
               onPressed: () {
                 final filePath = _assetPathController.text;
