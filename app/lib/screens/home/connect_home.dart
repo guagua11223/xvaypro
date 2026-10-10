@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../extensions/localization.dart';
 import '../../theme/lets_colors.dart';
@@ -37,6 +38,9 @@ class _ConnectHomeState extends State<ConnectHome> {
   Duration _elapsed = Duration.zero;
   bool _preparing = false;
   String _quota = '';
+  List<Map<String, dynamic>> _banners = [];
+  bool _promoAsked = false;
+  bool _promoLoading = false;
 
   @override
   void initState() {
@@ -74,6 +78,75 @@ class _ConnectHomeState extends State<ConnectHome> {
       _ticker?.cancel();
       _ticker = null;
     }
+  }
+
+  void _ensurePromos() {
+    if (!XvayAccount().isLoggedIn || _promoAsked || _promoLoading) return;
+    _promoLoading = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _loadPromos();
+    });
+  }
+
+  Future<void> _loadPromos() async {
+    final account = XvayAccount();
+    if (!account.isLoggedIn || _promoAsked) {
+      _promoLoading = false;
+      return;
+    }
+    _promoAsked = true;
+    _promoLoading = false;
+    try {
+      final ads = await account.apiGet('/api/ads');
+      final notices = await account.apiGet('/api/announcements');
+      if (!mounted) return;
+      final allAds = _maps(ads['ads']);
+      final allNotices = _maps(notices['announcements']);
+      setState(() {
+        _banners = allAds.where((item) => item['slot'] == 'home_banner').toList();
+      });
+      final popup = allAds.where((item) => item['slot'] == 'popup').toList();
+      if (popup.isEmpty && allNotices.isEmpty) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) {
+          final ad = popup.isEmpty ? null : popup.first;
+          final notice = allNotices.isEmpty ? null : allNotices.first;
+          return AlertDialog(
+            title: Text('${notice?['title'] ?? ad?['title'] ?? '公告'}'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (notice != null)
+                  Text('${notice['body'] ?? ''}', style: const TextStyle(height: 1.4)),
+                if (ad != null && '${ad['imageUrl'] ?? ''}'.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  GestureDetector(
+                    onTap: () => _openLink('${ad['linkUrl'] ?? ''}'),
+                    child: Image.network('${ad['imageUrl']}', height: 120, fit: BoxFit.cover),
+                  ),
+                ],
+              ],
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('知道了')),
+            ],
+          );
+        },
+      );
+    } catch (_) {}
+  }
+
+  List<Map<String, dynamic>> _maps(Object? raw) {
+    if (raw is! List) return [];
+    return raw.whereType<Map>().map((item) => Map<String, dynamic>.from(item)).toList();
+  }
+
+  Future<void> _openLink(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> _loadQuota() async {
@@ -151,6 +224,7 @@ class _ConnectHomeState extends State<ConnectHome> {
 
   @override
   Widget build(BuildContext context) {
+    _ensurePromos();
     final palette = LetsColors.of(context);
     return ColoredBox(
       color: palette.page,
@@ -161,6 +235,41 @@ class _ConnectHomeState extends State<ConnectHome> {
             automaticallyImplyLeading: widget.showMenuButton,
             onLeadingTap: widget.showMenuButton ? widget.onOpenDrawer : null,
           ),
+          if (_banners.isNotEmpty)
+            SizedBox(
+              height: 96,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                itemCount: _banners.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (context, index) {
+                  final ad = _banners[index];
+                  final image = '${ad['imageUrl'] ?? ''}';
+                  return GestureDetector(
+                    onTap: () => _openLink('${ad['linkUrl'] ?? ''}'),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(LetsColors.radiusInput),
+                      child: SizedBox(
+                        width: 220,
+                        child: image.isEmpty
+                            ? ColoredBox(
+                                color: palette.surface,
+                                child: Center(child: Text('${ad['title'] ?? ''}')),
+                              )
+                            : Image.network(
+                                image,
+                                fit: BoxFit.cover,
+                                errorBuilder: (_, _, _) => Center(
+                                  child: Text('${ad['title'] ?? ''}'),
+                                ),
+                              ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
           Material(
             color: palette.page,
             child: InkWell(

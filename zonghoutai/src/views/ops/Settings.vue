@@ -29,8 +29,8 @@ const services = ref([])
 const tickets = ref([])
 const staff = ref([])
 const logs = ref([])
-const notice = reactive({ title: '', body: '', noticeType: 'notice', startsAt: 0, endsAt: 0, status: '1' })
-const ad = reactive({ slot: 'home_banner', title: '', imageUrl: '', linkUrl: '', sortOrder: 0, status: 1 })
+const notice = reactive({ id: 0, title: '', body: '', noticeType: 'notice', startsAt: '', endsAt: '', status: '1' })
+const ad = reactive({ id: 0, slot: 'home_banner', title: '', imageUrl: '', linkUrl: '', sortOrder: 0, startsAt: '', endsAt: '', status: 1 })
 const service = reactive({ channel: 'wechat', account: '', qrUrl: '', sortOrder: 0, enabled: 1 })
 const staffForm = reactive({ username: '', password: '', role: 'support' })
 
@@ -74,16 +74,60 @@ async function saveMail() {
   ElMessage.success('邮件配置已保存')
 }
 
+function asMs(value) {
+  if (value === '' || value == null) return 0
+  const n = Number(value)
+  return Number.isFinite(n) ? n : 0
+}
+
+function stamp(value) {
+  const n = Number(value || 0)
+  if (!n) return ''
+  return new Date(n).toLocaleString()
+}
+
 async function addNotice() {
-  await adminRequest('/api/admin/notices', { method: 'POST', body: notice })
+  await adminRequest('/api/admin/notices', {
+    method: 'POST',
+    body: { ...notice, startsAt: asMs(notice.startsAt), endsAt: asMs(notice.endsAt) },
+  })
   notices.value = (await adminRequest('/api/admin/notices')).announcements || []
-  ElMessage.success('公告已发布')
+  notice.id = 0
+  ElMessage.success('公告已保存')
+}
+
+function editNotice(row) {
+  Object.assign(notice, {
+    id: row.id, title: row.title, body: row.body, noticeType: row.noticeType || 'notice',
+    startsAt: row.startsAt ? String(row.startsAt) : '',
+    endsAt: row.endsAt ? String(row.endsAt) : '',
+    status: String(row.enabled ?? 1),
+  })
 }
 
 async function addAd() {
-  await adminRequest('/api/admin/ads', { method: 'POST', body: ad })
+  await adminRequest('/api/admin/ads', {
+    method: 'POST',
+    body: { ...ad, startsAt: asMs(ad.startsAt), endsAt: asMs(ad.endsAt), status: Number(ad.status) },
+  })
   ads.value = (await adminRequest('/api/admin/ads')).ads || []
+  ad.id = 0
   ElMessage.success('广告已保存')
+}
+
+function editAd(row) {
+  Object.assign(ad, {
+    id: row.id, slot: row.slot, title: row.title, imageUrl: row.imageUrl, linkUrl: row.linkUrl,
+    sortOrder: row.sortOrder || 0,
+    startsAt: row.startsAt ? String(row.startsAt) : '',
+    endsAt: row.endsAt ? String(row.endsAt) : '',
+    status: row.status ?? 1,
+  })
+}
+
+async function removeAd(row) {
+  await adminRequest(`/api/admin/ads/${row.id}`, { method: 'DELETE' })
+  ads.value = (await adminRequest('/api/admin/ads')).ads || []
 }
 
 async function addService() {
@@ -124,9 +168,9 @@ async function createStaff() {
       <el-tab-pane v-if="full" label="分佣" name="commission">
         <div class="filters">
           <span>分佣池 %</span><el-input-number v-model="commission.poolRate" :min="0" :max="100" />
-          <span>一级</span><el-input-number v-model="commission.level1Rate" :min="0" :max="100" />
-          <span>二级</span><el-input-number v-model="commission.level2Rate" :min="0" :max="100" />
-          <span>三级</span><el-input-number v-model="commission.level3Rate" :min="0" :max="100" />
+          <span>一级 60%</span>
+          <span>二级 30%</span>
+          <span>三级 10%</span>
         </div>
         <div class="filters">
           <span>封顶</span><el-input-number v-model="commission.commissionCap" :min="0" />
@@ -178,22 +222,60 @@ async function createStaff() {
         </el-form>
       </el-tab-pane>
       <el-tab-pane label="公告广告" name="content">
+        <h3>公告</h3>
         <div class="filters">
-          <el-input v-model="notice.title" placeholder="公告标题" style="width: 180px" />
-          <el-input v-model="notice.body" placeholder="内容" style="width: 260px" />
-          <el-button @click="addNotice">发布公告</el-button>
+          <el-input v-model="notice.title" placeholder="标题" style="width: 160px" />
+          <el-input v-model="notice.body" placeholder="内容" style="width: 220px" />
+          <el-select v-model="notice.noticeType" style="width: 120px">
+            <el-option label="公告" value="notice" />
+            <el-option label="活动" value="activity" />
+            <el-option label="维护" value="maintenance" />
+          </el-select>
+          <el-date-picker v-model="notice.startsAt" type="datetime" value-format="x" placeholder="开始时间" />
+          <el-date-picker v-model="notice.endsAt" type="datetime" value-format="x" placeholder="结束时间" />
+          <el-select v-model="notice.status" style="width: 100px">
+            <el-option label="上架" value="1" />
+            <el-option label="下架" value="0" />
+          </el-select>
+          <el-button type="primary" @click="addNotice">保存公告</el-button>
         </div>
+        <el-table :data="notices" size="small" @row-click="editNotice">
+          <el-table-column prop="title" label="标题" min-width="140" />
+          <el-table-column label="类型" width="90">
+            <template #default="{ row }">{{ { notice: '公告', activity: '活动', maintenance: '维护' }[row.noticeType] || row.noticeType }}</template>
+          </el-table-column>
+          <el-table-column label="开始" width="160"><template #default="{ row }">{{ stamp(row.startsAt) }}</template></el-table-column>
+          <el-table-column label="结束" width="160"><template #default="{ row }">{{ stamp(row.endsAt) }}</template></el-table-column>
+          <el-table-column label="状态" width="80"><template #default="{ row }">{{ row.enabled ? '上架' : '下架' }}</template></el-table-column>
+        </el-table>
+        <h3>广告</h3>
         <div class="filters">
           <el-select v-model="ad.slot" style="width: 140px">
             <el-option label="首页 Banner" value="home_banner" />
             <el-option label="弹窗" value="popup" />
             <el-option label="邀请页" value="invite" />
           </el-select>
-          <el-input v-model="ad.title" placeholder="广告标题" style="width: 180px" />
-          <el-input v-model="ad.imageUrl" placeholder="图片地址" style="width: 220px" />
-          <el-button @click="addAd">发布广告</el-button>
+          <el-input v-model="ad.title" placeholder="标题" style="width: 140px" />
+          <el-input v-model="ad.imageUrl" placeholder="图片地址" style="width: 180px" />
+          <el-input v-model="ad.linkUrl" placeholder="链接" style="width: 160px" />
+          <el-input-number v-model="ad.sortOrder" :min="0" />
+          <el-date-picker v-model="ad.startsAt" type="datetime" value-format="x" placeholder="开始时间" />
+          <el-date-picker v-model="ad.endsAt" type="datetime" value-format="x" placeholder="结束时间" />
+          <el-select v-model="ad.status" style="width: 100px">
+            <el-option label="上架" :value="1" />
+            <el-option label="下架" :value="0" />
+          </el-select>
+          <el-button type="primary" @click="addAd">保存广告</el-button>
         </div>
-        <p>公告 {{ notices.length }} 条，广告 {{ ads.length }} 条。</p>
+        <el-table :data="ads" size="small" @row-click="editAd">
+          <el-table-column prop="slot" label="位置" width="120" />
+          <el-table-column prop="title" label="标题" min-width="120" />
+          <el-table-column prop="sortOrder" label="排序" width="70" />
+          <el-table-column label="状态" width="80"><template #default="{ row }">{{ row.status ? '上架' : '下架' }}</template></el-table-column>
+          <el-table-column width="80">
+            <template #default="{ row }"><el-button link type="danger" @click.stop="removeAd(row)">删除</el-button></template>
+          </el-table-column>
+        </el-table>
       </el-tab-pane>
       <el-tab-pane label="客服工单" name="support">
         <div class="filters">
@@ -207,6 +289,12 @@ async function createStaff() {
           <el-input v-model="service.qrUrl" placeholder="二维码地址" style="width: 220px" />
           <el-button @click="addService">保存客服</el-button>
         </div>
+        <el-table :data="services" size="small">
+          <el-table-column prop="channel" label="渠道" width="120" />
+          <el-table-column prop="account" label="账号" min-width="160" />
+          <el-table-column prop="qrUrl" label="二维码" min-width="180" />
+          <el-table-column label="状态" width="80"><template #default="{ row }">{{ row.enabled ? '启用' : '停用' }}</template></el-table-column>
+        </el-table>
         <el-table :data="tickets" size="small">
           <el-table-column prop="username" label="用户" width="120" />
           <el-table-column prop="title" label="标题" min-width="140" />

@@ -561,7 +561,7 @@ func (s *Server) memberJSON(m store.Member, withQuota bool) map[string]any {
 	rate, hasRate, _ := s.db.MemberRate(m.DistributorID, m.ID)
 	distRate, distStatus, _ := s.db.DistributorRate(m.ID)
 	item := map[string]any{
-		"id": m.ID, "username": m.Username, "avatar": m.Avatar, "phone": m.Phone,
+		"id": m.ID, "username": m.Username, "nickname": m.Username, "avatar": m.Avatar, "phone": m.Phone,
 		"email": m.BindEmail, "emailStatus": m.EmailStatus, "userType": memberType(m),
 		"isDistributor": m.IsDistributor, "isAgent": m.IsAgent, "commissionMode": m.CommissionMode,
 		"walletEnabled": m.WalletEnabled, "canAuthorizeAgent": m.CanAuthorizeAgent,

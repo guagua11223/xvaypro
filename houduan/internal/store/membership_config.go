@@ -110,8 +110,9 @@ func (s *Store) CommissionSettings() (map[string]any, error) {
 }
 
 func (s *Store) SaveCommissionSettings(pool, l1, l2, l3, cap, rateCap, distDefault, settleDay float64, three bool) error {
-	if l1 < 0 || l2 < 0 || l3 < 0 || pool < 0 || pool > 100 || l1+l2+l3 > 100 {
-		return errs.New(400, "VALIDATION", "分佣比例不合法，三级合计不能超过 100%")
+	l1, l2, l3 = 60, 30, 10
+	if pool < 0 || pool > 100 {
+		return errs.New(400, "VALIDATION", "分佣池比例须在 0 到 100 之间")
 	}
 	if settleDay < 1 || settleDay > 28 {
 		return errs.New(400, "VALIDATION", "结算日请设在 1 到 28 日")

@@ -34,6 +34,7 @@ class _AccountScreenState extends State<AccountScreen> {
   Map<String, dynamic> _wallet = {};
   Map<String, dynamic> _inviteInfo = {};
   List<Map<String, dynamic>> _notices = [];
+  List<Map<String, dynamic>> _ads = [];
   List<Map<String, dynamic>> _services = [];
   List<Map<String, dynamic>> _tickets = [];
   Uint8List? _qr;
@@ -77,6 +78,7 @@ class _AccountScreenState extends State<AccountScreen> {
       final packages = await _account.apiGet('/api/packages');
       final orders = await _account.apiGet('/api/orders');
       final notices = await _account.apiGet('/api/announcements');
+      final ads = await _account.apiGet('/api/ads');
       final services = await _account.apiGet('/api/customer-service');
       Map<String, dynamic> wallet = {};
       if (profile['walletEnabled'] == 1) {
@@ -96,6 +98,7 @@ class _AccountScreenState extends State<AccountScreen> {
         _wallet = wallet;
         _inviteInfo = invite;
         _notices = _list(notices['announcements']);
+        _ads = _list(ads['ads']);
         _services = _list(services['services']);
         _tickets = _list(tickets['tickets']);
         _qr = qr;
@@ -364,25 +367,14 @@ class _AccountScreenState extends State<AccountScreen> {
         palette,
         Row(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundColor: LetsColors.accent.withValues(alpha: 0.12),
-              child: Text(
-                _initial(),
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                  color: LetsColors.accent,
-                ),
-              ),
-            ),
+            _avatar(),
             const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${_profile['username'] ?? ''}',
+                    _displayName(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -541,6 +533,10 @@ class _AccountScreenState extends State<AccountScreen> {
                 child: Image.memory(_qr!, width: 160, height: 160),
               ),
             ],
+            for (final ad in _ads.where((item) => item['slot'] == 'invite')) ...[
+              const SizedBox(height: 12),
+              _adImage(ad),
+            ],
             if (_list(_inviteInfo['team']).isNotEmpty) ...[
               const SizedBox(height: 12),
               for (final person in _list(_inviteInfo['team']))
@@ -614,7 +610,7 @@ class _AccountScreenState extends State<AccountScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '${item['title']}',
+                    '${_noticeKind(item['noticeType'])} · ${item['title']}',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -643,13 +639,24 @@ class _AccountScreenState extends State<AccountScreen> {
           palette,
           Column(
             children: [
-              for (var i = 0; i < _services.length; i++)
+              for (var i = 0; i < _services.length; i++) ...[
                 _copyLine(
                   palette,
-                  '${_services[i]['channel']}',
+                  _channelName('${_services[i]['channel']}'),
                   '${_services[i]['account']}',
-                  last: i == _services.length - 1,
+                  last: i == _services.length - 1 &&
+                      '${_services[i]['qrUrl'] ?? ''}'.isEmpty,
                 ),
+                if ('${_services[i]['qrUrl'] ?? ''}'.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 8),
+                    child: Image.network(
+                      '${_services[i]['qrUrl']}',
+                      height: 120,
+                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                    ),
+                  ),
+              ],
             ],
           ),
         ),
@@ -1074,10 +1081,89 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
+  String _displayName() {
+    final name = '${_profile['nickname'] ?? _profile['username'] ?? ''}';
+    return name;
+  }
+
   String _initial() {
-    final name = '${_profile['username'] ?? ''}';
-    if (name.isEmpty) return '飞';
+    final name = _displayName();
+    if (name.isEmpty) return '讯';
     return String.fromCharCode(name.runes.first);
+  }
+
+  Widget _avatar() {
+    final url = '${_profile['avatar'] ?? ''}';
+    if (url.startsWith('http')) {
+      return CircleAvatar(
+        radius: 28,
+        backgroundColor: LetsColors.accent.withValues(alpha: 0.12),
+        backgroundImage: NetworkImage(url),
+      );
+    }
+    return CircleAvatar(
+      radius: 28,
+      backgroundColor: LetsColors.accent.withValues(alpha: 0.12),
+      child: Text(
+        _initial(),
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+          color: LetsColors.accent,
+        ),
+      ),
+    );
+  }
+
+  Widget _adImage(Map<String, dynamic> ad) {
+    final image = '${ad['imageUrl'] ?? ''}';
+    return GestureDetector(
+      onTap: () => _openLink('${ad['linkUrl'] ?? ''}'),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(LetsColors.radiusInput),
+        child: image.isEmpty
+            ? Text('${ad['title'] ?? ''}')
+            : Image.network(
+                image,
+                height: 96,
+                width: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (_, _, _) => Text('${ad['title'] ?? ''}'),
+              ),
+      ),
+    );
+  }
+
+  Future<void> _openLink(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null || !uri.hasScheme) return;
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+
+  String _noticeKind(dynamic value) {
+    switch ('$value') {
+      case 'activity':
+        return '活动';
+      case 'maintenance':
+        return '维护';
+      default:
+        return '公告';
+    }
+  }
+
+  String _channelName(String value) {
+    switch (value) {
+      case 'wechat':
+        return '微信';
+      case 'qq':
+        return 'QQ';
+      case 'telegram':
+        return 'Telegram';
+      case 'online':
+        return '在线客服';
+      default:
+        return value;
+    }
   }
 
   String _payName(dynamic value) {

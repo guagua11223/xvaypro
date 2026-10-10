@@ -7,8 +7,12 @@ import { token } from '@/stores/session'
 
 const data = ref({ rules: { example: {} } })
 const qr = ref('')
+const ads = ref([])
 onMounted(async () => {
   data.value = await request('/api/distributor/invite', { token: token() })
+  try {
+    ads.value = ((await request('/api/ads', { token: token() })).ads || []).filter((item) => item.slot === 'invite')
+  } catch (_) {}
   const response = await fetch(`${API_BASE}/api/app/invite/qr.png`, {
     headers: { Authorization: `Bearer ${token()}` },
   })
@@ -42,6 +46,10 @@ async function copy(text) {
       </div>
     </div>
     <img v-if="qr" :src="qr" alt="邀请二维码" width="180" height="180" />
+    <a v-for="ad in ads" :key="ad.id" :href="ad.linkUrl || undefined" target="_blank" rel="noreferrer">
+      <img v-if="ad.imageUrl" :src="ad.imageUrl" :alt="ad.title" style="max-width: 360px; margin-top: 12px" />
+      <p v-else>{{ ad.title }}</p>
+    </a>
     <p>
       系统三级示例：购买 100 元时，一级 {{ data.rules?.example?.level1 ?? '—' }}，二级 {{ data.rules?.example?.level2 ?? '—' }}，三级 {{ data.rules?.example?.level3 ?? '—' }}。
       有经销商归属时不走这套三级。
