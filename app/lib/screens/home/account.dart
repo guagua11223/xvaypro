@@ -351,6 +351,8 @@ class _AccountScreenState extends State<AccountScreen> {
     final traffic = gb is num ? gb.toStringAsFixed(2) : '0.00';
     final inviteCode = '${_inviteInfo['inviteCode'] ?? ''}';
     final inviteUrl = '${_inviteInfo['inviteUrl'] ?? ''}';
+    final parentName = '${_profile['parentName'] ?? _inviteInfo['parentName'] ?? ''}';
+    final invitees = _list(_inviteInfo['invitees']);
     return [
       _card(
         palette,
@@ -390,6 +392,15 @@ class _AccountScreenState extends State<AccountScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 13, color: palette.muted),
                   ),
+                  if (parentName.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '推荐人 $parentName',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: palette.muted),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -517,6 +528,30 @@ class _AccountScreenState extends State<AccountScreen> {
                 '${_inviteInfo['mode']}',
                 style: TextStyle(fontSize: 12, color: palette.muted),
               ),
+            ],
+            const SizedBox(height: 12),
+            Text(
+              '已邀请 ${invitees.length} 人',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
+              ),
+            ),
+            if (invitees.isEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                '把推荐码发给好友，对方注册时填写后会挂到你名下。',
+                style: TextStyle(fontSize: 12, height: 1.4, color: palette.muted),
+              ),
+            ] else ...[
+              for (var i = 0; i < invitees.length && i < 8; i++) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '${invitees[i]['username'] ?? ''} · ID ${invitees[i]['id'] ?? ''}',
+                  style: TextStyle(fontSize: 13, color: palette.text),
+                ),
+              ],
             ],
           ],
         ),

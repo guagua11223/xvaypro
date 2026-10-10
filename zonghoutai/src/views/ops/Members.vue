@@ -80,6 +80,7 @@ async function records(row) {
         <template #default="{ row }">{{ label(EMAIL_STATUS, row.emailStatus) }}</template>
       </el-table-column>
       <el-table-column prop="userType" label="类型" width="90" />
+      <el-table-column prop="inviteCode" label="邀请码" width="110" />
       <el-table-column prop="distributorName" label="上级经销商" min-width="120" />
       <el-table-column prop="parentName" label="推荐人" min-width="120" />
       <el-table-column label="分佣" width="90">

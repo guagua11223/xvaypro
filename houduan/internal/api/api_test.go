@@ -593,6 +593,61 @@ func TestCommerceModes(t *testing.T) {
 	}
 }
 
+func TestRegisterInviteLinksParent(t *testing.T) {
+	cfg := config.Config{
+		DataDir: t.TempDir(), DatabasePath: ":memory:",
+		PublicBaseURL: "http://127.0.0.1:8787", AdminToken: "admin-token",
+		TrialBytes: 1024, TrialDays: 7, SessionTTLMs: 3_600_000, NodeOfflineMs: 180_000,
+	}
+	db, err := store.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	handler := api.New(cfg, db)
+	parent := call(t, handler, http.MethodPost, "/api/app/register", "", map[string]any{
+		"username": "parent1", "password": "password1",
+	})
+	if parent.Status != http.StatusCreated {
+		t.Fatalf("parent %d %s", parent.Status, parent.Raw)
+	}
+	invite := call(t, handler, http.MethodGet, "/api/invite", parent.Data["token"].(string), nil)
+	code := invite.Data["inviteCode"].(string)
+	if code == "" {
+		t.Fatal("missing invite code")
+	}
+	child := call(t, handler, http.MethodPost, "/api/app/register", "", map[string]any{
+		"username": "child1", "password": "password1", "inviteCode": strings.ToUpper(code),
+	})
+	if child.Status != http.StatusCreated {
+		t.Fatalf("child %d %s", child.Status, child.Raw)
+	}
+	profile := call(t, handler, http.MethodGet, "/api/user/profile", child.Data["token"].(string), nil)
+	if profile.Data["parentId"].(float64) != parent.Data["user"].(map[string]any)["id"].(float64) {
+		t.Fatalf("parent not linked: %s", profile.Raw)
+	}
+	if profile.Data["parentName"] != "parent1" {
+		t.Fatalf("parent name %v", profile.Data["parentName"])
+	}
+	team := call(t, handler, http.MethodGet, "/api/invite", parent.Data["token"].(string), nil)
+	invitees, _ := team.Data["invitees"].([]any)
+	if len(invitees) != 1 || invitees[0].(map[string]any)["username"] != "child1" {
+		t.Fatalf("invitees %s", team.Raw)
+	}
+	bad := call(t, handler, http.MethodPost, "/api/app/register", "", map[string]any{
+		"username": "orphan", "password": "password1", "inviteCode": "bad-code",
+	})
+	if bad.Status != http.StatusBadRequest {
+		t.Fatalf("bad invite %d %s", bad.Status, bad.Raw)
+	}
+	taken := call(t, handler, http.MethodPost, "/api/app/login", "", map[string]any{
+		"username": "orphan", "password": "password1",
+	})
+	if taken.Status != http.StatusUnauthorized {
+		t.Fatalf("orphan should not remain %d %s", taken.Status, taken.Raw)
+	}
+}
+
 func TestPackagesUseAdminPlans(t *testing.T) {
 	cfg := config.Config{
 		DataDir: t.TempDir(), DatabasePath: ":memory:",
