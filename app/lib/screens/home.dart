@@ -19,6 +19,7 @@ import '../widgets/home_drawer_panel.dart';
 
 import 'home/connect_home.dart';
 import 'home/guide.dart';
+import 'lets/lets_shell.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -75,8 +76,11 @@ class _HomePageState extends State<HomePage> with WindowListener, TrayListener {
       );
     }
 
-    final isWide =
-        !RuntimePlatform.isWindows && MediaQuery.sizeOf(context).width >= 900;
+    if (RuntimePlatform.isWindows) {
+      return const LetsShell();
+    }
+
+    final isWide = MediaQuery.sizeOf(context).width >= 900;
 
     if (isWide) {
       return Scaffold(

@@ -33,8 +33,8 @@ class PrefsManager {
     'app.ping.http.url': "http://www.gstatic.com/generate_204",
     'app.ping.maxConcurrency': 8,
     'app.notification.foreground': RuntimePlatform.isAndroid,
-    'app.window.size.width': 1280.0,
-    'app.window.size.height': 720.0,
+    'app.window.size.width': RuntimePlatform.isWindows ? 980.0 : 1280.0,
+    'app.window.size.height': RuntimePlatform.isWindows ? 640.0 : 720.0,
     'app.window.isMaximized': false,
     'app.window.closeToTray':
         RuntimePlatform.isWindows ||

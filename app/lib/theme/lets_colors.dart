@@ -32,6 +32,15 @@ class LetsColors {
     borderRadius: BorderRadius.all(Radius.circular(radiusInput)),
   );
 
+  /// Windows desktop shell (Lets-style sidebar).
+  static const deskBlue = Color(0xFF1877F2);
+  static const deskBlueDark = Color(0xFF1464D0);
+  static const deskPink = Color(0xFFD6538D);
+  static const deskPinkDark = Color(0xFFC0447A);
+  static const deskSidebar = Color(0xFFEEF1F5);
+  static const deskPage = Color(0xFFF7F8FA);
+  static const deskBanner = Color(0xFFE8F1FC);
+
   static LetsPalette of(BuildContext context) {
     final dark = Theme.of(context).brightness == Brightness.dark;
     return dark ? LetsPalette.dark : LetsPalette.light;

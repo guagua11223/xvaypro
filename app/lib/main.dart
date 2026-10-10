@@ -87,14 +87,14 @@ void main(List<String> args) async {
     var height = prefs.getDouble("app.window.size.height")!;
     var isMaximized = prefs.getBool("app.window.isMaximized")!;
     if (RuntimePlatform.isWindows &&
-        (width < 390 || width > 520 || height < 680 || isMaximized)) {
-      width = 420;
-      height = 844;
+        (width < 900 || height < 560 || isMaximized)) {
+      width = 980;
+      height = 640;
       isMaximized = false;
     }
     WindowOptions windowOptions = WindowOptions(
       size: Size(width, height),
-      minimumSize: RuntimePlatform.isWindows ? const Size(390, 720) : null,
+      minimumSize: RuntimePlatform.isWindows ? const Size(900, 560) : null,
       center: RuntimePlatform.isWindows ? true : null,
       backgroundColor: RuntimePlatform.isWindows
           ? LetsColors.pageBg
