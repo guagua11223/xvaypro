@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -21,6 +23,9 @@ class _AccountScreenState extends State<AccountScreen> {
   final _account = XvayAccount();
   final _email = TextEditingController();
   final _code = TextEditingController();
+  final _withdraw = TextEditingController();
+  final _ticketTitle = TextEditingController();
+  final _ticketBody = TextEditingController();
   bool _busy = false;
   String? _message;
   Map<String, dynamic> _profile = {};
@@ -30,6 +35,8 @@ class _AccountScreenState extends State<AccountScreen> {
   Map<String, dynamic> _inviteInfo = {};
   List<Map<String, dynamic>> _notices = [];
   List<Map<String, dynamic>> _services = [];
+  List<Map<String, dynamic>> _tickets = [];
+  Uint8List? _qr;
 
   bool get _loggedIn => _account.isLoggedIn;
 
@@ -43,6 +50,9 @@ class _AccountScreenState extends State<AccountScreen> {
   void dispose() {
     _email.dispose();
     _code.dispose();
+    _withdraw.dispose();
+    _ticketTitle.dispose();
+    _ticketBody.dispose();
     super.dispose();
   }
 
@@ -67,6 +77,11 @@ class _AccountScreenState extends State<AccountScreen> {
         wallet = await _account.apiGet('/api/wallet');
       }
       final invite = await _account.apiGet('/api/invite');
+      final tickets = await _account.apiGet('/api/user/tickets');
+      Uint8List? qr;
+      try {
+        qr = await _account.apiBytes('/api/app/invite/qr.png');
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
         _profile = profile;
@@ -76,6 +91,8 @@ class _AccountScreenState extends State<AccountScreen> {
         _inviteInfo = invite;
         _notices = _list(notices['announcements']);
         _services = _list(services['services']);
+        _tickets = _list(tickets['tickets']);
+        _qr = qr;
         _message = null;
       });
       if (profile['emailStatus'] != 2 && mounted) {
@@ -188,6 +205,51 @@ class _AccountScreenState extends State<AccountScreen> {
       setState(
         () => _message = opened ? '已打开支付页面，完成后请刷新' : '无法打开支付页面',
       );
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _withdrawMoney() async {
+    final amount = double.tryParse(_withdraw.text.trim());
+    if (amount == null || amount <= 0) {
+      setState(() => _message = '请填写提现金额');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await _account.apiPost('/api/wallet/withdraw', {'amount': amount});
+      _withdraw.clear();
+      if (mounted) setState(() => _message = '提现申请已提交，等待审核');
+      await _refresh();
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _submitTicket() async {
+    if (_ticketTitle.text.trim().isEmpty || _ticketBody.text.trim().isEmpty) {
+      setState(() => _message = '请填写工单标题和内容');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await _account.apiPost('/api/user/tickets', {
+        'title': _ticketTitle.text.trim(),
+        'body': _ticketBody.text.trim(),
+      });
+      _ticketTitle.clear();
+      _ticketBody.clear();
+      if (mounted) setState(() => _message = '工单已提交');
+      await _refresh();
     } catch (error) {
       if (mounted) {
         setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
@@ -347,8 +409,19 @@ class _AccountScreenState extends State<AccountScreen> {
           Expanded(child: _stat(palette, '剩余时长', '$days 天')),
         ],
       ),
+      if (days > 0 && days <= 3) ...[
+        const SizedBox(height: 12),
+        _note(palette, '套餐将在 $days 天后到期。续费会按新套餐重新计算流量，到期流量不结转。'),
+      ],
       const SizedBox(height: 20),
-      _heading(palette, '购买节点'),
+      _heading(palette, '购买 / 续费'),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+        child: Text(
+          '支付走四方支付。续费成功后流量按新套餐重置，不结转剩余流量。',
+          style: TextStyle(fontSize: 13, height: 1.4, color: palette.muted),
+        ),
+      ),
       if (_hasUnpaid)
         Padding(
           padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
@@ -372,10 +445,44 @@ class _AccountScreenState extends State<AccountScreen> {
             children: [
               _kv(palette, '推荐获利', '¥${_wallet['totalIncome'] ?? 0}'),
               _kv(palette, '可提现', '¥${_wallet['balance'] ?? 0}'),
-              _kv(palette, '冻结', '¥${_wallet['frozen'] ?? 0}', last: true),
+              _kv(palette, '冻结', '¥${_wallet['frozen'] ?? 0}'),
+              _kv(
+                palette,
+                '负余额',
+                '¥${_wallet['negativeBalance'] ?? 0}',
+                last: true,
+              ),
             ],
           ),
         ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _withdraw,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: _fieldDecoration(palette, '提现金额'),
+        ),
+        const SizedBox(height: 8),
+        _primaryButton(
+          label: '申请提现',
+          onPressed: _busy ? null : _withdrawMoney,
+        ),
+        if (_list(_wallet['commissions']).isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _heading(palette, '返利明细'),
+          _card(
+            palette,
+            Column(
+              children: [
+                for (final row in _list(_wallet['commissions']))
+                  _kv(
+                    palette,
+                    '${row['fromUsername'] ?? row['fromUserId'] ?? ''} · ${row['level'] ?? ''}级',
+                    '¥${row['amount'] ?? 0}',
+                  ),
+              ],
+            ),
+          ),
+        ],
       ],
       const SizedBox(height: 8),
       _heading(palette, '推荐有奖'),
@@ -388,6 +495,21 @@ class _AccountScreenState extends State<AccountScreen> {
             if (inviteUrl.isNotEmpty) ...[
               const SizedBox(height: 10),
               _copyLine(palette, '推荐链接', inviteUrl),
+            ],
+            if (_qr != null) ...[
+              const SizedBox(height: 12),
+              Center(
+                child: Image.memory(_qr!, width: 160, height: 160),
+              ),
+            ],
+            if (_list(_inviteInfo['team']).isNotEmpty) ...[
+              const SizedBox(height: 12),
+              for (final person in _list(_inviteInfo['team']))
+                _kv(
+                  palette,
+                  '${person['username'] ?? ''}',
+                  '${person['userTypeLabel'] ?? person['userType'] ?? ''} · ${person['level'] ?? ''}级',
+                ),
             ],
             if ('${_inviteInfo['mode'] ?? ''}'.isNotEmpty) ...[
               const SizedBox(height: 8),
@@ -498,6 +620,40 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
             const SizedBox(height: 8),
             _primaryButton(label: '绑定邮箱', onPressed: _busy ? null : _bind),
+          ],
+        ),
+      ),
+      const SizedBox(height: 8),
+      _heading(palette, '提交工单'),
+      _card(
+        palette,
+        Column(
+          children: [
+            TextField(
+              controller: _ticketTitle,
+              decoration: _fieldDecoration(palette, '标题'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _ticketBody,
+              minLines: 2,
+              maxLines: 4,
+              decoration: _fieldDecoration(palette, '内容'),
+            ),
+            const SizedBox(height: 12),
+            _primaryButton(
+              label: '提交工单',
+              onPressed: _busy ? null : _submitTicket,
+            ),
+            if (_tickets.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              for (final ticket in _tickets)
+                _kv(
+                  palette,
+                  '${ticket['title'] ?? ''}',
+                  '${ticket['status'] ?? ''}',
+                ),
+            ],
           ],
         ),
       ),

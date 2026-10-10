@@ -34,7 +34,7 @@ onMounted(() => {
     <div class="page-head">
       <div>
         <h2>概览</h2>
-        <p>对照 AnyPortal 的线路、内核与连接配置，汇总用户和代理分佣。</p>
+        <p>会员、订单、佣金和提现按讯连宝的分佣规则汇总。经销商模式和系统三级分佣不叠加。</p>
       </div>
     </div>
     <div class="stat-grid">

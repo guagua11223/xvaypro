@@ -284,6 +284,12 @@ func Open(cfg config.Config) (*Store, error) {
 
 func (s *Store) Close() error { return s.db.Close() }
 
+func (s *Store) BackupTo(path string) error {
+	escaped := strings.ReplaceAll(path, "'", "''")
+	_, err := s.db.Exec(`VACUUM INTO '` + escaped + `'`)
+	return err
+}
+
 func sqliteDSN(path string) (string, error) {
 	query := "_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
 	if path == ":memory:" {

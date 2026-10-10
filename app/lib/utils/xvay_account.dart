@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:http/http.dart' as http;
@@ -45,6 +46,21 @@ class XvayAccount {
     final data = _decode(response)['data'];
     if (data is! Map) throw Exception('响应缺少内容');
     return Map<String, dynamic>.from(data);
+  }
+
+  Future<Uint8List> apiBytes(String path) async {
+    final current = token;
+    if (current == null || current.isEmpty) {
+      throw Exception('尚未登录');
+    }
+    final response = await _client.get(
+      Uri.parse('$kBackendBase$path'),
+      headers: {'Authorization': 'Bearer $current'},
+    );
+    if (response.statusCode >= 400) {
+      throw Exception('二维码加载失败');
+    }
+    return response.bodyBytes;
   }
 
   Future<Map<String, dynamic>> apiPost(String path, Map<String, dynamic> body, {bool auth = true}) async {

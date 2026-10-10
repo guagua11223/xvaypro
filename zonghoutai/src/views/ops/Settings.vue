@@ -32,6 +32,11 @@ onMounted(async () => {
   logs.value = (await adminRequest('/api/admin/system/logs')).logs || []
 })
 
+async function backup() {
+  const data = await adminRequest('/api/admin/system/backup', { method: 'POST', body: {} })
+  ElMessage.success(`已备份 ${data.file}`)
+}
+
 async function saveCommission() {
   Object.assign(commission, await adminRequest('/api/admin/commission-settings', { method: 'POST', body: { ...commission } }))
   ElMessage.success('分佣设置已保存，两种模式不可叠加')
@@ -83,6 +88,7 @@ async function setRole(row) {
         <h2>规则与系统</h2>
         <p>系统三级按分佣池分配。经销商自定义只发给直接推荐人。示例按 100 元、手续费 0 计算。</p>
       </div>
+      <el-button @click="backup">备份数据库</el-button>
     </div>
     <el-tabs v-model="tab">
       <el-tab-pane label="分佣" name="commission">

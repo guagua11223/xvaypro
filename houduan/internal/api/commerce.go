@@ -36,9 +36,6 @@ func (s *Server) userProfile(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) listPackages(w http.ResponseWriter, r *http.Request) error {
-	if _, err := s.requireUser(r); err != nil {
-		return err
-	}
 	list, err := s.db.SellablePackages()
 	if err != nil {
 		return err
@@ -159,9 +156,15 @@ func (s *Server) userInvite(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	team, err := s.teamItems(user.ID)
+	if err != nil {
+		return err
+	}
 	writeOK(w, http.StatusOK, map[string]any{
 		"inviteCode": member.InviteCode,
 		"inviteUrl":  link,
+		"qrUrl":      "/api/app/invite/qr.png",
+		"team":       team,
 		"mode":       "三级推荐：直接推荐人为一级，其上两级为二级、三级。有经销商归属时只按经销商规则返佣，不叠加。",
 		"rules":      settings,
 	})

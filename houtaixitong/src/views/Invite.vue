@@ -2,11 +2,17 @@
 import { onMounted, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { request } from '@/api'
+import { API_BASE } from '@/config'
 import { token } from '@/stores/session'
 
 const data = ref({ rules: { example: {} } })
+const qr = ref('')
 onMounted(async () => {
   data.value = await request('/api/distributor/invite', { token: token() })
+  const response = await fetch(`${API_BASE}/api/app/invite/qr.png`, {
+    headers: { Authorization: `Bearer ${token()}` },
+  })
+  if (response.ok) qr.value = URL.createObjectURL(await response.blob())
 })
 
 async function copy(text) {
@@ -35,6 +41,7 @@ async function copy(text) {
         <el-button link type="primary" @click="copy(data.inviteUrl)">复制链接</el-button>
       </div>
     </div>
+    <img v-if="qr" :src="qr" alt="邀请二维码" width="180" height="180" />
     <p>
       系统三级示例：购买 100 元时，一级 {{ data.rules?.example?.level1 ?? '—' }}，二级 {{ data.rules?.example?.level2 ?? '—' }}，三级 {{ data.rules?.example?.level3 ?? '—' }}。
       有经销商归属时不走这套三级。

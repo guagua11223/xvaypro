@@ -1,9 +1,9 @@
 window.XVAY = {
   plans: [
-    { id: "week", days: 7, priceZh: "¥12", priceEn: "$2", nameZh: "7 天", nameEn: "7 days", noteZh: "先用一周看看", noteEn: "Try a full week" },
-    { id: "month", days: 30, priceZh: "¥28", priceEn: "$4", nameZh: "1 个月", nameEn: "1 month", noteZh: "最常被选", noteEn: "Most picked", featured: true },
-    { id: "quarter", days: 90, priceZh: "¥68", priceEn: "$10", nameZh: "3 个月", nameEn: "3 months", noteZh: "够用一个季节", noteEn: "A season of access" },
-    { id: "year", days: 365, priceZh: "¥168", priceEn: "$24", nameZh: "12 个月", nameEn: "12 months", noteZh: "算下来最省", noteEn: "Lowest by month" }
+    { id: "week", days: 7, gb: 50, priceZh: "¥15", priceEn: "¥15", nameZh: "1 周", nameEn: "1 week", noteZh: "50 GB，到期清零", noteEn: "50 GB, cleared at expiry" },
+    { id: "month", days: 30, gb: 200, priceZh: "¥45", priceEn: "¥45", nameZh: "1 个月", nameEn: "1 month", noteZh: "200 GB，最常被选", noteEn: "200 GB, most picked", featured: true },
+    { id: "quarter", days: 90, gb: 600, priceZh: "¥120", priceEn: "¥120", nameZh: "1 季度", nameEn: "1 quarter", noteZh: "600 GB，到期不结转", noteEn: "600 GB, no carryover" },
+    { id: "year", days: 365, gb: 2400, priceZh: "¥360", priceEn: "¥360", nameZh: "1 年", nameEn: "1 year", noteZh: "2400 GB，在 App 内支付", noteEn: "2400 GB, pay in the app" }
   ],
   reviews: [
     { name: "陈予安", date: "2026.08.12", zh: "打开就能用，几乎不用管线路。出差两周没断过。", en: "It just connects. I barely touch the line list, and a two-week trip stayed online." },
@@ -23,16 +23,16 @@ window.XVAY = {
     { id: "billing", zh: "会员", en: "Plans" }
   ],
   faqs: [
-    { cat: "start", qZh: "怎样领取 72 小时试用？", qEn: "How do I start the 72-hour trial?", aZh: "注册一个账号即可。试用从注册成功时开始计算，不需要先绑定支付方式。到期后连接会停，账户还在。", aEn: "Create an account. The trial starts when registration succeeds, with no payment method required. When it ends, the connection stops and the account remains." },
+    { cat: "start", qZh: "怎样注册？", qEn: "How do I register?", aZh: "用用户名和密码注册，不需要实名，也不需要微信或手机授权。套餐在 App 里购买。", aEn: "Register with a username and password. No identity check, WeChat, or phone authorization. Buy a plan in the app." },
     { cat: "start", qZh: "支持哪些系统？", qEn: "Which systems are supported?", aZh: "macOS、Windows、iOS、Android 和 Linux。同一个会员可以在这些设备之间使用。", aEn: "macOS, Windows, iOS, Android, and Linux. One membership works across them." },
     { cat: "connect", qZh: "连上之后网页打不开？", qEn: "Connected, but pages won't load?", aZh: "先换一条线路再试。如果只有某一个网站打不开，多半是对方的访问策略，换地区通常比反复重连有用。也可以关掉客户端再开一次。", aEn: "Switch lines once. If only one site fails, its own access rules are the likely cause, and another region helps more than reconnecting in a loop. You can also quit the app and open it again." },
     { cat: "connect", qZh: "速度突然变慢？", qEn: "Why did it suddenly get slow?", aZh: "高峰时段热门线路会挤。换到延迟更低的一条，或避开刚连接时的默认线路。本地网络本身不稳时，VPN 没法把带宽变多。", aEn: "Popular lines crowd up at peak hours. Pick a lower-latency line instead of staying on the default. A VPN cannot add bandwidth your local network doesn't have." },
-    { cat: "account", qZh: "忘记密码了？", qEn: "Forgot the password?", aZh: "这个官网演示把账户放在你自己的浏览器里，没有邮件找回。可以在登录页删除提示所说的本机账户后重新注册。正式环境才会接邮箱重置。", aEn: "This demo keeps accounts in your browser and has no email reset. Remove the local account from the sign-in page and register again. A production setup would reset by email." },
+    { cat: "account", qZh: "忘记密码了？", qEn: "Forgot the password?", aZh: "先在 App 里绑定邮箱。然后在登录页用邮箱验证码找回账号或重置密码。验证码 5 分钟有效。", aEn: "Bind an email in the app first. Then use the email code on the sign-in page to find the account or reset the password. The code lasts 5 minutes." },
     { cat: "account", qZh: "试用和付费会员有什么区别？", qEn: "How is the trial different from a paid plan?", aZh: "试用 72 小时，线路和设备数与会员相同。区别是时长。试用结束不会自动变成付费，也不会扣款。", aEn: "The trial lasts 72 hours with the same lines and device limit. It does not turn into a paid plan and nothing is charged." },
     { cat: "device", qZh: "可以几台设备同时在线？", qEn: "How many devices can stay online?", aZh: "最多 5 台。超出时，在账户页移除一台不再使用的设备即可。", aEn: "Up to five. If you pass that, remove an unused device on the account page." },
     { cat: "device", qZh: "如何移除设备？", qEn: "How do I remove a device?", aZh: "登录后打开账户页的设备列表，点移除。当前这台浏览器也可以移除，移除后需要重新登录。", aEn: "Open the device list on the account page and choose Remove. You can remove this browser too; you'll need to sign in again." },
     { cat: "billing", qZh: "会自动续费吗？", qEn: "Does it auto-renew?", aZh: "不会。会员到期就停止，不会用同一张卡再扣下一期。想继续用，再选一次时长。", aEn: "No. The plan stops when the term ends. Nothing is charged again unless you pick a new term." },
-    { cat: "billing", qZh: "这里的开通是真的扣款吗？", qEn: "Will checkout charge me?", aZh: "不是。当前官网是界面演示，开通只会写进浏览器本地，用来展示到期时间和订单号，不会发生支付。", aEn: "No. This site is a demo. Choosing a plan only saves it in your browser so you can see the expiry and an order number. No payment runs." }
+    { cat: "billing", qZh: "在哪里付款？", qEn: "Where do I pay?", aZh: "在 App 里选择一周、一月、一季或一年，通过四方支付完成。官网只展示套餐，不在浏览器里扣款。", aEn: "Choose a week, month, quarter, or year in the app and pay there. This site lists the plans and does not charge in the browser." }
   ],
   posts: [
     {
@@ -183,10 +183,10 @@ window.XVAY = {
   },
   chat: [
     { keys: ["试用", "trial", "72"], zh: "注册后试用自动开始，共 72 小时，不用绑支付方式。账户页能看到剩余时间。", en: "The trial starts when you register and lasts 72 hours. No payment method. The account page shows the time left." },
-    { keys: ["价格", "会员", "多少钱", "plan", "price", "续费"], zh: "有 7 天、1 个月、3 个月和 12 个月。到期即停，不会自动续费。这里开通是演示，不会扣款。", en: "Terms are 7 days, 1 month, 3 months, and 12 months. They stop when they end and do not auto-renew. Checkout here is a demo and does not charge you." },
+    { keys: ["价格", "会员", "多少钱", "plan", "price", "续费"], zh: "有 1 周、1 月、1 季度和 1 年。在 App 里通过四方支付购买。到期流量清零，不结转，也不会自动续费。", en: "Plans are 1 week, 1 month, 1 quarter, and 1 year. Buy them in the app. Traffic clears at expiry and does not carry over or auto-renew." },
     { keys: ["设备", "几台", "device"], zh: "一个账号最多 5 台设备同时在线。可以在账户页移除旧设备。", en: "One account allows five devices online at once. Remove old ones on the account page." },
     { keys: ["下载", "安装", "download", "mac", "windows"], zh: "打开下载页，选中你的系统即可。当前下载的是演示说明文件，不是完整安装包。", en: "Open the download page and pick your system. The file you get now is a demo note, not the full installer." },
     { keys: ["连不上", "失败", "慢", "connect", "slow"], zh: "先换一条延迟更低的线路。如果本地网络本身打不开网页，先解决本地连接，再打开客户端。", en: "Switch to a lower-latency line. If normal pages already fail, fix the local network before opening the app." },
-    { keys: ["退款", "扣款", "refund", "pay"], zh: "演示环境没有支付，所以也不存在扣款和退款。正式付款规则会写在服务条款里。", en: "This demo never charges you, so there is nothing to refund. Real payment rules would live in the terms." }
+    { keys: ["退款", "扣款", "refund", "pay"], zh: "支付和退款都走四方支付。退款成功会扣回佣金并封禁账号，平台可以再解封。", en: "Payments and refunds go through the payment gateway. A successful refund claws back commission and bans the account. The platform can unban it." },
   ]
 };

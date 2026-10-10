@@ -42,6 +42,21 @@ async function ban(row) {
   const { value } = await ElMessageBox.prompt('封禁后节点立即停用，可以解封', '封禁', { inputPlaceholder: '原因' })
   await act(`/api/admin/members/${row.id}/ban`, { reason: value || '平台封禁' }, '已封禁')
 }
+
+async function setRate(row) {
+  const { value } = await ElMessageBox.prompt('不能超过该会员所属经销商的比例', '设置返佣比例', {
+    inputValue: String(row.customRate || 0),
+  })
+  await act(`/api/admin/members/${row.id}/rate`, { rate: Number(value) }, '已设置返佣比例')
+}
+
+async function records(row) {
+  const data = await adminRequest(`/api/admin/members/${row.id}/records`)
+  const orders = (data.orders || []).map((item) => item.orderNo).join('、') || '无'
+  const commissions = (data.commissions || []).length
+  const withdrawals = (data.withdrawals || []).length
+  await ElMessageBox.alert(`订单：${orders}\n佣金 ${commissions} 笔，提现 ${withdrawals} 笔`, `${row.username} 的记录`)
+}
 </script>
 
 <template>
@@ -87,6 +102,8 @@ async function ban(row) {
           <el-button v-if="row.status !== 1" link type="danger" @click="ban(row)">封禁</el-button>
           <el-button v-else link type="success" @click="act(`/api/admin/members/${row.id}/unban`, {}, '已解封')">解封</el-button>
           <el-button link @click="parentOf(row)">调整上级</el-button>
+          <el-button v-if="row.distributorId" link @click="setRate(row)">设置比例</el-button>
+          <el-button link @click="records(row)">记录</el-button>
           <el-button v-if="row.email" link @click="act(`/api/admin/members/${row.id}/email/unbind`, {}, '已解绑邮箱')">解绑邮箱</el-button>
         </template>
       </el-table-column>
