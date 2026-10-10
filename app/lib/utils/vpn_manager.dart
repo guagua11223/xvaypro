@@ -68,6 +68,14 @@ abstract class VPNManager with ChangeNotifier {
   }
 
   Future<void> _startSystemProxy() async {
+    final tunOn = prefs.getBool("tun") == true;
+    final desktop =
+        RuntimePlatform.isWindows ||
+        RuntimePlatform.isLinux ||
+        RuntimePlatform.isMacOS;
+    if (!tunOn && desktop && prefs.getBool("systemProxy") != true) {
+      await prefs.setBool("systemProxy", true);
+    }
     if (prefs.getBool("systemProxy")!) {
       String serverAddress = prefs.getString('app.server.address')!;
       if (serverAddress == "0.0.0.0") {

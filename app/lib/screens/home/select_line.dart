@@ -87,12 +87,15 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
       _fullMask = enable;
     });
     await prefs.setBool('tun', enable);
+    await prefs.setBool('systemProxy', !enable);
     prefs.notifyListeners();
     if (await vPNMan.getIsCoreActive()) {
       if (enable) {
+        await vPNMan.stopSystemProxy();
         await vPNMan.startTun().catchError(_handleTunError);
       } else {
         await vPNMan.stopTun().catchError(_handleTunError);
+        await vPNMan.startSystemProxy();
       }
     }
   }
