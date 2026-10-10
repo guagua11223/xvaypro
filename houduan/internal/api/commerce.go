@@ -432,7 +432,7 @@ func (s *Server) payRefund(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	id, err := s.db.ApplyRefund(store.AsInt64(body["orderId"]), user.ID, store.AsString(body["reason"]))
+	id, err := s.db.ApplyRefund(store.AsInt64(body["orderId"]), user.ID, store.AsFloat(body["amount"]), store.AsString(body["reason"]))
 	if err != nil {
 		return err
 	}

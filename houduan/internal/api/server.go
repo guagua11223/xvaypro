@@ -143,6 +143,7 @@ func New(cfg config.Config, db *store.Store) *Server {
 		{http.MethodGet, "/api/admin/distributors", s.adminDistributors},
 		{http.MethodPost, "/api/admin/distributors/:id/rate", s.adminDistributorRate},
 		{http.MethodGet, "/api/admin/commerce/orders", s.adminCommerceOrders},
+		{http.MethodPost, "/api/admin/commerce/orders/:id/refund", s.adminCommerceRefund},
 		{http.MethodGet, "/api/admin/withdrawals", s.adminWithdrawals},
 		{http.MethodPost, "/api/admin/withdrawals/rules", s.adminSaveWithdrawRules},
 		{http.MethodPost, "/api/admin/withdrawals/:id/audit", s.adminAuditWithdrawal},

@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/csv"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -390,6 +391,42 @@ func (s *Server) adminCommerceOrders(w http.ResponseWriter, r *http.Request) err
 		return s.exportOrders(w, from, to)
 	}
 	return s.writeOrders(w, 0, from, to)
+}
+
+func (s *Server) adminCommerceRefund(w http.ResponseWriter, r *http.Request) error {
+	if err := s.allowRole(r, "finance"); err != nil {
+		return err
+	}
+	orderID, err := idParam(r)
+	if err != nil {
+		return err
+	}
+	body, err := readJSON(r)
+	if err != nil {
+		return err
+	}
+	amount := store.AsFloat(body["amount"])
+	if amount <= 0 {
+		return badRequest("请填写退款金额")
+	}
+	reason := strings.TrimSpace(store.AsString(body["reason"]))
+	if reason == "" {
+		reason = "后台退款"
+	}
+	refundID, err := s.db.ApplyRefund(orderID, 0, amount, reason)
+	if err != nil {
+		return err
+	}
+	_, actor := s.staffRole(r)
+	if err := s.db.HandleRefund(refundID, true, actor, time.Now().UnixMilli()); err != nil {
+		return err
+	}
+	_ = s.db.AddLog("admin", actor, "refund", fmt.Sprintf("order=%d amount=%.2f ban=1", orderID, amount), clientIP(r))
+	s.syncNodes()
+	writeOK(w, http.StatusOK, map[string]any{
+		"id": refundID, "orderId": orderID, "amount": amount, "banned": true,
+	})
+	return nil
 }
 
 func (s *Server) exportOrders(w http.ResponseWriter, from, to int64) error {

@@ -679,8 +679,9 @@ func (s *Store) ListCommissionRows(userID int64, limit int) ([]CommissionRow, er
 	return list, rows.Err()
 }
 
-func (s *Store) ApplyRefund(orderID, userID int64, reason string) (int64, error) {
+func (s *Store) ApplyRefund(orderID, userID int64, amount float64, reason string) (int64, error) {
 	var id int64
+	now := time.Now().UnixMilli()
 	err := s.tx(func(tx *sql.Tx) error {
 		order, err := scanCommerceOrder(tx.QueryRow(orderSelect+` WHERE id = ?`, orderID))
 		if err == sql.ErrNoRows {
@@ -695,6 +696,13 @@ func (s *Store) ApplyRefund(orderID, userID int64, reason string) (int64, error)
 		if order.PayStatus != 1 {
 			return errs.New(400, "VALIDATION", "只有已支付订单可以退款")
 		}
+		amount = roundMoney(amount)
+		if amount <= 0 {
+			amount = order.Amount
+		}
+		if amount > order.Amount {
+			return errs.New(400, "VALIDATION", "退款金额不能超过订单金额")
+		}
 		var existing int
 		if err := tx.QueryRow(`SELECT COUNT(*) FROM refunds WHERE order_id = ? AND status IN (0, 1, 2)`, orderID).Scan(&existing); err != nil {
 			return err
@@ -705,8 +713,11 @@ func (s *Store) ApplyRefund(orderID, userID int64, reason string) (int64, error)
 		if _, err := tx.Exec(`UPDATE orders SET refund_status = 0 WHERE id = ?`, orderID); err != nil {
 			return err
 		}
-		return tx.QueryRow(`INSERT INTO refunds (order_id, user_id, amount, reason, status, ban_user, can_unban) VALUES (?, ?, ?, ?, 0, 1, 1) RETURNING id`,
-			orderID, order.UserID, order.Amount, reason).Scan(&id)
+		return tx.QueryRow(
+			`INSERT INTO refunds (order_id, user_id, amount, reason, status, ban_user, can_unban, created_at)
+			 VALUES (?, ?, ?, ?, 0, 1, 1, ?) RETURNING id`,
+			orderID, order.UserID, amount, reason, now,
+		).Scan(&id)
 	})
 	return id, err
 }
@@ -739,10 +750,15 @@ func (s *Store) HandleRefund(id int64, approve bool, actor, now int64) error {
 		if _, err := tx.Exec(`UPDATE orders SET pay_status = 2, refund_status = 2, commission_status = 2, service_status = 4 WHERE id = ?`, orderID); err != nil {
 			return err
 		}
-		if err := clawback(tx, orderID); err != nil {
+		var orderAmount float64
+		if err := tx.QueryRow(`SELECT amount FROM orders WHERE id = ?`, orderID).Scan(&orderAmount); err != nil {
 			return err
 		}
-		if _, err := tx.Exec(`UPDATE users SET status = 'disabled', member_status = 1, banned_at = ?, ban_reason = ? WHERE id = ?`, now, "退款封禁", userID); err != nil {
+		if err := clawback(tx, orderID, amount, orderAmount); err != nil {
+			return err
+		}
+		banReason := "退款封禁"
+		if _, err := tx.Exec(`UPDATE users SET status = 'disabled', member_status = 1, banned_at = ?, ban_reason = ? WHERE id = ?`, now, banReason, userID); err != nil {
 			return err
 		}
 		_, err = tx.Exec(`UPDATE orders SET service_status = 4 WHERE user_id = ? AND id = ?`, userID, orderID)
@@ -750,7 +766,17 @@ func (s *Store) HandleRefund(id int64, approve bool, actor, now int64) error {
 	})
 }
 
-func clawback(tx *sql.Tx, orderID int64) error {
+func clawback(tx *sql.Tx, orderID int64, refundAmount, orderAmount float64) error {
+	ratio := 1.0
+	if orderAmount > 0 {
+		ratio = refundAmount / orderAmount
+		if ratio > 1 {
+			ratio = 1
+		}
+		if ratio < 0 {
+			ratio = 0
+		}
+	}
 	rows, err := tx.Query(`SELECT id, user_id, amount, status FROM commissions WHERE order_id = ? AND status IN (0, 1)`, orderID)
 	if err != nil {
 		return err
@@ -772,15 +798,22 @@ func clawback(tx *sql.Tx, orderID int64) error {
 	if err := rows.Err(); err != nil {
 		return err
 	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
 	for _, it := range items {
-		if err := debitWallet(tx, it.user, it.amount, it.status == 0); err != nil {
+		take := roundMoney(it.amount * ratio)
+		if take <= 0 {
+			continue
+		}
+		if err := debitWallet(tx, it.user, take, it.status == 0); err != nil {
 			return err
 		}
 		if _, err := tx.Exec(`UPDATE commissions SET status = 2 WHERE id = ?`, it.id); err != nil {
 			return err
 		}
 		_, _ = tx.Exec(`UPDATE distributors SET total_commission = CASE WHEN total_commission > ? THEN total_commission - ? ELSE 0 END WHERE user_id = ?`,
-			it.amount, it.amount, it.user)
+			take, take, it.user)
 	}
 	return nil
 }
