@@ -22,6 +22,21 @@ LimitNOFILE=1048576
 WantedBy=multi-user.target
 `
 
+const xrayWrapUnit = `[Unit]
+Description=讯连宝 Xray node %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=__WRAP__ %i
+Restart=on-failure
+RestartSec=2
+LimitNOFILE=1048576
+
+[Install]
+WantedBy=multi-user.target
+`
+
 const hy2Unit = `[Unit]
 Description=讯连宝 Hysteria2 node %i
 After=network-online.target
@@ -43,6 +58,7 @@ func ensureUnits(dataDir string) error {
 	}
 	xrayBin := binPath("xray", "/usr/local/bin/xray")
 	hy2Bin := binPath("hysteria", "/usr/local/bin/hysteria")
+	wrapBin := binPath("xvay-xray-wrap", "/usr/local/bin/xvay-xray-wrap")
 	if xrayBin == "" || hy2Bin == "" {
 		return nil
 	}
@@ -50,7 +66,12 @@ func ensureUnits(dataDir string) error {
 	if err != nil {
 		return err
 	}
-	xrayText := strings.ReplaceAll(strings.ReplaceAll(xrayUnit, "__XRAY__", xrayBin), "__DATA__", dir)
+	var xrayText string
+	if wrapBin != "" {
+		xrayText = strings.ReplaceAll(xrayWrapUnit, "__WRAP__", wrapBin)
+	} else {
+		xrayText = strings.ReplaceAll(strings.ReplaceAll(xrayUnit, "__XRAY__", xrayBin), "__DATA__", dir)
+	}
 	hy2Text := strings.ReplaceAll(strings.ReplaceAll(hy2Unit, "__HY2__", hy2Bin), "__DATA__", dir)
 	changed, err := writeIfChanged("/etc/systemd/system/xvay-xray@.service", xrayText)
 	if err != nil {

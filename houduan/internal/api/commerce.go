@@ -159,9 +159,25 @@ func (s *Server) userInvite(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	invitees, err := s.db.ListInvitees(user.ID, 50)
+	if err != nil {
+		return err
+	}
+	items := make([]map[string]any, 0, len(invitees))
+	for _, item := range invitees {
+		items = append(items, map[string]any{
+			"id": item.ID, "username": item.Username, "createdAt": item.CreatedAt,
+			"userType": memberType(item),
+		})
+	}
+	parentName, _ := s.usernameOf(member.ParentID)
 	writeOK(w, http.StatusOK, map[string]any{
 		"inviteCode": member.InviteCode,
 		"inviteUrl":  link,
+		"parentId":   member.ParentID,
+		"parentName": parentName,
+		"invitees":   items,
+		"inviteeCount": len(items),
 		"mode":       "三级推荐：直接推荐人为一级，其上两级为二级、三级。有经销商归属时只按经销商规则返佣，不叠加。",
 		"rules":      settings,
 	})

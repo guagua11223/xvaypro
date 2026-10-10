@@ -62,6 +62,13 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	if invite != "" {
+		if _, ok, err := s.db.FindByInvite(invite); err != nil {
+			return err
+		} else if !ok {
+			return errs.New(http.StatusBadRequest, "VALIDATION", "邀请码不正确")
+		}
+	}
 	user, err := s.db.CreateUser(store.UserInput{
 		Email: email, Password: password, Total: total,
 		ExpireAt: validate.TrialExpireAt(settings, time.Now()), DeviceLimit: 3,
@@ -70,7 +77,11 @@ func (s *Server) register(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if err := s.db.InitMember(user.ID, username, invite); err != nil {
+		_ = s.db.DeleteUser(user.ID)
 		return err
+	}
+	if refreshed, ok, err := s.db.FindUserByID(user.ID); err == nil && ok {
+		user = refreshed
 	}
 	token, err := s.db.CreateSession(user, s.cfg.SessionTTLMs)
 	if err != nil {
