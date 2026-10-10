@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../../utils/prefs.dart';
 import '../../utils/xvay_account.dart';
 
-/// Shared account snapshot for the Windows desktop shell.
+/// Shared account snapshot for Lets shell / personal center.
 class LetsSession extends ChangeNotifier {
   LetsSession._();
   static final LetsSession instance = LetsSession._();

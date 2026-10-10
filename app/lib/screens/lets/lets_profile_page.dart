@@ -3,11 +3,15 @@ import 'package:flutter/services.dart';
 
 import '../../theme/lets_colors.dart';
 import '../../utils/xvay_account.dart';
+import '../../widgets/lets_app_bar.dart';
 import '../home/login.dart';
 import 'lets_session.dart';
 
 class LetsProfilePage extends StatefulWidget {
-  const LetsProfilePage({super.key});
+  const LetsProfilePage({super.key, this.asPage = false});
+
+  /// Android / mobile: push as a full page with app bar.
+  final bool asPage;
 
   @override
   State<LetsProfilePage> createState() => _LetsProfilePageState();
@@ -21,6 +25,14 @@ class _LetsProfilePageState extends State<LetsProfilePage> {
   final _confirmPassword = TextEditingController();
   bool _busy = false;
   String? _message;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.asPage && _account.isLoggedIn) {
+      LetsSession.instance.refresh();
+    }
+  }
 
   @override
   void dispose() {
@@ -93,12 +105,18 @@ class _LetsProfilePageState extends State<LetsProfilePage> {
     final ok = await Navigator.of(context).push<bool>(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
     );
-    if (ok == true) await LetsSession.instance.refresh();
+    if (ok == true) {
+      await LetsSession.instance.refresh();
+      return;
+    }
+    if (widget.asPage && mounted && !_account.isLoggedIn) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
+    final body = ListenableBuilder(
       listenable: LetsSession.instance,
       builder: (context, _) {
         final session = LetsSession.instance;
@@ -109,37 +127,55 @@ class _LetsProfilePageState extends State<LetsProfilePage> {
             parentId is num && parentId.toInt() > 0 || parentName.isNotEmpty;
         final email = '${profile['email'] ?? ''}';
         final userType = '${profile['userType'] ?? '普通用户'}';
-        final inviteCode = '${profile['inviteCode'] ?? session.invite['inviteCode'] ?? ''}';
+        final inviteCode =
+            '${profile['inviteCode'] ?? session.invite['inviteCode'] ?? ''}';
+        final pad = widget.asPage
+            ? const EdgeInsets.fromLTRB(16, 16, 16, 28)
+            : const EdgeInsets.fromLTRB(28, 24, 28, 32);
 
         return ColoredBox(
           color: LetsColors.deskPage,
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(28, 24, 28, 32),
+            padding: pad,
             children: [
-              const Text(
-                '个人中心',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                '查看账号信息，绑定推荐关系，或切换登录账号。',
-                style: TextStyle(fontSize: 13, color: LetsColors.textSecondary),
-              ),
-              if (_message != null) ...[
+              if (!widget.asPage) ...[
+                const Text(
+                  '个人中心',
+                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  '查看账号信息，绑定推荐关系，或切换登录账号。',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: LetsColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ] else ...[
+                const Text(
+                  '查看账号信息，绑定推荐关系，或切换登录账号。',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: LetsColors.textSecondary,
+                  ),
+                ),
                 const SizedBox(height: 16),
-                _Notice(text: _message!),
               ],
-              const SizedBox(height: 20),
+              if (_message != null) ...[
+                _Notice(text: _message!),
+                const SizedBox(height: 16),
+              ],
               _Card(
                 child: Row(
                   children: [
                     CircleAvatar(
-                      radius: 34,
+                      radius: widget.asPage ? 28 : 34,
                       backgroundColor: Colors.grey.shade300,
                       child: Icon(
                         Icons.person,
                         color: Colors.grey.shade600,
-                        size: 36,
+                        size: widget.asPage ? 30 : 36,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -303,30 +339,56 @@ class _LetsProfilePageState extends State<LetsProfilePage> {
               const SizedBox(height: 16),
               _Card(
                 title: '切换账号',
-                child: Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        '退出当前账号并打开登录页，可登录其他账号。',
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.5,
-                          color: LetsColors.textSecondary,
-                        ),
+                child: widget.asPage
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const Text(
+                            '退出当前账号并打开登录页，可登录其他账号。',
+                            style: TextStyle(
+                              fontSize: 13,
+                              height: 1.5,
+                              color: LetsColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 12),
+                          OutlinedButton(
+                            onPressed: _busy ? null : _switchAccount,
+                            child: const Text('切换账号'),
+                          ),
+                        ],
+                      )
+                    : Row(
+                        children: [
+                          const Expanded(
+                            child: Text(
+                              '退出当前账号并打开登录页，可登录其他账号。',
+                              style: TextStyle(
+                                fontSize: 13,
+                                height: 1.5,
+                                color: LetsColors.textSecondary,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          OutlinedButton(
+                            onPressed: _busy ? null : _switchAccount,
+                            child: const Text('切换账号'),
+                          ),
+                        ],
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    OutlinedButton(
-                      onPressed: _busy ? null : _switchAccount,
-                      child: const Text('切换账号'),
-                    ),
-                  ],
-                ),
               ),
             ],
           ),
         );
       },
+    );
+
+    if (!widget.asPage) return body;
+    return Scaffold(
+      backgroundColor: LetsColors.deskPage,
+      appBar: const LetsAppBar(title: '个人中心'),
+      body: body,
     );
   }
 
@@ -418,7 +480,7 @@ class _InfoRow extends StatelessWidget {
               style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
             ),
           ),
-          if (trailing != null) trailing!,
+          ?trailing,
         ],
       ),
     );

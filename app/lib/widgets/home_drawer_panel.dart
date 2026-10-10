@@ -5,6 +5,8 @@ import '../extensions/localization.dart';
 import '../screens/home/account.dart';
 import '../screens/home/login.dart';
 import '../screens/home/register.dart';
+import '../screens/lets/lets_profile_page.dart';
+import '../screens/lets/lets_session.dart';
 import '../utils/xvay_account.dart';
 import '../screens/home/dashboard.dart';
 import '../screens/home/logs.dart';
@@ -44,6 +46,17 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
         });
       }
     });
+    if (XvayAccount().isLoggedIn) {
+      LetsSession.instance.refresh();
+    }
+  }
+
+  void _openProfile() {
+    if (!XvayAccount().isLoggedIn) {
+      widget.onNavigate(const LoginScreen());
+      return;
+    }
+    widget.onNavigate(const LetsProfilePage(asPage: true));
   }
 
   @override
@@ -66,59 +79,83 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 8, 16, 16),
               child: ListenableBuilder(
-                listenable: Listenable.merge([prefs, vPNMan]),
+                listenable: Listenable.merge([
+                  prefs,
+                  vPNMan,
+                  LetsSession.instance,
+                ]),
                 builder: (context, _) {
-                  final name =
-                      prefs.getString("cache.app.selectedProfileName") ??
-                      context.loc.please_select_a_profile;
-                  final status = vPNMan.isCoreActive
-                      ? context.loc.home_status_connected
-                      : context.loc.home_status_disconnected;
-                  return Row(
-                    children: [
-                      const LetsMark(size: 56),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "讯连宝",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: palette.text,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                                color: palette.text,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              status,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: palette.muted,
-                              ),
-                            ),
-                          ],
+                  final session = LetsSession.instance;
+                  final loggedIn = XvayAccount().isLoggedIn;
+                  final name = loggedIn
+                      ? session.username
+                      : (prefs.getString("cache.app.selectedProfileName") ??
+                          context.loc.please_select_a_profile);
+                  final status = loggedIn
+                      ? (session.expired ? '已过期' : '有效 · ${session.expireText}')
+                      : (vPNMan.isCoreActive
+                          ? context.loc.home_status_connected
+                          : context.loc.home_status_disconnected);
+                  return InkWell(
+                    onTap: _openProfile,
+                    borderRadius: BorderRadius.circular(12),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 28,
+                          backgroundColor: Colors.grey.shade300,
+                          child: Icon(
+                            Icons.person,
+                            color: Colors.grey.shade600,
+                            size: 30,
+                          ),
                         ),
-                      ),
-                      IconButton(
-                        icon: const LetsIcon(LetsIcons.chevron),
-                        onPressed: () => widget.onNavigate(const SettingList()),
-                      ),
-                    ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                loggedIn ? '个人中心' : '讯连宝',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: palette.text,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                name,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                  color: palette.text,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                status,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: palette.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          tooltip: loggedIn ? '个人中心' : '登录',
+                          icon: const LetsIcon(LetsIcons.chevron),
+                          onPressed: _openProfile,
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),
@@ -128,13 +165,18 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 children: [
-                  if (XvayAccount().isLoggedIn)
+                  if (XvayAccount().isLoggedIn) ...[
+                    _DrawerItem(
+                      icon: LetsIcons.account,
+                      label: '个人中心',
+                      onTap: _openProfile,
+                    ),
                     _DrawerItem(
                       icon: LetsIcons.account,
                       label: '讯连宝账户',
                       onTap: () => widget.onNavigate(const AccountScreen()),
-                    )
-                  else ...[
+                    ),
+                  ] else ...[
                     _DrawerItem(
                       icon: LetsIcons.account,
                       label: '登录',

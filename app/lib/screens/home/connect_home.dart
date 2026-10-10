@@ -15,6 +15,9 @@ import '../../utils/vpn_manager.dart';
 import 'settings/tun.dart';
 import '../../widgets/connect_orb.dart';
 import '../../widgets/lets_app_bar.dart';
+import '../lets/lets_profile_page.dart';
+import '../lets/lets_session.dart';
+import 'login.dart';
 import 'profiles.dart';
 import 'select_line.dart';
 
@@ -49,6 +52,30 @@ class _ConnectHomeState extends State<ConnectHome> {
     _syncConnectedClock();
     ensureBackendProfile();
     _loadQuota();
+    if (XvayAccount().isLoggedIn) {
+      LetsSession.instance.refresh();
+    }
+  }
+
+  Future<void> _openProfile() async {
+    if (!mounted) return;
+    if (!XvayAccount().isLoggedIn) {
+      final ok = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+      if (!mounted) return;
+      if (ok == true) {
+        await LetsSession.instance.refresh();
+        await _loadQuota();
+      }
+      return;
+    }
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const LetsProfilePage(asPage: true)),
+    );
+    if (!mounted) return;
+    await LetsSession.instance.refresh();
+    await _loadQuota();
   }
 
   @override
@@ -234,6 +261,30 @@ class _ConnectHomeState extends State<ConnectHome> {
             title: "讯连宝",
             automaticallyImplyLeading: widget.showMenuButton,
             onLeadingTap: widget.showMenuButton ? widget.onOpenDrawer : null,
+            actions: [
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: ListenableBuilder(
+                  listenable: LetsSession.instance,
+                  builder: (context, _) {
+                    final loggedIn = XvayAccount().isLoggedIn;
+                    return IconButton(
+                      tooltip: loggedIn ? '个人中心' : '登录',
+                      onPressed: _openProfile,
+                      icon: CircleAvatar(
+                        radius: 16,
+                        backgroundColor: Colors.white.withValues(alpha: 0.22),
+                        child: Icon(
+                          Icons.person,
+                          size: 18,
+                          color: palette.onBar,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
           ),
           if (_banners.isNotEmpty)
             SizedBox(
