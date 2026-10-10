@@ -27,6 +27,7 @@ import 'utils/platform_task_scheduler.dart';
 import 'utils/platform_theme.dart';
 import 'utils/prefs.dart';
 import 'utils/runtime_platform.dart';
+import 'theme/lets_colors.dart';
 import 'utils/theme_manager.dart';
 import 'utils/tray_menu.dart';
 import 'utils/vpn_manager.dart';
@@ -96,7 +97,7 @@ void main(List<String> args) async {
       minimumSize: RuntimePlatform.isWindows ? const Size(390, 720) : null,
       center: RuntimePlatform.isWindows ? true : null,
       backgroundColor: RuntimePlatform.isWindows
-          ? const Color(0xFFF4F5F7)
+          ? LetsColors.pageBg
           : null,
       title: RuntimePlatform.isWindows ? "飞连" : null,
       skipTaskbar: false,

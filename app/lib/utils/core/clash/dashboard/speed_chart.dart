@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../../../extensions/localization.dart';
+import '../../../../theme/lets_colors.dart';
 import '../../../format_byte.dart';
 import '../../base/plugin.dart';
 import '../data_notifier.dart';
@@ -17,8 +18,8 @@ class SpeedChart extends StatefulWidget {
 
 class _SpeedChartState extends State<SpeedChart> {
   final Map<TrafficStatType, Color> trafficColor = {
-    TrafficStatType.totalUp: Colors.blue,
-    TrafficStatType.totalDn: Colors.blue,
+    TrafficStatType.totalUp: LetsColors.accent,
+    TrafficStatType.totalDn: LetsColors.accent,
   };
 
   @override
@@ -123,11 +124,11 @@ class _SpeedChartState extends State<SpeedChart> {
                     children: <Widget>[
                       Text(
                         "${context.loc.total} ↑ ┄┄",
-                        style: TextStyle(color: Colors.blue, fontSize: 10),
+                        style: const TextStyle(color: LetsColors.accent, fontSize: 10),
                       ),
                       Text(
                         "${context.loc.total} ↓ ──",
-                        style: TextStyle(color: Colors.blue, fontSize: 10),
+                        style: const TextStyle(color: LetsColors.accent, fontSize: 10),
                       ),
                     ],
                   ),

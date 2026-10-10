@@ -15,6 +15,7 @@ import '../../../utils/prefs.dart';
 import '../../../utils/runtime_platform.dart';
 import '../../../utils/show_snack_bar_now.dart';
 import '../../../utils/vpn_manager.dart';
+import '../../../theme/lets_icons.dart';
 import '../../../widgets/popup/radio_list_selection.dart';
 import '../../../widgets/popup/text_input.dart';
 import '../../installed_app.dart';
@@ -381,7 +382,7 @@ misc:
         title: Text(context.loc.edit_config),
         subtitle: Text(tunSingBoxUserConfigFile.path),
         trailing: Icon(
-          RuntimePlatform.isAndroid ? Icons.copy : Icons.folder_open,
+          RuntimePlatform.isAndroid ? LetsIcons.copy : LetsIcons.folder,
         ),
         onTap: () {
           final filePath = tunSingBoxUserConfigFile.path;

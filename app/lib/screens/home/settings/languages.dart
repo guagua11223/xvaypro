@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'package:flutter_localized_locales/flutter_localized_locales.dart';
 
+import '../../../theme/lets_icons.dart';
 import '../../../extensions/localization.dart';
 import '../../../generated/l10n/app_localizations.dart';
 import '../../../utils/locale_manager.dart';
@@ -52,7 +53,7 @@ class _LanguagesScreenState extends State<LanguagesScreen> {
             subtitle: Text(
               LocaleNames.of(context)!.nameOf(locale.toString()) ?? "",
             ),
-            trailing: locale == selectedLocale ? Icon(Icons.check) : null,
+            trailing: locale == selectedLocale ? const Icon(LetsIcons.check) : null,
             onTap: () {
               prefs.setString('app.locale', locale.toString());
               localeManager.update(notify: true);

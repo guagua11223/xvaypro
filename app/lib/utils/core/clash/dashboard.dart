@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../extensions/localization.dart';
+import '../../../theme/lets_colors.dart';
 import '../base/dashboard.dart';
 
 import 'dashboard/perf_stats.dart';
@@ -38,7 +39,7 @@ class DashboardWidgetsClash extends DashboardWidgetsBase {
                       height: 8,
                       margin: const EdgeInsets.fromLTRB(0, 16, 24, 0),
                       decoration: const BoxDecoration(
-                        color: Colors.blue,
+                        color: LetsColors.accent,
                         shape: BoxShape.circle,
                       ),
                     ),

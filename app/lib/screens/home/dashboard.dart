@@ -106,7 +106,7 @@ class _DashboardState extends State<Dashboard> {
                     margin: const EdgeInsets.all(8.0),
                     child: SmoothHighlight(
                       enabled: _highlightSelectProfile,
-                      color: Colors.grey,
+                      color: LetsColors.divider,
                       child: ListTile(
                         title: Text(
                           context.loc.selected_profile,

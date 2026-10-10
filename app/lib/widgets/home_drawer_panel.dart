@@ -76,17 +76,7 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                       : context.loc.home_status_disconnected;
                   return Row(
                     children: [
-                      CircleAvatar(
-                        radius: 32,
-                        backgroundColor: LetsColors.accent.withValues(
-                          alpha: 0.12,
-                        ),
-                        child: const LetsIcon(
-                          LetsIcons.account,
-                          size: 28,
-                          color: LetsColors.accent,
-                        ),
-                      ),
+                      const LetsMark(size: 56),
                       const SizedBox(width: 16),
                       Expanded(
                         child: Column(

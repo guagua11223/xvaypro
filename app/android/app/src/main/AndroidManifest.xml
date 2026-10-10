@@ -18,7 +18,7 @@
         <service
             android:name=".MainTileService"
             android:exported="true"
-            android:icon="@drawable/ic_launcher_monochrome"
+            android:icon="@mipmap/launcher_icon"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
                 <action android:name="android.service.quicksettings.action.QS_TILE" />

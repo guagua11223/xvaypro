@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:system_theme/system_theme.dart';
 
 import '../theme/lets_colors.dart';
+import '../theme/lets_icons.dart';
 import 'prefs.dart';
 import 'runtime_platform.dart';
 import 'theme_manager.dart';
@@ -34,7 +35,7 @@ ThemeData getPlatformThemeData() {
   if (RuntimePlatform.isMacOS) {
     return ThemeData(
       // colorSchemeSeed: SystemTheme.accentColor.accent,
-      colorSchemeSeed: getColorSchemeSeed(),
+      colorSchemeSeed: LetsColors.accent,
       useMaterial3: true,
       scaffoldBackgroundColor: isTransparentBG ? Colors.transparent : null,
       cardTheme: CardThemeData(
@@ -64,22 +65,25 @@ ThemeData getPlatformThemeData() {
   } else {
     return ThemeData(
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF2457D6),
+        seedColor: LetsColors.accent,
         brightness: Brightness.light,
-        surface: const Color(0xFFF4F5F7),
-      ),
+        surface: LetsColors.pageBg,
+      ).copyWith(primary: LetsColors.accent, onPrimary: LetsColors.onAccent),
       useMaterial3: true,
-      scaffoldBackgroundColor: const Color(0xFFF4F5F7),
-      iconTheme: const IconThemeData(size: 22),
+      scaffoldBackgroundColor: LetsColors.pageBg,
+      iconTheme: const IconThemeData(size: LetsIcons.size, color: LetsColors.textPrimary),
+      filledButtonTheme: _filledButtons(),
+      elevatedButtonTheme: _elevatedButtons(),
+      outlinedButtonTheme: _outlinedButtons(),
       cardTheme: CardThemeData(
-        color: const Color(0xFFF7F8FA),
+        color: LetsColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(LetsColors.radiusCard),
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: Color(0xFFD5D8DE),
+        color: LetsColors.divider,
         thickness: 1,
       ),
       appBarTheme: LetsColors.appBarTheme(dark: false),
@@ -95,7 +99,7 @@ ThemeData getPlatformDarkThemeData() {
     return ThemeData(
       brightness: Brightness.dark,
       // colorSchemeSeed: SystemTheme.accentColor.accent,
-      colorSchemeSeed: getColorSchemeSeed(),
+      colorSchemeSeed: LetsColors.accent,
       useMaterial3: true,
       scaffoldBackgroundColor: isBlackDark
           ? Colors.black
@@ -134,24 +138,30 @@ ThemeData getPlatformDarkThemeData() {
     return ThemeData(
       brightness: Brightness.dark,
       colorScheme: ColorScheme.fromSeed(
-        seedColor: const Color(0xFF2457D6),
+        seedColor: LetsColors.accent,
         brightness: Brightness.dark,
-        surface: const Color(0xFF12141A),
-      ),
+        surface: LetsColors.pageBgDark,
+      ).copyWith(primary: LetsColors.accent, onPrimary: LetsColors.onAccent),
       useMaterial3: true,
       scaffoldBackgroundColor: isBlackDark
-          ? const Color(0xFF0E1014)
-          : const Color(0xFF12141A),
-      iconTheme: const IconThemeData(size: 22),
+          ? const Color(0xFF000000)
+          : LetsColors.pageBgDark,
+      iconTheme: const IconThemeData(
+        size: LetsIcons.size,
+        color: LetsColors.textPrimaryDark,
+      ),
+      filledButtonTheme: _filledButtons(),
+      elevatedButtonTheme: _elevatedButtons(),
+      outlinedButtonTheme: _outlinedButtons(),
       cardTheme: CardThemeData(
-        color: const Color(0xFF1C1F27),
+        color: LetsColors.surfaceDark,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(LetsColors.radiusCard),
         ),
       ),
       dividerTheme: const DividerThemeData(
-        color: Color(0xFF2C313C),
+        color: LetsColors.dividerDark,
         thickness: 1,
       ),
       appBarTheme: LetsColors.appBarTheme(dark: true),
@@ -162,4 +172,36 @@ ThemeData getPlatformDarkThemeData() {
       ),
     );
   }
+}
+
+FilledButtonThemeData _filledButtons() {
+  return FilledButtonThemeData(
+    style: FilledButton.styleFrom(
+      backgroundColor: LetsColors.accent,
+      foregroundColor: LetsColors.onAccent,
+      elevation: 0,
+      shape: LetsColors.buttonShape,
+    ),
+  );
+}
+
+ElevatedButtonThemeData _elevatedButtons() {
+  return ElevatedButtonThemeData(
+    style: ElevatedButton.styleFrom(
+      backgroundColor: LetsColors.accent,
+      foregroundColor: LetsColors.onAccent,
+      elevation: 0,
+      shape: LetsColors.buttonShape,
+    ),
+  );
+}
+
+OutlinedButtonThemeData _outlinedButtons() {
+  return OutlinedButtonThemeData(
+    style: OutlinedButton.styleFrom(
+      foregroundColor: LetsColors.accent,
+      side: const BorderSide(color: LetsColors.accent),
+      shape: LetsColors.buttonShape,
+    ),
+  );
 }
