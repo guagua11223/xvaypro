@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../theme/lets_colors.dart';
 import '../../theme/lets_icons.dart';
@@ -107,7 +108,13 @@ class _AccountScreenState extends State<AccountScreen> {
     if (ok == true && mounted) await _refresh();
   }
 
+  bool get _hasUnpaid => _orders.any(commerceOrderPending);
+
   Future<void> _buy(Map<String, dynamic> item) async {
+    if (_hasUnpaid) {
+      setState(() => _message = '有待支付订单，请先完成支付');
+      return;
+    }
     setState(() => _busy = true);
     try {
       final data = await _account.apiPost('/api/orders', {
@@ -120,6 +127,38 @@ class _AccountScreenState extends State<AccountScreen> {
     } catch (error) {
       if (mounted)
         setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _pay(Map<String, dynamic> item) async {
+    setState(() => _busy = true);
+    try {
+      final data = await _account.apiPost('/api/pay/create', {
+        'orderId': item['id'],
+      });
+      final url = payLink(data);
+      if (!mounted) return;
+      if (url == null) {
+        setState(
+          () => _message =
+              '订单 ${item['orderNo']} 待支付 ¥${item['amount']}，支付网关未返回链接',
+        );
+        return;
+      }
+      final opened = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!mounted) return;
+      setState(
+        () => _message = opened ? '已打开支付页面，完成后请刷新' : '无法打开支付页面',
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -277,10 +316,20 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
       const SizedBox(height: 20),
       _heading(palette, '购买节点'),
+      if (_hasUnpaid)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+          child: Text(
+            '有待支付订单，请先完成支付后再购买。',
+            style: TextStyle(fontSize: 13, height: 1.4, color: palette.muted),
+          ),
+        ),
       if (_packages.isEmpty)
         _empty(palette, '暂时没有可购买的套餐')
       else
-        ..._packages.map((item) => _packageTile(palette, item)),
+        ..._packages.map(
+          (item) => _packageTile(palette, item, enabled: !_hasUnpaid),
+        ),
       if (_profile['walletEnabled'] == 1) ...[
         const SizedBox(height: 8),
         _heading(palette, '钱包'),
@@ -326,11 +375,11 @@ class _AccountScreenState extends State<AccountScreen> {
           palette,
           Column(
             children: [
-              for (var i = 0; i < _orders.take(8).length; i++)
+              for (var i = 0; i < _shownOrders.length; i++)
                 _orderRow(
                   palette,
-                  _orders[i],
-                  last: i == _orders.take(8).length - 1,
+                  _shownOrders[i],
+                  last: i == _shownOrders.length - 1,
                 ),
             ],
           ),
@@ -511,51 +560,60 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  Widget _packageTile(LetsPalette palette, Map<String, dynamic> item) {
+  List<Map<String, dynamic>> get _shownOrders => visibleOrders(_orders);
+
+  Widget _packageTile(
+    LetsPalette palette,
+    Map<String, dynamic> item, {
+    required bool enabled,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: palette.surface,
-        borderRadius: BorderRadius.circular(LetsColors.radiusCard),
-        child: InkWell(
+      child: Opacity(
+        opacity: enabled ? 1 : 0.45,
+        child: Material(
+          color: palette.surface,
           borderRadius: BorderRadius.circular(LetsColors.radiusCard),
-          onTap: _busy ? null : () => _buy(item),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${item['name']}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: palette.text,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+            onTap: !enabled || _busy ? null : () => _buy(item),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${item['name']}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${item['trafficGb']} GB · ${item['durationDays']} 天',
-                        style: TextStyle(fontSize: 13, color: palette.muted),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          '${item['trafficGb']} GB · ${item['durationDays']} 天',
+                          style: TextStyle(fontSize: 13, color: palette.muted),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '¥${item['price']}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: LetsColors.accent,
+                  const SizedBox(width: 12),
+                  Text(
+                    '¥${item['price']}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: LetsColors.accent,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -662,12 +720,36 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            status,
-            style: TextStyle(
-              fontSize: 13,
-              color: status == '已支付' ? LetsColors.accent : palette.muted,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                status,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: status == '已支付' ? LetsColors.accent : palette.muted,
+                ),
+              ),
+              if (commerceOrderPending(item)) ...[
+                const SizedBox(height: 6),
+                SizedBox(
+                  height: 32,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: LetsColors.accent,
+                      foregroundColor: LetsColors.onAccent,
+                      elevation: 0,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                    onPressed: _busy ? null : () => _pay(item),
+                    child: const Text('支付', style: TextStyle(fontSize: 13)),
+                  ),
+                ),
+              ],
+            ],
           ),
         ],
       ),
@@ -749,4 +831,26 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
     );
   }
+}
+
+bool commerceOrderPending(Map<String, dynamic> item) {
+  final value = item['payStatus'];
+  return value is num && value.toInt() == 0;
+}
+
+List<Map<String, dynamic>> visibleOrders(List<Map<String, dynamic>> orders) {
+  final pending = orders.where(commerceOrderPending).toList();
+  final rest = orders.where((item) => !commerceOrderPending(item)).take(8);
+  return [...pending, ...rest];
+}
+
+String? payLink(Map<String, dynamic> data) {
+  for (final key in ['payUrl', 'url', 'gateway']) {
+    final value = data[key];
+    if (value is String &&
+        (value.startsWith('http://') || value.startsWith('https://'))) {
+      return value;
+    }
+  }
+  return null;
 }
