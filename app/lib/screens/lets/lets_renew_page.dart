@@ -44,6 +44,70 @@ class _LetsRenewPageState extends State<LetsRenewPage> {
   bool get _hasUnpaid =>
       LetsSession.instance.orders.any(commerceOrderPending);
 
+  List<Map<String, dynamic>> get _pendingOrders =>
+      LetsSession.instance.orders.where(commerceOrderPending).toList();
+
+  Future<void> _payExisting(Map<String, dynamic> order) async {
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      final pay = await _account.apiPost('/api/pay/create', {
+        'orderId': order['id'],
+      });
+      final url = payLink(pay);
+      if (url != null) {
+        await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+        setState(() => _message = '已打开 EPAY 支付页面');
+      } else {
+        setState(
+          () => _message =
+              '订单 ${order['orderNo']} 待支付 ¥${order['amount']}，支付网关未返回链接',
+        );
+      }
+      await LetsSession.instance.refresh();
+    } catch (e) {
+      setState(() => _message = '$e'.replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _deleteOrder(Map<String, dynamic> order) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除订单'),
+        content: Text('删除待支付订单 ${order['orderNo']}？删除后可以重新购买。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      await _account.apiPost('/api/orders/cancel', {'orderId': order['id']});
+      setState(() => _message = '已删除待支付订单');
+      await LetsSession.instance.refresh();
+    } catch (e) {
+      setState(() => _message = '$e'.replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _pay() async {
     final pack = _selected;
     if (pack == null) {
@@ -51,7 +115,7 @@ class _LetsRenewPageState extends State<LetsRenewPage> {
       return;
     }
     if (_hasUnpaid) {
-      setState(() => _message = '有待支付订单，请先完成或删除后再购买');
+      setState(() => _message = '有待支付订单，请先在右侧完成支付或删除后再购买');
       return;
     }
     setState(() {
@@ -164,13 +228,6 @@ class _LetsRenewPageState extends State<LetsRenewPage> {
                         style: const TextStyle(color: LetsColors.deskPink),
                       ),
                     ],
-                    if (_hasUnpaid) ...[
-                      const SizedBox(height: 8),
-                      const Text(
-                        '有待支付订单未完成，可在手机端「我的」删除后再购。',
-                        style: TextStyle(color: LetsColors.textSecondary),
-                      ),
-                    ],
                     const SizedBox(height: 20),
                     SizedBox(
                       height: 48,
@@ -181,15 +238,21 @@ class _LetsRenewPageState extends State<LetsRenewPage> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                         ),
-                        onPressed: _busy ? null : _pay,
-                        child: Text(_busy ? '提交中…' : '确认支付'),
+                        onPressed: _busy || _hasUnpaid ? null : _pay,
+                        child: Text(
+                          _busy
+                              ? '提交中…'
+                              : _hasUnpaid
+                                  ? '请先处理待支付订单'
+                                  : '确认支付',
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
               SizedBox(
-                width: 260,
+                width: 280,
                 child: Container(
                   color: Colors.white,
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -216,7 +279,7 @@ class _LetsRenewPageState extends State<LetsRenewPage> {
                             : '${selected['trafficGb']} GB 流量',
                         style: const TextStyle(color: LetsColors.textSecondary),
                       ),
-                      const Spacer(),
+                      const SizedBox(height: 16),
                       Row(
                         children: [
                           const Text('订单金额'),
@@ -233,7 +296,166 @@ class _LetsRenewPageState extends State<LetsRenewPage> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 20),
+                      const Divider(height: 1, color: Color(0xFFE8ECF1)),
                       const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const Text(
+                            '待支付订单',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const Spacer(),
+                          if (_pendingOrders.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: LetsColors.deskPink.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${_pendingOrders.length}',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: LetsColors.deskPink,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: _pendingOrders.isEmpty
+                            ? const Text(
+                                '暂无待支付订单',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: LetsColors.textSecondary,
+                                ),
+                              )
+                            : ListView.separated(
+                                itemCount: _pendingOrders.length,
+                                separatorBuilder: (_, _) =>
+                                    const SizedBox(height: 10),
+                                itemBuilder: (context, index) {
+                                  final order = _pendingOrders[index];
+                                  final name =
+                                      '${order['packageName'] ?? ''}'.trim();
+                                  return Container(
+                                    padding: const EdgeInsets.all(12),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF7F8FA),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: Border.all(
+                                        color: const Color(0xFFE2E8F0),
+                                      ),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '${order['orderNo']}',
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          name.isEmpty
+                                              ? '¥${order['amount']} · 待支付'
+                                              : '$name · ¥${order['amount']}',
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            color: LetsColors.textSecondary,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 10),
+                                        Row(
+                                          children: [
+                                            Expanded(
+                                              child: SizedBox(
+                                                height: 32,
+                                                child: FilledButton(
+                                                  style:
+                                                      FilledButton.styleFrom(
+                                                    backgroundColor:
+                                                        LetsColors.deskBlue,
+                                                    padding: EdgeInsets.zero,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                        6,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  onPressed: _busy
+                                                      ? null
+                                                      : () => _payExisting(
+                                                            order,
+                                                          ),
+                                                  child: const Text(
+                                                    '支付',
+                                                    style:
+                                                        TextStyle(fontSize: 12),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            const SizedBox(width: 8),
+                                            Expanded(
+                                              child: SizedBox(
+                                                height: 32,
+                                                child: OutlinedButton(
+                                                  style:
+                                                      OutlinedButton.styleFrom(
+                                                    foregroundColor:
+                                                        LetsColors.textPrimary,
+                                                    side: const BorderSide(
+                                                      color: Color(0xFFD8DDE5),
+                                                    ),
+                                                    padding: EdgeInsets.zero,
+                                                    shape:
+                                                        RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                        6,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  onPressed: _busy
+                                                      ? null
+                                                      : () => _deleteOrder(
+                                                            order,
+                                                          ),
+                                                  child: const Text(
+                                                    '删除',
+                                                    style:
+                                                        TextStyle(fontSize: 12),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                      ),
+                      const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
