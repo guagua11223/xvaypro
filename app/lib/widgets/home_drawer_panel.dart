@@ -3,6 +3,9 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../extensions/localization.dart';
 import '../screens/home/account.dart';
+import '../screens/home/login.dart';
+import '../screens/home/register.dart';
+import '../utils/xvay_account.dart';
 import '../screens/home/dashboard.dart';
 import '../screens/home/logs.dart';
 import '../screens/home/profiles.dart';
@@ -75,7 +78,9 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                     children: [
                       CircleAvatar(
                         radius: 32,
-                        backgroundColor: LetsColors.accent.withValues(alpha: 0.12),
+                        backgroundColor: LetsColors.accent.withValues(
+                          alpha: 0.12,
+                        ),
                         child: const LetsIcon(
                           LetsIcons.account,
                           size: 28,
@@ -133,11 +138,24 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
               child: ListView(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 children: [
-                  _DrawerItem(
-                    icon: LetsIcons.account,
-                    label: '飞连账户',
-                    onTap: () => widget.onNavigate(const AccountScreen()),
-                  ),
+                  if (XvayAccount().isLoggedIn)
+                    _DrawerItem(
+                      icon: LetsIcons.account,
+                      label: '飞连账户',
+                      onTap: () => widget.onNavigate(const AccountScreen()),
+                    )
+                  else ...[
+                    _DrawerItem(
+                      icon: LetsIcons.account,
+                      label: '登录',
+                      onTap: () => widget.onNavigate(const LoginScreen()),
+                    ),
+                    _DrawerItem(
+                      icon: LetsIcons.account,
+                      label: '注册',
+                      onTap: () => widget.onNavigate(const RegisterScreen()),
+                    ),
+                  ],
                   _DrawerItem(
                     icon: LetsIcons.region,
                     label: context.loc.switch_region,
@@ -181,7 +199,9 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                     foregroundColor: LetsColors.onAccent,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+                      borderRadius: BorderRadius.circular(
+                        LetsColors.radiusCard,
+                      ),
                     ),
                   ),
                   onPressed: () => widget.onNavigate(const ProfileList()),

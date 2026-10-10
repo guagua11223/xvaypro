@@ -5,6 +5,9 @@ import '../../theme/lets_colors.dart';
 import '../../theme/lets_icons.dart';
 import '../../utils/xvay_account.dart';
 import '../../widgets/lets_app_bar.dart';
+import 'auth_widgets.dart';
+import 'login.dart';
+import 'register.dart';
 
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
@@ -15,13 +18,8 @@ class AccountScreen extends StatefulWidget {
 
 class _AccountScreenState extends State<AccountScreen> {
   final _account = XvayAccount();
-  final _name = TextEditingController();
-  final _password = TextEditingController();
-  final _invite = TextEditingController();
   final _email = TextEditingController();
   final _code = TextEditingController();
-  bool _register = false;
-  bool _recover = false;
   bool _busy = false;
   String? _message;
   Map<String, dynamic> _profile = {};
@@ -42,9 +40,6 @@ class _AccountScreenState extends State<AccountScreen> {
 
   @override
   void dispose() {
-    _name.dispose();
-    _password.dispose();
-    _invite.dispose();
     _email.dispose();
     _code.dispose();
     super.dispose();
@@ -105,21 +100,11 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
-  Future<void> _submit() async {
-    setState(() => _busy = true);
-    try {
-      if (_register) {
-        await _account.register(_name.text, _password.text, _invite.text);
-      } else {
-        await _account.login(_name.text, _password.text);
-      }
-      await _refresh();
-    } catch (error) {
-      if (mounted)
-        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+  Future<void> _openAuth(Widget page) async {
+    final ok = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => page),
+    );
+    if (ok == true && mounted) await _refresh();
   }
 
   Future<void> _buy(Map<String, dynamic> item) async {
@@ -161,36 +146,6 @@ class _AccountScreenState extends State<AccountScreen> {
       });
       if (mounted) setState(() => _message = '邮箱已绑定');
       await _refresh();
-    } catch (error) {
-      if (mounted)
-        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
-    }
-  }
-
-  Future<void> _find() async {
-    try {
-      final data = await _account.apiPost('/api/auth/find-account', {
-        'email': _email.text.trim(),
-        'code': _code.text.trim(),
-      }, auth: false);
-      if (mounted)
-        setState(
-          () => _message = '关联账号 ${data['userId']}（${data['username']}）',
-        );
-    } catch (error) {
-      if (mounted)
-        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
-    }
-  }
-
-  Future<void> _reset() async {
-    try {
-      await _account.apiPost('/api/auth/reset-password-by-email', {
-        'email': _email.text.trim(),
-        'code': _code.text.trim(),
-        'password': _password.text,
-      }, auth: false);
-      if (mounted) setState(() => _message = '密码已重置，请登录');
     } catch (error) {
       if (mounted)
         setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
@@ -239,105 +194,18 @@ class _AccountScreenState extends State<AccountScreen> {
   List<Widget> _guest(LetsPalette palette) {
     return [
       Text(
-        _recover ? '找回账号' : (_register ? '注册' : '登录'),
-        style: TextStyle(
-          fontSize: 22,
-          fontWeight: FontWeight.w600,
-          color: palette.text,
-        ),
-      ),
-      const SizedBox(height: 6),
-      Text(
-        '用户名和密码即可注册，不需要实名、微信或手机授权。',
-        style: TextStyle(fontSize: 13, height: 1.4, color: palette.muted),
+        '登录后查看流量、套餐和订单。',
+        style: TextStyle(fontSize: 14, height: 1.4, color: palette.muted),
       ),
       const SizedBox(height: 16),
-      _card(
-        palette,
-        Column(
-          children: [
-            TextField(
-              controller: _name,
-              textInputAction: TextInputAction.next,
-              decoration: _fieldDecoration(palette, '用户名或邮箱'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _password,
-              obscureText: true,
-              textInputAction: _register || _recover
-                  ? TextInputAction.next
-                  : TextInputAction.done,
-              decoration: _fieldDecoration(palette, '密码'),
-            ),
-            if (_register) ...[
-              const SizedBox(height: 12),
-              TextField(
-                controller: _invite,
-                decoration: _fieldDecoration(palette, '邀请码，可选'),
-              ),
-            ],
-            if (_recover) ...[
-              const SizedBox(height: 12),
-              TextField(
-                controller: _email,
-                keyboardType: TextInputType.emailAddress,
-                decoration: _fieldDecoration(palette, '绑定邮箱'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _code,
-                decoration: _fieldDecoration(palette, '验证码'),
-              ),
-            ],
-            const SizedBox(height: 16),
-            if (!_recover)
-              _primaryButton(
-                label: _register ? '注册' : '登录',
-                onPressed: _busy ? null : _submit,
-              )
-            else ...[
-              _primaryButton(
-                label: '查看关联账号',
-                onPressed: _busy ? null : _find,
-              ),
-              const SizedBox(height: 8),
-              _secondaryButton(label: '重置密码', onPressed: _reset),
-              const SizedBox(height: 8),
-              _secondaryButton(
-                label: '发送找回验证码',
-                onPressed: () => _sendCode('find_account'),
-              ),
-              const SizedBox(height: 8),
-              _secondaryButton(
-                label: '发送重置验证码',
-                onPressed: () => _sendCode('reset_password'),
-              ),
-            ],
-          ],
-        ),
+      AuthPrimaryButton(
+        label: '登录',
+        onPressed: () => _openAuth(const LoginScreen()),
       ),
-      const SizedBox(height: 8),
-      Wrap(
-        alignment: WrapAlignment.center,
-        children: [
-          if (!_recover)
-            TextButton(
-              onPressed: () => setState(() {
-                _register = !_register;
-                _message = null;
-              }),
-              child: Text(_register ? '已有账号，去登录' : '没有账号，去注册'),
-            ),
-          TextButton(
-            onPressed: () => setState(() {
-              _recover = !_recover;
-              _register = false;
-              _message = null;
-            }),
-            child: Text(_recover ? '返回登录' : '找回账号'),
-          ),
-        ],
+      const SizedBox(height: 12),
+      AuthSecondaryButton(
+        label: '注册',
+        onPressed: () => _openAuth(const RegisterScreen()),
       ),
     ];
   }
