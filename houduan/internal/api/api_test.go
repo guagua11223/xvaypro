@@ -592,3 +592,50 @@ func TestCommerceModes(t *testing.T) {
 		t.Fatalf("member under distributor should have no wallet yet %d", eRows.Status)
 	}
 }
+
+func TestPackagesUseAdminPlans(t *testing.T) {
+	cfg := config.Config{
+		DataDir: t.TempDir(), DatabasePath: ":memory:",
+		PublicBaseURL: "http://127.0.0.1:8787", AdminToken: "admin-token",
+		TrialBytes: 1024, TrialDays: 7, SessionTTLMs: 3_600_000, NodeOfflineMs: 180_000,
+	}
+	db, err := store.Open(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	if _, err := db.InsertCatalog("plans", map[string]any{
+		"name": "月卡", "price": 30, "durationDays": 30, "trafficGB": 100, "status": "on",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.InsertCatalog("plans", map[string]any{
+		"name": "停售", "price": 9, "durationDays": 7, "trafficGB": 10, "status": "off",
+	}); err != nil {
+		t.Fatal(err)
+	}
+	handler := api.New(cfg, db)
+	reg := call(t, handler, http.MethodPost, "/api/app/register", "", map[string]any{
+		"username": "buyer", "password": "password1",
+	})
+	if reg.Status != http.StatusCreated {
+		t.Fatalf("register %d %s", reg.Status, reg.Raw)
+	}
+	token := reg.Data["token"].(string)
+	pkgs := call(t, handler, http.MethodGet, "/api/packages", token, nil)
+	list, _ := pkgs.Data["packages"].([]any)
+	if pkgs.Status != http.StatusOK || len(list) != 1 {
+		t.Fatalf("packages %d %s", pkgs.Status, pkgs.Raw)
+	}
+	row := list[0].(map[string]any)
+	if row["name"] != "月卡" || row["price"] != 30.0 || row["trafficGb"] != 100.0 || row["durationDays"] != 30.0 {
+		t.Fatalf("plan row %#v", row)
+	}
+	order := call(t, handler, http.MethodPost, "/api/orders", token, map[string]any{"packageId": row["id"]})
+	if order.Status != http.StatusCreated {
+		t.Fatalf("order %d %s", order.Status, order.Raw)
+	}
+	if order.Data["order"].(map[string]any)["amount"] != 30.0 {
+		t.Fatalf("amount %s", order.Raw)
+	}
+}

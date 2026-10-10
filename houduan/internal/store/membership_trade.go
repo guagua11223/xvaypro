@@ -89,13 +89,21 @@ func (s *Store) ListPackages(activeOnly bool) ([]Package, error) {
 	return list, rows.Err()
 }
 
-func (s *Store) CreateCommerceOrder(userID, packageID, now int64) (CommerceOrder, error) {
+func (s *Store) nodePackage(id int64, activeOnly bool) (Package, error) {
 	var pkg Package
-	err := s.db.QueryRow(`SELECT id, name, duration_type, duration_days, traffic_gb, price, status FROM node_packages WHERE id = ?`, packageID).
+	err := s.db.QueryRow(`SELECT id, name, duration_type, duration_days, traffic_gb, price, status FROM node_packages WHERE id = ?`, id).
 		Scan(&pkg.ID, &pkg.Name, &pkg.DurationType, &pkg.DurationDays, &pkg.TrafficGB, &pkg.Price, &pkg.Status)
-	if err == sql.ErrNoRows || (err == nil && pkg.Status != 1) {
-		return CommerceOrder{}, errs.New(404, "NOT_FOUND", "套餐不存在")
+	if err == sql.ErrNoRows || (err == nil && activeOnly && pkg.Status != 1) {
+		return Package{}, errs.New(404, "NOT_FOUND", "套餐不存在")
 	}
+	if err != nil {
+		return Package{}, err
+	}
+	return pkg, nil
+}
+
+func (s *Store) CreateCommerceOrder(userID, packageID, now int64) (CommerceOrder, error) {
+	pkg, err := s.PackageForSale(packageID)
 	if err != nil {
 		return CommerceOrder{}, err
 	}
@@ -260,8 +268,19 @@ func (s *Store) ListOrdersForUsers(ids []int64, limit int) ([]CommerceOrder, err
 // MarkOrderPaid records the gateway fee and creates one commission mode.
 // A second notify for the same order does nothing.
 func (s *Store) MarkCommercePaid(orderNo string, gatewayFee float64, now int64) (CommerceOrder, error) {
+	preview, found, err := s.FindCommerceOrderByNo(orderNo)
+	if err != nil {
+		return CommerceOrder{}, err
+	}
+	var pkg Package
+	if found && preview.PayStatus == 0 {
+		pkg, err = s.PackageForFulfillment(preview.PackageID, preview.Amount)
+		if err != nil {
+			return CommerceOrder{}, err
+		}
+	}
 	var paid CommerceOrder
-	err := s.tx(func(tx *sql.Tx) error {
+	err = s.tx(func(tx *sql.Tx) error {
 		order, err := scanCommerceOrder(tx.QueryRow(orderSelect+` WHERE order_no = ?`, orderNo))
 		if err == sql.ErrNoRows {
 			return errs.New(404, "NOT_FOUND", "订单不存在")
@@ -280,11 +299,6 @@ func (s *Store) MarkCommercePaid(orderNo string, gatewayFee float64, now int64) 
 			return errs.New(400, "VALIDATION", "支付手续费不正确")
 		}
 		base := roundMoney(order.Amount - gatewayFee)
-		var pkg Package
-		if err := tx.QueryRow(`SELECT id, name, duration_type, duration_days, traffic_gb, price, status FROM node_packages WHERE id = ?`, order.PackageID).
-			Scan(&pkg.ID, &pkg.Name, &pkg.DurationType, &pkg.DurationDays, &pkg.TrafficGB, &pkg.Price, &pkg.Status); err != nil {
-			return err
-		}
 		end := now + int64(pkg.DurationDays)*86400000
 		bytes := int64(pkg.TrafficGB * 1024 * 1024 * 1024)
 		if _, err := tx.Exec(`UPDATE orders SET pay_status = 1, gateway_fee = ?, commission_base = ?, pay_time = ?,

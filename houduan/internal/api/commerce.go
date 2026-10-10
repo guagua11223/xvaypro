@@ -39,7 +39,7 @@ func (s *Server) listPackages(w http.ResponseWriter, r *http.Request) error {
 	if _, err := s.requireUser(r); err != nil {
 		return err
 	}
-	list, err := s.db.ListPackages(true)
+	list, err := s.db.SellablePackages()
 	if err != nil {
 		return err
 	}
@@ -508,11 +508,6 @@ func (s *Server) writeOrders(w http.ResponseWriter, userID, from, to int64) erro
 		return err
 	}
 	names := map[int64]string{}
-	pkgs, _ := s.db.ListPackages(false)
-	pkgName := map[int64]string{}
-	for _, p := range pkgs {
-		pkgName[p.ID] = p.Name
-	}
 	out := make([]map[string]any, 0, len(list))
 	for _, order := range list {
 		name, ok := names[order.UserID]
@@ -520,7 +515,11 @@ func (s *Server) writeOrders(w http.ResponseWriter, userID, from, to int64) erro
 			name, _ = s.usernameOf(order.UserID)
 			names[order.UserID] = name
 		}
-		out = append(out, orderJSON(order, name, pkgName[order.PackageID]))
+		pkgName := ""
+		if pkg, err := s.db.PackageForFulfillment(order.PackageID, order.Amount); err == nil {
+			pkgName = pkg.Name
+		}
+		out = append(out, orderJSON(order, name, pkgName))
 	}
 	var amount float64
 	for _, order := range list {

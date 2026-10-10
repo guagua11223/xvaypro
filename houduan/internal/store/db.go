@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 
 	"xvay/houduan/internal/config"
@@ -296,7 +297,11 @@ func sqliteDSN(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	u := url.URL{Scheme: "file", Path: abs, RawQuery: query}
+	slash := filepath.ToSlash(abs)
+	if !strings.HasPrefix(slash, "/") {
+		slash = "/" + slash
+	}
+	u := url.URL{Scheme: "file", Path: slash, RawQuery: query}
 	return u.String(), nil
 }
 
