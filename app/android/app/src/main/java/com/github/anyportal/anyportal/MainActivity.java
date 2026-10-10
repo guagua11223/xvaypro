@@ -294,6 +294,11 @@ public class MainActivity extends FlutterActivity {
                 break;
             }
 
+            case "app.minimize":
+                moveTaskToBack(true);
+                result.success(true);
+                break;
+
             case "os.installApk": {
                 String path = call.argument("path");
                 installApk(path);

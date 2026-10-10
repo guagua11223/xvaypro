@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/lets_colors.dart';
 import '../../utils/xvay_account.dart';
+import '../../widgets/lets_minimize_button.dart';
 import 'lets_home_page.dart';
 import 'lets_invite_page.dart';
 import 'lets_messages_page.dart';
@@ -69,18 +70,27 @@ class _LetsShellState extends State<LetsShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: LetsColors.deskPage,
-      body: Row(
+      body: Stack(
         children: [
-          SizedBox(
-            width: 248,
-            child: LetsSidebar(
-              selected: _nav,
-              onSelect: _select,
-              onRenew: () => _select(LetsNav.renew),
-            ),
+          Row(
+            children: [
+              SizedBox(
+                width: 248,
+                child: LetsSidebar(
+                  selected: _nav,
+                  onSelect: _select,
+                  onRenew: () => _select(LetsNav.renew),
+                ),
+              ),
+              Container(width: 1, color: const Color(0xFFD8DDE5)),
+              Expanded(child: _page()),
+            ],
           ),
-          Container(width: 1, color: const Color(0xFFD8DDE5)),
-          Expanded(child: _page()),
+          const Positioned(
+            top: 2,
+            right: 4,
+            child: LetsMinimizeButton(color: LetsColors.textSecondary),
+          ),
         ],
       ),
     );

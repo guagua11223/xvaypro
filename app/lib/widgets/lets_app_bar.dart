@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import '../theme/lets_colors.dart';
 import '../theme/lets_icons.dart';
+import 'lets_minimize_button.dart';
 
 class LetsAppBar extends StatelessWidget implements PreferredSizeWidget {
   const LetsAppBar({
@@ -12,17 +13,31 @@ class LetsAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.onLeadingTap,
     this.automaticallyImplyLeading = true,
+    this.showMinimize,
   });
-
 
   final String title;
   final Widget? leading;
   final List<Widget>? actions;
   final VoidCallback? onLeadingTap;
   final bool automaticallyImplyLeading;
+  /// Defaults to true on Android / Windows.
+  final bool? showMinimize;
 
   @override
   Size get preferredSize => const Size.fromHeight(64);
+
+  bool get _minimizeEnabled =>
+      showMinimize ?? LetsMinimizeButton.supported;
+
+  Widget? _trailing(LetsPalette palette) {
+    final extras = <Widget>[
+      ...?actions,
+      if (_minimizeEnabled) LetsMinimizeButton(color: palette.onBar),
+    ];
+    if (extras.isEmpty) return null;
+    return Row(mainAxisSize: MainAxisSize.min, children: extras);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,12 +83,7 @@ class LetsAppBar extends StatelessWidget implements PreferredSizeWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              trailing: actions == null
-                  ? null
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: actions!,
-                    ),
+              trailing: _trailing(palette),
               centerMiddle: true,
             ),
           ),
