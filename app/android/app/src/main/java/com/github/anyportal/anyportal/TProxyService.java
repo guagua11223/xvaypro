@@ -146,7 +146,7 @@ public class TProxyService extends VpnService {
 
         // Build the notification
         return new NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("飞连")
+                .setContentTitle("讯连宝")
                 // .setContentText("The VPN service is running")
                 .setSmallIcon(R.drawable.ic_launcher_monochrome)
                 .setContentIntent(pendingIntent)

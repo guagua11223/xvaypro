@@ -157,7 +157,7 @@ class _ConnectHomeState extends State<ConnectHome> {
       child: Column(
         children: [
           LetsAppBar(
-            title: "飞连",
+            title: "讯连宝",
             automaticallyImplyLeading: widget.showMenuButton,
             onLeadingTap: widget.showMenuButton ? widget.onOpenDrawer : null,
           ),

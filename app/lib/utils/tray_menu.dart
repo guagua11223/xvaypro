@@ -37,7 +37,7 @@ class TrayMenuManager {
       ),
     );
 
-    trayManager.setToolTip("飞连");
+    trayManager.setToolTip("讯连宝");
 
     vPNMan.addListener(updateContextMenu);
     prefs.addListener(updateContextMenu);

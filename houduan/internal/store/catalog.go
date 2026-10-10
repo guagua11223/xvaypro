@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"strconv"
+	"strings"
 	"time"
 
 	"xvay/houduan/internal/auth"
@@ -18,6 +19,145 @@ var catalogKinds = map[string]bool{
 
 func ValidCatalogKind(kind string) bool {
 	return catalogKinds[kind]
+}
+
+// SellablePackages returns the plans configured in the admin console.
+// The built-in node packages are only used when the console has no plans yet.
+func (s *Store) SellablePackages() ([]Package, error) {
+	plans, configured, err := s.catalogPackages()
+	if err != nil {
+		return nil, err
+	}
+	if !configured {
+		return s.ListPackages(true)
+	}
+	on := make([]Package, 0, len(plans))
+	for _, plan := range plans {
+		if plan.Status == 1 {
+			on = append(on, plan)
+		}
+	}
+	return on, nil
+}
+
+// PackageForSale resolves a package the app is allowed to buy.
+func (s *Store) PackageForSale(id int64) (Package, error) {
+	plans, configured, err := s.catalogPackages()
+	if err != nil {
+		return Package{}, err
+	}
+	if configured {
+		for _, plan := range plans {
+			if plan.ID == id && plan.Status == 1 {
+				return plan, nil
+			}
+		}
+		return Package{}, errs.New(404, "NOT_FOUND", "套餐不存在")
+	}
+	return s.nodePackage(id, true)
+}
+
+// PackageForFulfillment resolves the plan that should be applied when an order is paid.
+// An older order that was priced from the built-in package keeps that package when the
+// admin plan with the same id has a different price.
+func (s *Store) PackageForFulfillment(id int64, amount float64) (Package, error) {
+	plans, _, err := s.catalogPackages()
+	if err != nil {
+		return Package{}, err
+	}
+	var catalog Package
+	hasCatalog := false
+	for _, plan := range plans {
+		if plan.ID == id {
+			catalog = plan
+			hasCatalog = true
+			break
+		}
+	}
+	node, nodeErr := s.nodePackage(id, false)
+	hasNode := nodeErr == nil
+	if hasCatalog && hasNode && sameMoney(amount, node.Price) && !sameMoney(amount, catalog.Price) {
+		return node, nil
+	}
+	if hasCatalog {
+		return catalog, nil
+	}
+	if hasNode {
+		return node, nil
+	}
+	if nodeErr != nil {
+		return Package{}, nodeErr
+	}
+	return Package{}, errs.New(404, "NOT_FOUND", "套餐不存在")
+}
+
+func (s *Store) catalogPackages() ([]Package, bool, error) {
+	rows, err := s.ListCatalog("plans")
+	if err != nil {
+		return nil, false, err
+	}
+	if len(rows) == 0 {
+		return nil, false, nil
+	}
+	out := make([]Package, 0, len(rows))
+	for _, row := range rows {
+		item, ok := packageFromCatalog(row)
+		if ok {
+			out = append(out, item)
+		}
+	}
+	return out, true, nil
+}
+
+func packageFromCatalog(item map[string]any) (Package, bool) {
+	id := AsInt64(item["id"])
+	name := strings.TrimSpace(AsString(item["name"]))
+	if id <= 0 || name == "" {
+		return Package{}, false
+	}
+	traffic := AsFloat(item["trafficGB"])
+	if traffic == 0 {
+		traffic = AsFloat(item["trafficGb"])
+	}
+	status := 0
+	if planOnSale(item) {
+		status = 1
+	}
+	return Package{
+		ID: id, Name: name, DurationType: "catalog",
+		DurationDays: int(AsInt64(item["durationDays"])),
+		TrafficGB:    traffic, Price: AsFloat(item["price"]), Status: status,
+	}, true
+}
+
+func planOnSale(item map[string]any) bool {
+	switch value := item["status"].(type) {
+	case string:
+		switch strings.ToLower(strings.TrimSpace(value)) {
+		case "off", "0", "false", "disabled":
+			return false
+		default:
+			return true
+		}
+	case float64:
+		return value != 0
+	case int64:
+		return value != 0
+	case int:
+		return value != 0
+	case bool:
+		return value
+	default:
+		return item["status"] == nil
+	}
+}
+
+func sameMoney(a, b float64) bool {
+	diff := a - b
+	if diff < 0 {
+		diff = -diff
+	}
+	return diff < 0.001
 }
 
 func (s *Store) ListCatalog(kind string) ([]map[string]any, error) {

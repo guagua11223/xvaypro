@@ -80,7 +80,14 @@ func (s *Store) FindLogin(account string) (Member, bool, error) {
 }
 
 func (s *Store) FindByInvite(code string) (Member, bool, error) {
-	m, err := scanMember(s.db.QueryRow(`SELECT `+memberCols+` FROM users WHERE invite_code = ?`, code))
+	code = strings.TrimSpace(code)
+	if code == "" {
+		return Member{}, false, nil
+	}
+	m, err := scanMember(s.db.QueryRow(
+		`SELECT `+memberCols+` FROM users WHERE invite_code = ? OR lower(invite_code) = lower(?) LIMIT 1`,
+		code, code,
+	))
 	if err == sql.ErrNoRows {
 		return Member{}, false, nil
 	}
@@ -88,6 +95,30 @@ func (s *Store) FindByInvite(code string) (Member, bool, error) {
 		return Member{}, false, err
 	}
 	return m, true, nil
+}
+
+// ListInvitees returns accounts that registered under this member's invite code.
+func (s *Store) ListInvitees(parentID int64, limit int) ([]Member, error) {
+	if limit <= 0 || limit > 200 {
+		limit = 50
+	}
+	rows, err := s.db.Query(
+		`SELECT `+memberCols+` FROM users WHERE parent_id = ? OR referrer_id = ? ORDER BY id DESC LIMIT ?`,
+		parentID, parentID, limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	list := []Member{}
+	for rows.Next() {
+		m, err := scanMember(rows)
+		if err != nil {
+			return nil, err
+		}
+		list = append(list, m)
+	}
+	return list, rows.Err()
 }
 
 func (s *Store) UsernameTaken(username string, except int64) (bool, error) {

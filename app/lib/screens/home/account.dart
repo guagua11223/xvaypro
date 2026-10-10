@@ -1,5 +1,8 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../theme/lets_colors.dart';
 import '../../theme/lets_icons.dart';
@@ -20,6 +23,9 @@ class _AccountScreenState extends State<AccountScreen> {
   final _account = XvayAccount();
   final _email = TextEditingController();
   final _code = TextEditingController();
+  final _withdraw = TextEditingController();
+  final _ticketTitle = TextEditingController();
+  final _ticketBody = TextEditingController();
   bool _busy = false;
   String? _message;
   Map<String, dynamic> _profile = {};
@@ -29,6 +35,8 @@ class _AccountScreenState extends State<AccountScreen> {
   Map<String, dynamic> _inviteInfo = {};
   List<Map<String, dynamic>> _notices = [];
   List<Map<String, dynamic>> _services = [];
+  List<Map<String, dynamic>> _tickets = [];
+  Uint8List? _qr;
 
   bool get _loggedIn => _account.isLoggedIn;
 
@@ -42,6 +50,9 @@ class _AccountScreenState extends State<AccountScreen> {
   void dispose() {
     _email.dispose();
     _code.dispose();
+    _withdraw.dispose();
+    _ticketTitle.dispose();
+    _ticketBody.dispose();
     super.dispose();
   }
 
@@ -66,6 +77,11 @@ class _AccountScreenState extends State<AccountScreen> {
         wallet = await _account.apiGet('/api/wallet');
       }
       final invite = await _account.apiGet('/api/invite');
+      final tickets = await _account.apiGet('/api/user/tickets');
+      Uint8List? qr;
+      try {
+        qr = await _account.apiBytes('/api/app/invite/qr.png');
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
         _profile = profile;
@@ -75,6 +91,8 @@ class _AccountScreenState extends State<AccountScreen> {
         _inviteInfo = invite;
         _notices = _list(notices['announcements']);
         _services = _list(services['services']);
+        _tickets = _list(tickets['tickets']);
+        _qr = qr;
         _message = null;
       });
       if (profile['emailStatus'] != 2 && mounted) {
@@ -107,7 +125,13 @@ class _AccountScreenState extends State<AccountScreen> {
     if (ok == true && mounted) await _refresh();
   }
 
+  bool get _hasUnpaid => _orders.any(commerceOrderPending);
+
   Future<void> _buy(Map<String, dynamic> item) async {
+    if (_hasUnpaid) {
+      setState(() => _message = '有待支付订单，请先完成支付');
+      return;
+    }
     setState(() => _busy = true);
     try {
       final data = await _account.apiPost('/api/orders', {
@@ -120,6 +144,116 @@ class _AccountScreenState extends State<AccountScreen> {
     } catch (error) {
       if (mounted)
         setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _deleteOrder(Map<String, dynamic> item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除订单'),
+        content: Text('删除待支付订单 ${item['orderNo']}？删除后可以重新购买。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await _account.apiPost('/api/orders/cancel', {'orderId': item['id']});
+      if (mounted) setState(() => _message = '已删除待支付订单');
+      await _refresh();
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _pay(Map<String, dynamic> item) async {
+    setState(() => _busy = true);
+    try {
+      final data = await _account.apiPost('/api/pay/create', {
+        'orderId': item['id'],
+      });
+      final url = payLink(data);
+      if (!mounted) return;
+      if (url == null) {
+        setState(
+          () => _message =
+              '订单 ${item['orderNo']} 待支付 ¥${item['amount']}，支付网关未返回链接',
+        );
+        return;
+      }
+      final opened = await launchUrl(
+        Uri.parse(url),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!mounted) return;
+      setState(
+        () => _message = opened ? '已打开支付页面，完成后请刷新' : '无法打开支付页面',
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _withdrawMoney() async {
+    final amount = double.tryParse(_withdraw.text.trim());
+    if (amount == null || amount <= 0) {
+      setState(() => _message = '请填写提现金额');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await _account.apiPost('/api/wallet/withdraw', {'amount': amount});
+      _withdraw.clear();
+      if (mounted) setState(() => _message = '提现申请已提交，等待审核');
+      await _refresh();
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _submitTicket() async {
+    if (_ticketTitle.text.trim().isEmpty || _ticketBody.text.trim().isEmpty) {
+      setState(() => _message = '请填写工单标题和内容');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      await _account.apiPost('/api/user/tickets', {
+        'title': _ticketTitle.text.trim(),
+        'body': _ticketBody.text.trim(),
+      });
+      _ticketTitle.clear();
+      _ticketBody.clear();
+      if (mounted) setState(() => _message = '工单已提交');
+      await _refresh();
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -217,6 +351,8 @@ class _AccountScreenState extends State<AccountScreen> {
     final traffic = gb is num ? gb.toStringAsFixed(2) : '0.00';
     final inviteCode = '${_inviteInfo['inviteCode'] ?? ''}';
     final inviteUrl = '${_inviteInfo['inviteUrl'] ?? ''}';
+    final parentName = '${_profile['parentName'] ?? _inviteInfo['parentName'] ?? ''}';
+    final invitees = _list(_inviteInfo['invitees']);
     return [
       _card(
         palette,
@@ -256,6 +392,15 @@ class _AccountScreenState extends State<AccountScreen> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(fontSize: 13, color: palette.muted),
                   ),
+                  if (parentName.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      '推荐人 $parentName',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 12, color: palette.muted),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -275,12 +420,33 @@ class _AccountScreenState extends State<AccountScreen> {
           Expanded(child: _stat(palette, '剩余时长', '$days 天')),
         ],
       ),
+      if (days > 0 && days <= 3) ...[
+        const SizedBox(height: 12),
+        _note(palette, '套餐将在 $days 天后到期。续费会按新套餐重新计算流量，到期流量不结转。'),
+      ],
       const SizedBox(height: 20),
-      _heading(palette, '购买节点'),
+      _heading(palette, '购买 / 续费'),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+        child: Text(
+          '支付走四方支付。续费成功后流量按新套餐重置，不结转剩余流量。',
+          style: TextStyle(fontSize: 13, height: 1.4, color: palette.muted),
+        ),
+      ),
+      if (_hasUnpaid)
+        Padding(
+          padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+          child: Text(
+            '有待支付订单，请先完成支付后再购买。',
+            style: TextStyle(fontSize: 13, height: 1.4, color: palette.muted),
+          ),
+        ),
       if (_packages.isEmpty)
         _empty(palette, '暂时没有可购买的套餐')
       else
-        ..._packages.map((item) => _packageTile(palette, item)),
+        ..._packages.map(
+          (item) => _packageTile(palette, item, enabled: !_hasUnpaid),
+        ),
       if (_profile['walletEnabled'] == 1) ...[
         const SizedBox(height: 8),
         _heading(palette, '钱包'),
@@ -290,10 +456,44 @@ class _AccountScreenState extends State<AccountScreen> {
             children: [
               _kv(palette, '推荐获利', '¥${_wallet['totalIncome'] ?? 0}'),
               _kv(palette, '可提现', '¥${_wallet['balance'] ?? 0}'),
-              _kv(palette, '冻结', '¥${_wallet['frozen'] ?? 0}', last: true),
+              _kv(palette, '冻结', '¥${_wallet['frozen'] ?? 0}'),
+              _kv(
+                palette,
+                '负余额',
+                '¥${_wallet['negativeBalance'] ?? 0}',
+                last: true,
+              ),
             ],
           ),
         ),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _withdraw,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: _fieldDecoration(palette, '提现金额'),
+        ),
+        const SizedBox(height: 8),
+        _primaryButton(
+          label: '申请提现',
+          onPressed: _busy ? null : _withdrawMoney,
+        ),
+        if (_list(_wallet['commissions']).isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _heading(palette, '返利明细'),
+          _card(
+            palette,
+            Column(
+              children: [
+                for (final row in _list(_wallet['commissions']))
+                  _kv(
+                    palette,
+                    '${row['fromUsername'] ?? row['fromUserId'] ?? ''} · ${row['level'] ?? ''}级',
+                    '¥${row['amount'] ?? 0}',
+                  ),
+              ],
+            ),
+          ),
+        ],
       ],
       const SizedBox(height: 8),
       _heading(palette, '推荐有奖'),
@@ -307,12 +507,51 @@ class _AccountScreenState extends State<AccountScreen> {
               const SizedBox(height: 10),
               _copyLine(palette, '推荐链接', inviteUrl),
             ],
+            if (_qr != null) ...[
+              const SizedBox(height: 12),
+              Center(
+                child: Image.memory(_qr!, width: 160, height: 160),
+              ),
+            ],
+            if (_list(_inviteInfo['team']).isNotEmpty) ...[
+              const SizedBox(height: 12),
+              for (final person in _list(_inviteInfo['team']))
+                _kv(
+                  palette,
+                  '${person['username'] ?? ''}',
+                  '${person['userTypeLabel'] ?? person['userType'] ?? ''} · ${person['level'] ?? ''}级',
+                ),
+            ],
             if ('${_inviteInfo['mode'] ?? ''}'.isNotEmpty) ...[
               const SizedBox(height: 8),
               Text(
                 '${_inviteInfo['mode']}',
                 style: TextStyle(fontSize: 12, color: palette.muted),
               ),
+            ],
+            const SizedBox(height: 12),
+            Text(
+              '已邀请 ${invitees.length} 人',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: palette.text,
+              ),
+            ),
+            if (invitees.isEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                '把推荐码发给好友，对方注册时填写后会挂到你名下。',
+                style: TextStyle(fontSize: 12, height: 1.4, color: palette.muted),
+              ),
+            ] else ...[
+              for (var i = 0; i < invitees.length && i < 8; i++) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '${invitees[i]['username'] ?? ''} · ID ${invitees[i]['id'] ?? ''}',
+                  style: TextStyle(fontSize: 13, color: palette.text),
+                ),
+              ],
             ],
           ],
         ),
@@ -326,11 +565,11 @@ class _AccountScreenState extends State<AccountScreen> {
           palette,
           Column(
             children: [
-              for (var i = 0; i < _orders.take(8).length; i++)
+              for (var i = 0; i < _shownOrders.length; i++)
                 _orderRow(
                   palette,
-                  _orders[i],
-                  last: i == _orders.take(8).length - 1,
+                  _shownOrders[i],
+                  last: i == _shownOrders.length - 1,
                 ),
             ],
           ),
@@ -416,6 +655,40 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
             const SizedBox(height: 8),
             _primaryButton(label: '绑定邮箱', onPressed: _busy ? null : _bind),
+          ],
+        ),
+      ),
+      const SizedBox(height: 8),
+      _heading(palette, '提交工单'),
+      _card(
+        palette,
+        Column(
+          children: [
+            TextField(
+              controller: _ticketTitle,
+              decoration: _fieldDecoration(palette, '标题'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _ticketBody,
+              minLines: 2,
+              maxLines: 4,
+              decoration: _fieldDecoration(palette, '内容'),
+            ),
+            const SizedBox(height: 12),
+            _primaryButton(
+              label: '提交工单',
+              onPressed: _busy ? null : _submitTicket,
+            ),
+            if (_tickets.isNotEmpty) ...[
+              const SizedBox(height: 12),
+              for (final ticket in _tickets)
+                _kv(
+                  palette,
+                  '${ticket['title'] ?? ''}',
+                  '${ticket['status'] ?? ''}',
+                ),
+            ],
           ],
         ),
       ),
@@ -511,51 +784,60 @@ class _AccountScreenState extends State<AccountScreen> {
     );
   }
 
-  Widget _packageTile(LetsPalette palette, Map<String, dynamic> item) {
+  List<Map<String, dynamic>> get _shownOrders => visibleOrders(_orders);
+
+  Widget _packageTile(
+    LetsPalette palette,
+    Map<String, dynamic> item, {
+    required bool enabled,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Material(
-        color: palette.surface,
-        borderRadius: BorderRadius.circular(LetsColors.radiusCard),
-        child: InkWell(
+      child: Opacity(
+        opacity: enabled ? 1 : 0.45,
+        child: Material(
+          color: palette.surface,
           borderRadius: BorderRadius.circular(LetsColors.radiusCard),
-          onTap: _busy ? null : () => _buy(item),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '${item['name']}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: palette.text,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(LetsColors.radiusCard),
+            onTap: !enabled || _busy ? null : () => _buy(item),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '${item['name']}',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: palette.text,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${item['trafficGb']} GB · ${item['durationDays']} 天',
-                        style: TextStyle(fontSize: 13, color: palette.muted),
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          '${item['trafficGb']} GB · ${item['durationDays']} 天',
+                          style: TextStyle(fontSize: 13, color: palette.muted),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  '¥${item['price']}',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: LetsColors.accent,
+                  const SizedBox(width: 12),
+                  Text(
+                    '¥${item['price']}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: LetsColors.accent,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -662,12 +944,57 @@ class _AccountScreenState extends State<AccountScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          Text(
-            status,
-            style: TextStyle(
-              fontSize: 13,
-              color: status == '已支付' ? LetsColors.accent : palette.muted,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                status,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: status == '已支付' ? LetsColors.accent : palette.muted,
+                ),
+              ),
+              if (commerceOrderPending(item)) ...[
+                const SizedBox(height: 6),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 32,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: LetsColors.accent,
+                          foregroundColor: LetsColors.onAccent,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _busy ? null : () => _pay(item),
+                        child: const Text('支付', style: TextStyle(fontSize: 13)),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 32,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: palette.text,
+                          side: BorderSide(color: palette.line),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _busy ? null : () => _deleteOrder(item),
+                        child: const Text('删除', style: TextStyle(fontSize: 13)),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
           ),
         ],
       ),
@@ -749,4 +1076,26 @@ class _AccountScreenState extends State<AccountScreen> {
       ),
     );
   }
+}
+
+bool commerceOrderPending(Map<String, dynamic> item) {
+  final value = item['payStatus'];
+  return value is num && value.toInt() == 0;
+}
+
+List<Map<String, dynamic>> visibleOrders(List<Map<String, dynamic>> orders) {
+  final pending = orders.where(commerceOrderPending).toList();
+  final rest = orders.where((item) => !commerceOrderPending(item)).take(8);
+  return [...pending, ...rest];
+}
+
+String? payLink(Map<String, dynamic> data) {
+  for (final key in ['payUrl', 'url', 'gateway']) {
+    final value = data[key];
+    if (value is String &&
+        (value.startsWith('http://') || value.startsWith('https://'))) {
+      return value;
+    }
+  }
+  return null;
 }

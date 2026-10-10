@@ -38,7 +38,7 @@ async function submit() {
     <section class="auth-brand">
       <div>
         <div class="brand-mark">X</div>
-        <h1>飞连 经销商后台</h1>
+        <h1>讯连宝 经销商后台</h1>
         <p>管理旗下会员、授权代理、查看订单和佣金。代理不能登录这里，也不能再发展代理。</p>
         <div class="brand-points">
           <div>旗下会员：设置返佣，授权代理</div>
@@ -46,7 +46,7 @@ async function submit() {
           <div>邀请码：会员注册时填写，加入你的团队</div>
         </div>
       </div>
-      <div>飞连 · 经销商</div>
+      <div>讯连宝 · 经销商</div>
     </section>
     <section class="auth-panel">
       <div class="auth-card">

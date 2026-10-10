@@ -83,7 +83,7 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "飞连",
+                              "讯连宝",
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
@@ -131,7 +131,7 @@ class _HomeDrawerPanelState extends State<HomeDrawerPanel> {
                   if (XvayAccount().isLoggedIn)
                     _DrawerItem(
                       icon: LetsIcons.account,
-                      label: '飞连账户',
+                      label: '讯连宝账户',
                       onTap: () => widget.onNavigate(const AccountScreen()),
                     )
                   else ...[

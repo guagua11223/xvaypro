@@ -36,10 +36,7 @@ func (s *Server) userProfile(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *Server) listPackages(w http.ResponseWriter, r *http.Request) error {
-	if _, err := s.requireUser(r); err != nil {
-		return err
-	}
-	list, err := s.db.ListPackages(true)
+	list, err := s.db.SellablePackages()
 	if err != nil {
 		return err
 	}
@@ -81,6 +78,22 @@ func (s *Server) listMyOrders(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return s.writeOrders(w, user.ID, 0, 0)
+}
+
+func (s *Server) cancelMyOrder(w http.ResponseWriter, r *http.Request) error {
+	user, err := s.requireUser(r)
+	if err != nil {
+		return err
+	}
+	body, err := readJSON(r)
+	if err != nil {
+		return err
+	}
+	if err := s.db.CancelCommerceOrder(user.ID, store.AsInt64(body["orderId"])); err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, map[string]any{"cancelled": true})
+	return nil
 }
 
 func (s *Server) userWallet(w http.ResponseWriter, r *http.Request) error {
@@ -143,11 +156,33 @@ func (s *Server) userInvite(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
+	team, err := s.teamItems(user.ID)
+	if err != nil {
+		return err
+	}
+	invitees, err := s.db.ListInvitees(user.ID, 50)
+	if err != nil {
+		return err
+	}
+	items := make([]map[string]any, 0, len(invitees))
+	for _, item := range invitees {
+		items = append(items, map[string]any{
+			"id": item.ID, "username": item.Username, "createdAt": item.CreatedAt,
+			"userType": memberType(item),
+		})
+	}
+	parentName, _ := s.usernameOf(member.ParentID)
 	writeOK(w, http.StatusOK, map[string]any{
-		"inviteCode": member.InviteCode,
-		"inviteUrl":  link,
-		"mode":       "三级推荐：直接推荐人为一级，其上两级为二级、三级。有经销商归属时只按经销商规则返佣，不叠加。",
-		"rules":      settings,
+		"inviteCode":   member.InviteCode,
+		"inviteUrl":    link,
+		"qrUrl":        "/api/app/invite/qr.png",
+		"team":         team,
+		"parentId":     member.ParentID,
+		"parentName":   parentName,
+		"invitees":     items,
+		"inviteeCount": len(items),
+		"mode":         "三级推荐：直接推荐人为一级，其上两级为二级、三级。有经销商归属时只按经销商规则返佣，不叠加。",
+		"rules":        settings,
 	})
 	return nil
 }
@@ -492,11 +527,6 @@ func (s *Server) writeOrders(w http.ResponseWriter, userID, from, to int64) erro
 		return err
 	}
 	names := map[int64]string{}
-	pkgs, _ := s.db.ListPackages(false)
-	pkgName := map[int64]string{}
-	for _, p := range pkgs {
-		pkgName[p.ID] = p.Name
-	}
 	out := make([]map[string]any, 0, len(list))
 	for _, order := range list {
 		name, ok := names[order.UserID]
@@ -504,7 +534,11 @@ func (s *Server) writeOrders(w http.ResponseWriter, userID, from, to int64) erro
 			name, _ = s.usernameOf(order.UserID)
 			names[order.UserID] = name
 		}
-		out = append(out, orderJSON(order, name, pkgName[order.PackageID]))
+		pkgName := ""
+		if pkg, err := s.db.PackageForFulfillment(order.PackageID, order.Amount); err == nil {
+			pkgName = pkg.Name
+		}
+		out = append(out, orderJSON(order, name, pkgName))
 	}
 	var amount float64
 	for _, order := range list {

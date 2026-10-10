@@ -97,7 +97,7 @@ We hope you choose well between your home world and Wonderlands.""",
         ),
       ),
       ListTile(
-        title: const Text("飞连"),
+        title: const Text("讯连宝"),
         subtitle: Text(version),
       ),
       ListTile(

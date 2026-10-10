@@ -103,10 +103,10 @@ func (s *Store) seedDemoCatalog() error {
 		return err
 	}
 	if err := s.ensureCatalog("agents", []map[string]any{
-		{"id": int64(1), "name": "华南总代", "username": "agent-hn", "phone": "13900001001", "level": "gold", "inviteCode": "飞连-HN", "parentId": nil, "balance": 154.8, "totalCommission": 154.8, "status": "active", "remark": "覆盖广东直营与下级站点", "createdAt": agoISO(200)},
-		{"id": int64(2), "name": "华东渠道", "username": "agent-hd", "phone": "13900001002", "level": "gold", "inviteCode": "飞连-HD", "parentId": nil, "balance": 9, "totalCommission": 9, "status": "active", "remark": "上海、江苏渠道", "createdAt": agoISO(180)},
-		{"id": int64(3), "name": "深圳站", "username": "agent-sz", "phone": "13900001003", "level": "silver", "inviteCode": "飞连-SZ", "parentId": int64(1), "balance": 0, "totalCommission": 0, "status": "active", "remark": "华南总代下级", "createdAt": agoISO(90)},
-		{"id": int64(4), "name": "杭州站", "username": "agent-hz", "phone": "13900001004", "level": "bronze", "inviteCode": "飞连-HZ", "parentId": int64(2), "balance": 0, "totalCommission": 0, "status": "frozen", "remark": "结算资料待补充", "createdAt": agoISO(40)},
+		{"id": int64(1), "name": "华南总代", "username": "agent-hn", "phone": "13900001001", "level": "gold", "inviteCode": "讯连宝-HN", "parentId": nil, "balance": 154.8, "totalCommission": 154.8, "status": "active", "remark": "覆盖广东直营与下级站点", "createdAt": agoISO(200)},
+		{"id": int64(2), "name": "华东渠道", "username": "agent-hd", "phone": "13900001002", "level": "gold", "inviteCode": "讯连宝-HD", "parentId": nil, "balance": 9, "totalCommission": 9, "status": "active", "remark": "上海、江苏渠道", "createdAt": agoISO(180)},
+		{"id": int64(3), "name": "深圳站", "username": "agent-sz", "phone": "13900001003", "level": "silver", "inviteCode": "讯连宝-SZ", "parentId": int64(1), "balance": 0, "totalCommission": 0, "status": "active", "remark": "华南总代下级", "createdAt": agoISO(90)},
+		{"id": int64(4), "name": "杭州站", "username": "agent-hz", "phone": "13900001004", "level": "bronze", "inviteCode": "讯连宝-HZ", "parentId": int64(2), "balance": 0, "totalCommission": 0, "status": "frozen", "remark": "结算资料待补充", "createdAt": agoISO(40)},
 	}); err != nil {
 		return err
 	}
@@ -138,7 +138,7 @@ func defaultAppSettings() map[string]any {
 		"socksPort": 15491, "httpPort": 15492,
 		"defaultMode": "fullSpeed", "systemProxy": false, "tun": false,
 		"pingUrl": "http://www.gstatic.com/generate_204", "pingMaxConcurrency": 8,
-		"announcement": "欢迎使用 飞连。线路、套餐与公告由总后台统一配置后下发到 App。",
+		"announcement": "欢迎使用 讯连宝。线路、套餐与公告由总后台统一配置后下发到 App。",
 		"supportUrl":   "https://xvay.example/support",
 		"aboutText":    "AnyPortal 客户端，支持 V2Ray、Xray、sing-box、Clash、Hysteria2 与 Naive。",
 		"profileName":  "AnyPortal",
@@ -327,7 +327,7 @@ func (s *Store) seedDemoNotice() error {
 	if count > 0 {
 		return nil
 	}
-	_, err := s.CreateAnnouncement("飞连", "欢迎使用 飞连。线路、套餐与公告由总后台统一配置后下发到 App。", true)
+	_, err := s.CreateAnnouncement("讯连宝", "欢迎使用 讯连宝。线路、套餐与公告由总后台统一配置后下发到 App。", true)
 	return err
 }
 

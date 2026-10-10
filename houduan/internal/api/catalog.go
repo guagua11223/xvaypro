@@ -240,7 +240,7 @@ func (s *Server) adminPutAppSettings(w http.ResponseWriter, r *http.Request) err
 			return err
 		}
 	}
-	title := "飞连"
+	title := "讯连宝"
 	text := strings.TrimSpace(store.AsString(body["announcement"]))
 	if text != "" {
 		rows, err := s.db.ListAnnouncements(false)

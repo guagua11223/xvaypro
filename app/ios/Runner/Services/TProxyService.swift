@@ -81,7 +81,7 @@ class TProxyService {
             let manager = managers?.first ?? NETunnelProviderManager()
             let proto = NETunnelProviderProtocol()
             proto.providerBundleIdentifier = bundleId
-            proto.serverAddress = "飞连"
+            proto.serverAddress = "讯连宝"
             let storedPort = preferences.integer(forKey: "flutter.app.http.port")
             let httpPort = storedPort > 0 ? storedPort : 15492
             proto.providerConfiguration = [
@@ -90,7 +90,7 @@ class TProxyService {
                 "httpPort": httpPort,
             ]
             manager.protocolConfiguration = proto
-            manager.localizedDescription = "飞连"
+            manager.localizedDescription = "讯连宝"
             manager.isEnabled = true
             manager.saveToPreferences { error in
                 if error != nil {

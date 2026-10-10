@@ -99,7 +99,7 @@ void main(List<String> args) async {
       backgroundColor: RuntimePlatform.isWindows
           ? LetsColors.pageBg
           : null,
-      title: RuntimePlatform.isWindows ? "飞连" : null,
+      title: RuntimePlatform.isWindows ? "讯连宝" : null,
       skipTaskbar: false,
     );
     // override the default close handler
@@ -190,7 +190,7 @@ class AnyPortal extends StatelessWidget {
       listenable: Listenable.merge([themeManager, localeManager]),
       builder: (BuildContext context, Widget? child) {
         return MaterialApp(
-          title: '飞连',
+          title: '讯连宝',
           navigatorKey: global.navigatorKey,
           theme: getPlatformThemeData(),
           locale: localeManager.locale,
@@ -213,7 +213,7 @@ class AnyPortal extends StatelessWidget {
           darkTheme: getPlatformDarkThemeData(),
           themeMode: themeManager.isDark ? ThemeMode.dark : ThemeMode.light,
           home: HomePage(
-            title: '飞连',
+            title: '讯连宝',
           ),
           localizationsDelegates: [
             LocaleNamesLocalizationsDelegate(),

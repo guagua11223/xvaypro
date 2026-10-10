@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:drift/drift.dart' as drift;
 import 'package:http/http.dart' as http;
@@ -45,6 +46,21 @@ class XvayAccount {
     final data = _decode(response)['data'];
     if (data is! Map) throw Exception('响应缺少内容');
     return Map<String, dynamic>.from(data);
+  }
+
+  Future<Uint8List> apiBytes(String path) async {
+    final current = token;
+    if (current == null || current.isEmpty) {
+      throw Exception('尚未登录');
+    }
+    final response = await _client.get(
+      Uri.parse('$kBackendBase$path'),
+      headers: {'Authorization': 'Bearer $current'},
+    );
+    if (response.statusCode >= 400) {
+      throw Exception('二维码加载失败');
+    }
+    return response.bodyBytes;
   }
 
   Future<Map<String, dynamic>> apiPost(String path, Map<String, dynamic> body, {bool auth = true}) async {
@@ -301,7 +317,7 @@ Future<void> syncSubscription(Map<String, dynamic> user) async {
   final raw = user['subscriptionUrl'] as String?;
   if (raw == null || raw.isEmpty) return;
   final url = reachableBackendUrl(raw);
-  final name = (user['email'] as String?) ?? '飞连';
+  final name = (user['email'] as String?) ?? '讯连宝';
   final remotes = await db.select(db.profileGroupRemote).get();
   ProfileGroupData? existing;
   for (final remote in remotes) {
@@ -372,7 +388,7 @@ void applyVlessKeys(Map<String, dynamic> profile, Map<String, dynamic> _) {
 }
 
 Future<void> applyConnectProfile(Map<String, dynamic> profile) async {
-  final name = profile['name'] as String? ?? '飞连';
+  final name = profile['name'] as String? ?? '讯连宝';
   final key = profile['key'] as String? ?? name;
   final coreTypeName = profile['coreType'] as String? ?? 'xray';
   final format = profile['format'] as String? ?? 'json';

@@ -51,6 +51,10 @@ func EnsureDefault(db *store.Store, cfg config.Config) error {
 
 // Sync writes Xray and Hysteria configs for every enabled node and restarts the local units.
 func Sync(db *store.Store, cfg config.Config) error {
+	if os.Getenv("XVAY_SKIP_NODE_SYNC") == "1" {
+		log.Printf("skip node sync")
+		return nil
+	}
 	if err := ensureUnits(cfg.DataDir); err != nil {
 		log.Printf("node units: %v", err)
 	}

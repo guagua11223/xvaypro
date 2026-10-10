@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 
 	"xvay/houduan/internal/config"
@@ -283,6 +284,12 @@ func Open(cfg config.Config) (*Store, error) {
 
 func (s *Store) Close() error { return s.db.Close() }
 
+func (s *Store) BackupTo(path string) error {
+	escaped := strings.ReplaceAll(path, "'", "''")
+	_, err := s.db.Exec(`VACUUM INTO '` + escaped + `'`)
+	return err
+}
+
 func sqliteDSN(path string) (string, error) {
 	query := "_pragma=busy_timeout(5000)&_pragma=foreign_keys(1)"
 	if path == ":memory:" {
@@ -296,13 +303,17 @@ func sqliteDSN(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	u := url.URL{Scheme: "file", Path: abs, RawQuery: query}
+	slash := filepath.ToSlash(abs)
+	if !strings.HasPrefix(slash, "/") {
+		slash = "/" + slash
+	}
+	u := url.URL{Scheme: "file", Path: slash, RawQuery: query}
 	return u.String(), nil
 }
 
 func (s *Store) seedSettings(cfg config.Config) error {
 	defaults := map[string]string{
-		"profile_name":         "飞连",
+		"profile_name":         "讯连宝",
 		"support_url":          "",
 		"profile_web_page_url": "",
 		"auto_update_interval": "86400",

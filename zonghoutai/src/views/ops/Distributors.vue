@@ -21,6 +21,19 @@ async function load() {
   }
 }
 
+async function ban(row) {
+  const { value } = await ElMessageBox.prompt('封禁后已购节点立即停用，可以解封', '封禁经销商', { inputPlaceholder: '原因' })
+  await adminRequest(`/api/admin/members/${row.id}/ban`, { method: 'POST', body: { reason: value || '平台封禁' } })
+  ElMessage.success('已封禁')
+  await load()
+}
+
+async function unban(row) {
+  await adminRequest(`/api/admin/members/${row.id}/unban`, { method: 'POST', body: {} })
+  ElMessage.success('已解封')
+  await load()
+}
+
 async function setRate(row) {
   const { value } = await ElMessageBox.prompt('给会员设置的比例不能超过这个数', '经销商比例', {
     inputValue: String(row.rate),
@@ -58,9 +71,12 @@ async function setRate(row) {
       <el-table-column label="状态" width="80">
         <template #default="{ row }">{{ row.status === 0 ? '正常' : '禁用' }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="120">
+      <el-table-column label="操作" width="280">
         <template #default="{ row }">
           <el-button link type="primary" @click="setRate(row)">设置比例</el-button>
+          <el-button v-if="row.status !== 1" link type="danger" @click="ban(row)">封禁</el-button>
+          <el-button v-else link type="success" @click="unban(row)">解封</el-button>
+          <el-button link tag="a" href="/dealer/" target="_blank">经销商后台</el-button>
         </template>
       </el-table-column>
     </el-table>

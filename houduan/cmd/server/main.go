@@ -5,6 +5,7 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -25,11 +26,15 @@ func main() {
 	if err := db.SeedDemo(); err != nil {
 		log.Printf("seed demo: %v", err)
 	}
-	if err := nodeproc.EnsureDefault(db, cfg); err != nil {
-		log.Printf("default node: %v", err)
-	}
-	if err := nodeproc.Sync(db, cfg); err != nil {
-		log.Printf("sync nodes: %v", err)
+	if os.Getenv("XVAY_SKIP_NODE_SYNC") == "1" {
+		log.Printf("skip node sync")
+	} else {
+		if err := nodeproc.EnsureDefault(db, cfg); err != nil {
+			log.Printf("default node: %v", err)
+		}
+		if err := nodeproc.Sync(db, cfg); err != nil {
+			log.Printf("sync nodes: %v", err)
+		}
 	}
 	if err := db.KeepDemoOnline(); err != nil {
 		log.Printf("demo nodes: %v", err)

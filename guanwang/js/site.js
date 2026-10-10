@@ -1,7 +1,7 @@
 (function () {
   const LANG_KEY = "xvay-ui-lang";
-  const USER_KEY = "xvay-users";
-  const SESSION_KEY = "xvay-session";
+  const TOKEN_KEY = "xvay-token";
+  const PROFILE_KEY = "xvay-profile";
   const PROMO_KEY = "xvay-promo";
   const TICKET_KEY = "xvay-tickets";
 
@@ -26,18 +26,35 @@
     return (h >>> 0).toString(16);
   }
 
-  function users() {
-    try { return JSON.parse(localStorage.getItem(USER_KEY)) || []; }
-    catch { return []; }
+  function token() { return localStorage.getItem(TOKEN_KEY) || ""; }
+  function currentUser() {
+    try { return JSON.parse(localStorage.getItem(PROFILE_KEY) || "null"); }
+    catch { return null; }
   }
-  function saveUsers(list) { localStorage.setItem(USER_KEY, JSON.stringify(list)); }
-  function sessionEmail() { return localStorage.getItem(SESSION_KEY) || ""; }
-  function currentUser() { return users().find((u) => u.email === sessionEmail()) || null; }
-  function writeUser(next) {
-    const list = users();
-    const i = list.findIndex((u) => u.email === next.email);
-    if (i >= 0) list[i] = next; else list.push(next);
-    saveUsers(list);
+  function saveSession(data) {
+    const user = data.user || {};
+    localStorage.setItem(TOKEN_KEY, data.token || "");
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({
+      name: user.username || user.email || "账号",
+      email: user.email || "",
+      id: user.id
+    }));
+  }
+  async function api(path, options) {
+    const opts = options || {};
+    const headers = { "Content-Type": "application/json" };
+    if (opts.auth !== false && token()) headers.Authorization = "Bearer " + token();
+    const response = await fetch(path, {
+      method: opts.method || "GET",
+      headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || payload.ok === false) {
+      const error = payload.error || {};
+      throw new Error(error.message || "请求失败");
+    }
+    return payload.data || {};
   }
 
   function detectOS() {
@@ -50,11 +67,11 @@
   }
 
   const OS = {
-    mac: { zh: "macOS", en: "Mac", file: "飞连-1.4.2-mac.txt", size: "86 MB" },
-    windows: { zh: "Windows", en: "Windows", file: "飞连-1.4.2-windows.txt", size: "72 MB" },
-    ios: { zh: "iOS", en: "iOS", file: "飞连-1.4.2-ios.txt", size: "App Store" },
-    android: { zh: "Android", en: "Android", file: "飞连-1.4.2-android.txt", size: "48 MB" },
-    linux: { zh: "Linux", en: "Linux", file: "飞连-1.4.2-linux.txt", size: "64 MB" }
+    mac: { zh: "macOS", en: "Mac", file: "讯连宝-1.4.2-mac.txt", size: "86 MB" },
+    windows: { zh: "Windows", en: "Windows", file: "讯连宝-1.4.2-windows.txt", size: "72 MB" },
+    ios: { zh: "iOS", en: "iOS", file: "讯连宝-1.4.2-ios.txt", size: "App Store" },
+    android: { zh: "Android", en: "Android", file: "讯连宝-1.4.2-android.txt", size: "48 MB" },
+    linux: { zh: "Linux", en: "Linux", file: "讯连宝-1.4.2-linux.txt", size: "64 MB" }
   };
 
   function logo() {
@@ -140,14 +157,14 @@
     const user = currentUser();
     const showPromo = page() === "home" && sessionStorage.getItem(PROMO_KEY) !== "off";
     const account = user
-      ? `<a class="login-pill" href="account.html">${esc(user.name)}</a>`
+      ? `<a class="login-pill" href="account.html">${esc(user.name || user.username || "账户")}</a>`
       : `<a class="login-pill" href="login.html"><span data-zh="登录账户" data-en="Sign in">登录账户</span></a>`;
     root.innerHTML = `
       <a class="skip" href="#main" data-zh="跳到内容" data-en="Skip to content">跳到内容</a>
       <header class="header${page() !== "home" ? " is-solid" : ""}">
-        ${showPromo ? `<div class="topbar"><span class="hide-sm" data-zh="飞连 支持 macOS、Windows、iOS、Android 与 Linux" data-en="飞连 runs on macOS, Windows, iOS, Android, and Linux">飞连 支持 macOS、Windows、iOS、Android 与 Linux</span><span class="show-sm" data-zh="电脑和手机都能用" data-en="Phone and desktop">电脑和手机都能用</span><button type="button" data-action="dismiss-promo" aria-label="close">×</button></div>` : ""}
+        ${showPromo ? `<div class="topbar"><span class="hide-sm" data-zh="讯连宝 支持 macOS、Windows、iOS、Android 与 Linux" data-en="讯连宝 runs on macOS, Windows, iOS, Android, and Linux">讯连宝 支持 macOS、Windows、iOS、Android 与 Linux</span><span class="show-sm" data-zh="电脑和手机都能用" data-en="Phone and desktop">电脑和手机都能用</span><button type="button" data-action="dismiss-promo" aria-label="close">×</button></div>` : ""}
         <div class="header-inner">
-          <a class="brand" href="index.html">${logo()} 飞连 <small>VPN</small></a>
+          <a class="brand" href="index.html">${logo()} 讯连宝 <small>VPN</small></a>
           <button class="menu-toggle" type="button" data-action="toggle-menu" aria-label="menu">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6h16M3 11h16M3 16h16"/></svg>
           </button>
@@ -198,7 +215,7 @@
       <footer class="footer">
         <div class="wrap footer-grid">
           <div>
-            <a class="brand" href="index.html">${logo()} 飞连 <small>VPN</small></a>
+            <a class="brand" href="index.html">${logo()} 讯连宝 <small>VPN</small></a>
             <p data-zh="一点连接，稳稳在线。到期即停，不会自动续费。" data-en="Tap once, stay online. Plans end when they end.">一点连接，稳稳在线。到期即停，不会自动续费。</p>
           </div>
           ${cols.map(([zh, en, links]) => `
@@ -215,7 +232,7 @@
           </div>
         </div>
         <div class="wrap fine">
-          <span>© 2026 飞连</span>
+          <span>© 2026 讯连宝</span>
           <span data-zh="本站为产品界面演示，开通与下载不会产生真实扣款或安装包。" data-en="This site is a product demo. Plans and downloads do not charge you or ship an installer.">本站为产品界面演示，开通与下载不会产生真实扣款或安装包。</span>
         </div>
       </footer>`;
@@ -255,7 +272,7 @@
         <div class="price">${esc(lang() === "en" ? plan.priceEn : plan.priceZh)}</div>
         <div class="note">${esc(field(plan, "note"))}</div>
         <ul>${perks().map((item) => `<li><span class="dot"></span>${esc(item)}</li>`).join("")}</ul>
-        <button class="btn ${plan.featured ? "btn-primary" : "btn-line"}" type="button" data-action="choose-plan" data-plan="${plan.id}">${esc(tx("选择这个时长", "Choose this term"))}</button>
+        <a class="btn ${plan.featured ? "btn-primary" : "btn-line"}" href="download.html">${esc(tx("在 App 中购买", "Buy in the app"))}</a>
       </article>`).join("");
   }
 
@@ -428,49 +445,45 @@
     return { kind: "none", label: tx("未开通", "No active plan"), remain: tx("可以领取试用，或选择一个时长", "Start a trial, or pick a term"), until: null };
   }
 
-  function renderAccount() {
+  async function renderAccount() {
     const root = document.getElementById("account-root");
     if (!root) return;
-    const user = currentUser();
-    if (!user) {
-      location.href = "login.html?next=" + encodeURIComponent("account.html" + location.search);
+    if (!token()) {
+      location.href = "login.html?next=" + encodeURIComponent("account.html");
       return;
     }
-    const params = new URLSearchParams(location.search);
-    const pending = params.get("plan");
-    const plan = window.XVAY.plans.find((p) => p.id === pending);
-    const state = membership(user);
-    const when = (ts) => new Date(ts).toLocaleString(lang() === "en" ? "en" : "zh-CN", { hour12: false });
-    root.innerHTML = `
-      <div class="account-grid">
-        <section class="card">
-          <div class="kicker">${esc(tx("当前状态", "Status"))}</div>
-          <h2>${esc(user.name)}</h2>
-          <p class="fine-note">${esc(user.email)}</p>
-          <div class="stat-line"><span>${esc(tx("方案", "Plan"))}</span><b>${esc(state.label)}</b></div>
-          <div class="stat-line"><span>${esc(tx("时间", "Time"))}</span><b>${esc(state.remain)}</b></div>
-          ${state.until ? `<div class="stat-line"><span>${esc(tx("到期", "Ends"))}</span><span>${esc(state.until.toLocaleString(lang() === "en" ? "en" : "zh-CN", { hour12: false }))}</span></div>` : ""}
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
-            ${state.kind === "none" ? `<button class="btn btn-primary" type="button" data-action="start-trial">${esc(tx("领取 72 小时试用", "Start 72-hour trial"))}</button>` : ""}
-            <a class="btn btn-line" href="index.html#pricing">${esc(tx("查看时长", "See terms"))}</a>
-            <button class="btn btn-line" type="button" data-action="logout">${esc(tx("退出登录", "Sign out"))}</button>
-          </div>
-          ${plan ? `<div class="ticket" style="margin-top:16px"><b>${esc(tx("确认开通", "Confirm"))} ${esc(field(plan, "name"))}</b><p>${esc(tx("这是演示，不会扣款。确认后只在这台浏览器里记录到期时间。", "This is a demo and will not charge you. Confirming only saves the expiry in this browser."))}</p><button class="btn btn-primary" type="button" data-action="confirm-plan" data-plan="${plan.id}">${esc(tx("确认开通", "Confirm plan"))}</button></div>` : ""}
-          <h3 style="margin-top:22px">${esc(tx("订单", "Orders"))}</h3>
-          ${(user.orders || []).length ? (user.orders || []).map((o) => `<div class="stat-line"><span>${esc(o.id)}</span><span>${esc(o.name)} · ${esc(when(o.at))}</span></div>`).join("") : `<p class="fine-note">${esc(tx("还没有订单。", "No orders yet."))}</p>`}
-        </section>
-        <section class="card">
-          <h2>${esc(tx("设备", "Devices"))}</h2>
-          <p class="fine-note">${esc(tx("最多 5 台同时在线。", "Up to 5 online at once."))}</p>
-          ${(user.devices || []).map((d) => `
-            <div class="device">
-              <div><b>${esc(d.name)}</b><div class="fine-note">${esc(when(d.last))}</div></div>
-              <button class="btn btn-line" type="button" data-action="remove-device" data-id="${esc(d.id)}">${esc(tx("移除", "Remove"))}</button>
-            </div>`).join("")}
-          <button class="btn btn-line" style="margin-top:16px" type="button" data-action="delete-account">${esc(tx("删除本机账户", "Delete local account"))}</button>
-        </section>
-      </div>`;
-    if (params.get("trial") === "1" && !user.trialStart && !(user.planExpire > Date.now())) startTrial(false);
+    root.innerHTML = `<p class="fine-note">${esc(tx("正在读取账号…", "Loading account…"))}</p>`;
+    try {
+      const profile = await api("/api/user/profile");
+      const orders = await api("/api/orders");
+      const list = orders.orders || [];
+      const gb = Number(profile.trafficRemainGb || 0).toFixed(2);
+      const days = Math.floor(Number(profile.remainSeconds || 0) / 86400);
+      root.innerHTML = `
+        <div class="account-grid">
+          <section class="card">
+            <div class="kicker">${esc(tx("当前状态", "Status"))}</div>
+            <h2>${esc(profile.username || "")}</h2>
+            <p class="fine-note">${esc(profile.userType || "")} · ID ${esc(profile.id || "")}</p>
+            <div class="stat-line"><span>${esc(tx("剩余流量", "Traffic left"))}</span><b>${esc(gb)} GB</b></div>
+            <div class="stat-line"><span>${esc(tx("剩余时长", "Time left"))}</span><b>${esc(days)} ${esc(tx("天", "days"))}</b></div>
+            <p class="fine-note">${esc(tx("套餐在 App 内通过四方支付购买。到期流量清零，不结转。", "Buy a plan in the app. Traffic clears at expiry."))}</p>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:16px">
+              <a class="btn btn-primary" href="download.html">${esc(tx("去 App 购买", "Buy in the app"))}</a>
+              <button class="btn btn-line" type="button" data-action="logout">${esc(tx("退出登录", "Sign out"))}</button>
+            </div>
+            <h3 style="margin-top:22px">${esc(tx("订单", "Orders"))}</h3>
+            ${list.length ? list.map((order) => `<div class="stat-line"><span>${esc(order.orderNo)}</span><span>¥${esc(order.amount)}</span></div>`).join("") : `<p class="fine-note">${esc(tx("还没有订单。", "No orders yet."))}</p>`}
+          </section>
+          <section class="card">
+            <h2>${esc(tx("账号安全", "Account safety"))}</h2>
+            <p class="fine-note">${esc(profile.emailStatus === 2 ? tx("邮箱已绑定，可以找回账号。", "Email is bound. You can recover this account.") : tx("还没有绑定邮箱。请在 App 的个人中心绑定，避免账号丢失。", "Email is not bound yet. Bind it in the app so the account can be recovered."))}</p>
+            <p class="fine-note">${esc(tx("有上级经销商且不是代理时，钱包关闭。经销商分佣和系统三级分佣不会叠加。", "Members under a distributor do not get a wallet unless they are agents. Distributor commission and the system three-level split do not stack."))}</p>
+          </section>
+        </div>`;
+    } catch (error) {
+      root.innerHTML = `<p class="fine-note">${esc(error.message)}</p>`;
+    }
   }
 
   function startTrial(manual) {
@@ -522,7 +535,7 @@
   function downloadPlatform(id) {
     const spec = OS[id] || OS.mac;
     const text = [
-      "飞连 VPN",
+      "讯连宝 VPN",
       `platform: ${spec.en}`,
       `version: 1.4.2`,
       "",
@@ -563,7 +576,7 @@
     const root = document.createElement("div");
     root.innerHTML = `
       <section class="chat-panel" id="chat-panel">
-        <div class="chat-hd"><strong>飞连</strong><button type="button" data-action="toggle-chat" aria-label="close">×</button></div>
+        <div class="chat-hd"><strong>讯连宝</strong><button type="button" data-action="toggle-chat" aria-label="close">×</button></div>
         <div class="chat-log" id="chat-log"></div>
         <div class="chat-suggestions" id="chat-suggestions"></div>
         <form class="chat-form" id="chat-form">
@@ -633,48 +646,68 @@
   function bindForms() {
     const login = document.getElementById("form-login");
     const reg = document.getElementById("form-register");
+    const recover = document.getElementById("form-recover");
     const contact = document.getElementById("form-contact");
+    if (recover && !recover.dataset.bound) {
+      recover.dataset.bound = "1";
+      recover.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const alert = document.getElementById("recover-alert");
+        try {
+          const data = await api("/api/auth/find-account", {
+            method: "POST",
+            auth: false,
+            body: { email: recover.email.value.trim(), code: recover.code.value.trim() }
+          });
+          alert.hidden = false;
+          alert.textContent = tx(`关联账号 ${data.userId || ""}（${data.username || ""}）`, `Account ${data.userId || ""} (${data.username || ""})`);
+        } catch (error) {
+          alert.hidden = false;
+          alert.textContent = error.message;
+        }
+      });
+    }
     if (login && !login.dataset.bound) {
       login.dataset.bound = "1";
-      login.addEventListener("submit", (e) => {
+      login.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const email = login.email.value.trim().toLowerCase();
-        const password = login.password.value;
         const alert = document.getElementById("login-alert");
-        const user = users().find((u) => u.email === email && u.password === hash(password));
-        if (!user) {
+        const username = login.username.value.trim();
+        const password = login.password.value;
+        try {
+          const data = await api("/api/app/login", { method: "POST", auth: false, body: { username, password } });
+          saveSession(data);
+          location.href = safeNext(new URLSearchParams(location.search).get("next"));
+        } catch (error) {
           alert.hidden = false;
-          alert.textContent = tx("邮箱或密码不对。", "That email or password doesn't match.");
-          return;
+          alert.textContent = error.message;
         }
-        const id = rememberDevice(user);
-        user.currentDevice = id;
-        writeUser(user);
-        localStorage.setItem(SESSION_KEY, user.email);
-        location.href = safeNext(new URLSearchParams(location.search).get("next"));
       });
     }
     if (reg && !reg.dataset.bound) {
       reg.dataset.bound = "1";
-      reg.addEventListener("submit", (e) => {
+      reg.addEventListener("submit", async (e) => {
         e.preventDefault();
         const alert = document.getElementById("reg-alert");
-        const name = reg.name.value.trim();
-        const email = reg.email.value.trim().toLowerCase();
+        const username = reg.username.value.trim();
         const password = reg.password.value;
         const show = (msg) => { alert.hidden = false; alert.textContent = msg; };
-        if (name.length < 2) return show(tx("名字至少 2 个字。", "Use at least 2 characters in the name."));
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return show(tx("邮箱格式不对。", "That email doesn't look right."));
-        if (password.length < 6) return show(tx("密码至少 6 位。", "Use at least 6 characters."));
+        if (username.length < 3 || /[\s@]/.test(username)) return show(tx("用户名需要 3-20 位，且不能包含空格或 @。", "Username must be 3-20 characters without spaces or @."));
+        if (password.length < 8) return show(tx("密码至少 8 位。", "Use at least 8 characters."));
         if (password !== reg.confirm.value) return show(tx("两次密码不一致。", "The passwords don't match."));
         if (!reg.agree.checked) return show(tx("请先勾选注册协议。", "Please accept the registration agreement."));
-        if (users().some((u) => u.email === email)) return show(tx("这个邮箱已经注册过。", "That email is already registered."));
-        const user = { name, email, password: hash(password), createdAt: Date.now(), trialStart: Date.now(), devices: [], orders: [] };
-        rememberDevice(user);
-        writeUser(user);
-        localStorage.setItem(SESSION_KEY, email);
-        toast(tx("账户已就绪，试用开始了。", "Account ready. The trial has started."));
-        location.href = safeNext(new URLSearchParams(location.search).get("next"));
+        try {
+          const data = await api("/api/app/register", {
+            method: "POST",
+            auth: false,
+            body: { username, password, inviteCode: reg.invite.value.trim() }
+          });
+          saveSession(data);
+          toast(tx("账号已创建。套餐请在 App 内购买。", "Account created. Buy a plan in the app."));
+          location.href = safeNext(new URLSearchParams(location.search).get("next"));
+        } catch (error) {
+          show(error.message);
+        }
       });
     }
     if (contact && !contact.dataset.bound) {
@@ -703,11 +736,10 @@
   }
 
   function showAuth(tab) {
-    const login = document.getElementById("panel-login");
-    const register = document.getElementById("panel-register");
-    if (!login || !register) return;
-    login.hidden = tab !== "login";
-    register.hidden = tab !== "register";
+    ["login", "register", "recover"].forEach((name) => {
+      const panel = document.getElementById("panel-" + name);
+      if (panel) panel.hidden = tab !== name;
+    });
     document.querySelectorAll("[data-tab]").forEach((btn) => btn.classList.toggle("is-active", btn.dataset.tab === tab));
   }
 
@@ -759,28 +791,29 @@
       location.href = currentUser() ? next : "login.html?next=" + encodeURIComponent(next);
       return;
     }
-    if (action === "start-trial") { startTrial(true); return; }
-    if (action === "confirm-plan") { confirmPlan(el.dataset.plan); return; }
+    if (action === "send-recover") {
+      const form = document.getElementById("form-recover");
+      const alert = document.getElementById("recover-alert");
+      api("/api/auth/email/send-code", { method: "POST", auth: false, body: { email: form.email.value.trim(), scene: el.dataset.scene } })
+        .then(() => { alert.hidden = false; alert.textContent = tx("验证码已发送，5 分钟内有效。", "Code sent. It lasts 5 minutes."); })
+        .catch((error) => { alert.hidden = false; alert.textContent = error.message; });
+      return;
+    }
+    if (action === "reset-password") {
+      const form = document.getElementById("form-recover");
+      const alert = document.getElementById("recover-alert");
+      api("/api/auth/reset-password-by-email", {
+        method: "POST",
+        auth: false,
+        body: { email: form.email.value.trim(), code: form.code.value.trim(), password: form.password.value }
+      }).then(() => { alert.hidden = false; alert.textContent = tx("密码已重置，请返回登录。", "Password reset. Sign in again."); })
+        .catch((error) => { alert.hidden = false; alert.textContent = error.message; });
+      return;
+    }
     if (action === "logout") {
-      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(PROFILE_KEY);
       location.href = "index.html";
-      return;
-    }
-    if (action === "delete-account") {
-      const ok = window.confirm(tx("删除后，这个浏览器里的账户、试用和订单都会消失。", "This removes the account, trial, and orders stored in this browser."));
-      if (!ok) return;
-      const email = sessionEmail();
-      saveUsers(users().filter((u) => u.email !== email));
-      localStorage.removeItem(SESSION_KEY);
-      toast(tx("本机账户已删除。", "Local account deleted."));
-      location.href = "index.html";
-      return;
-    }
-    if (action === "remove-device") {
-      const user = currentUser();
-      user.devices = (user.devices || []).filter((d) => d.id !== el.dataset.id);
-      writeUser(user);
-      renderAccount();
       return;
     }
     if (action === "download") {

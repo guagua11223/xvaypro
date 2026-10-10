@@ -3,6 +3,8 @@ package api
 import (
 	"encoding/csv"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -201,6 +203,63 @@ func (s *Server) adminSetParent(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	writeOK(w, http.StatusOK, map[string]any{"id": id})
+	return nil
+}
+
+func (s *Server) adminSetMemberRate(w http.ResponseWriter, r *http.Request) error {
+	if err := s.allowRole(r); err != nil {
+		return err
+	}
+	id, err := idParam(r)
+	if err != nil {
+		return err
+	}
+	body, err := readJSON(r)
+	if err != nil {
+		return err
+	}
+	member, ok, err := s.db.LoadMember(id)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return notFound("会员不存在")
+	}
+	if member.DistributorID == 0 {
+		return badRequest("该会员没有上级经销商，按系统三级分佣，不能单独设比例")
+	}
+	_, actor := s.staffRole(r)
+	if err := s.db.SetCustomRate(member.DistributorID, id, store.AsFloat(body["rate"]), actor, time.Now().UnixMilli()); err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, map[string]any{"id": id, "rate": store.AsFloat(body["rate"])})
+	return nil
+}
+
+func (s *Server) adminBackup(w http.ResponseWriter, r *http.Request) error {
+	if err := s.allowRole(r); err != nil {
+		return err
+	}
+	src := s.cfg.DatabasePath
+	if src == "" || src == ":memory:" {
+		return badRequest("当前数据库不支持备份")
+	}
+	dir := filepath.Join(s.cfg.DataDir, "backups")
+	if err := os.MkdirAll(dir, 0o700); err != nil {
+		return err
+	}
+	name := "xvay-" + time.Now().Format("20060102-150405") + ".sqlite"
+	dst := filepath.Join(dir, name)
+	if err := s.db.BackupTo(dst); err != nil {
+		return err
+	}
+	info, err := os.Stat(dst)
+	if err != nil {
+		return err
+	}
+	_, actor := s.staffRole(r)
+	_ = s.db.AddLog("admin", actor, "backup", name, clientIP(r))
+	writeOK(w, http.StatusOK, map[string]any{"file": name, "bytes": info.Size()})
 	return nil
 }
 
