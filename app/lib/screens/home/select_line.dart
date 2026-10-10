@@ -265,6 +265,8 @@ class _SelectLineScreenState extends State<SelectLineScreen> {
                                                 Expanded(
                                                   child: Text(
                                                     profile.name,
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow.ellipsis,
                                                     style: TextStyle(
                                                       fontSize: 16,
                                                       fontWeight: selected

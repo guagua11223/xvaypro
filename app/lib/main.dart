@@ -82,11 +82,23 @@ void main(List<String> args) async {
     /// minimize to tray
     await TrayMenuManager().init();
     await windowManager.ensureInitialized();
-    final width = prefs.getDouble("app.window.size.width");
-    final height = prefs.getDouble("app.window.size.height");
-    final isMaximized = prefs.getBool("app.window.isMaximized");
+    var width = prefs.getDouble("app.window.size.width")!;
+    var height = prefs.getDouble("app.window.size.height")!;
+    var isMaximized = prefs.getBool("app.window.isMaximized")!;
+    if (RuntimePlatform.isWindows &&
+        (width < 390 || width > 520 || height < 680 || isMaximized)) {
+      width = 420;
+      height = 844;
+      isMaximized = false;
+    }
     WindowOptions windowOptions = WindowOptions(
-      size: Size(width!, height!),
+      size: Size(width, height),
+      minimumSize: RuntimePlatform.isWindows ? const Size(390, 720) : null,
+      center: RuntimePlatform.isWindows ? true : null,
+      backgroundColor: RuntimePlatform.isWindows
+          ? const Color(0xFFF4F5F7)
+          : null,
+      title: RuntimePlatform.isWindows ? "飞连" : null,
       skipTaskbar: false,
     );
     // override the default close handler
