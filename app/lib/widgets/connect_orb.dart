@@ -12,12 +12,14 @@ class ConnectOrb extends StatefulWidget {
     required this.isToggling,
     required this.label,
     required this.onPressed,
+    this.diameter = 250,
   });
 
   final bool isActive;
   final bool isToggling;
   final String label;
   final VoidCallback? onPressed;
+  final double diameter;
 
   @override
   State<ConnectOrb> createState() => _ConnectOrbState();
@@ -47,7 +49,10 @@ class _ConnectOrbState extends State<ConnectOrb>
   }
 
   void _syncAnimation() {
-    final reduce = WidgetsBinding.instance.platformDispatcher.accessibilityFeatures
+    final reduce = WidgetsBinding
+        .instance
+        .platformDispatcher
+        .accessibilityFeatures
         .disableAnimations;
     if (reduce || (!widget.isActive && !widget.isToggling)) {
       _controller
@@ -76,49 +81,49 @@ class _ConnectOrbState extends State<ConnectOrb>
       child: GestureDetector(
         onTap: widget.onPressed,
         child: SizedBox(
-          width: 250,
-          height: 250,
+          width: widget.diameter,
+          height: widget.diameter,
           child: AnimatedScale(
             scale: widget.isToggling ? 0.98 : 1,
             duration: const Duration(milliseconds: 160),
             curve: Curves.easeOut,
             child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              return CustomPaint(
-                painter: _OrbPainter(
-                  progress: _controller.value,
-                  accent: accent,
-                  fill: fill,
-                  active: widget.isActive,
-                  toggling: widget.isToggling,
-                ),
-                child: child,
-              );
-            },
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    widget.isToggling ? LetsIcons.sync : LetsIcons.power,
-                    size: 32,
-                    color: accent,
+              animation: _controller,
+              builder: (context, child) {
+                return CustomPaint(
+                  painter: _OrbPainter(
+                    progress: _controller.value,
+                    accent: accent,
+                    fill: fill,
+                    active: widget.isActive,
+                    toggling: widget.isToggling,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    widget.label,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
+                  child: child,
+                );
+              },
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      widget.isToggling ? LetsIcons.sync : LetsIcons.power,
+                      size: 32,
                       color: accent,
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 8),
+                    Text(
+                      widget.label,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: accent,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           ),
         ),
       ),

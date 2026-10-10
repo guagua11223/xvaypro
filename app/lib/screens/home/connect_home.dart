@@ -86,7 +86,8 @@ class _ConnectHomeState extends State<ConnectHome> {
       final days = seconds is num ? (seconds.toInt() / 86400).floor() : 0;
       if (!mounted) return;
       setState(() {
-        _quota = '剩余 ${gb is num ? gb.toStringAsFixed(2) : '0.00'} GB · 剩余 $days 天';
+        _quota =
+            '剩余 ${gb is num ? gb.toStringAsFixed(2) : '0.00'} GB · 剩余 $days 天';
       });
     } catch (_) {}
   }
@@ -184,6 +185,8 @@ class _ConnectHomeState extends State<ConnectHome> {
                           Expanded(
                             child: Text(
                               context.loc.region_label(name),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 fontSize: 14,
                                 color: palette.text,
@@ -200,59 +203,89 @@ class _ConnectHomeState extends State<ConnectHome> {
             ),
           ),
           Expanded(
-            child: Center(
-              child: ListenableBuilder(
-                listenable: Listenable.merge([vPNMan, prefs]),
-                builder: (context, _) {
-                  final notice = prefs.getString('xvay.announcement') ?? '';
-                  return Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (notice.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(28, 0, 28, 16),
-                          child: Text(
-                            notice,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: palette.muted,
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final orbSize = (constraints.maxHeight * 0.46).clamp(
+                  168.0,
+                  250.0,
+                );
+                return ListenableBuilder(
+                  listenable: Listenable.merge([vPNMan, prefs]),
+                  builder: (context, _) {
+                    final notice = prefs.getString('xvay.announcement') ?? '';
+                    return SingleChildScrollView(
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                          minHeight: constraints.maxHeight,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (notice.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  28,
+                                  8,
+                                  28,
+                                  12,
+                                ),
+                                child: Text(
+                                  notice,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    height: 1.4,
+                                    color: palette.muted,
+                                  ),
+                                ),
+                              ),
+                            ConnectOrb(
+                              isActive: vPNMan.isCoreActive,
+                              isToggling: vPNMan.isTogglingAll || _preparing,
+                              label: _orbLabel(context),
+                              diameter: orbSize,
+                              onPressed: vPNMan.isTogglingAll || _preparing
+                                  ? null
+                                  : _handleToggle,
                             ),
-                          ),
+                            if (_quota.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  28,
+                                  12,
+                                  28,
+                                  0,
+                                ),
+                                child: Text(
+                                  _quota,
+                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: LetsColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            if (vPNMan.isCoreActive) ...[
+                              const SizedBox(height: 8),
+                              Text(
+                                _formatElapsed(_elapsed),
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: palette.muted,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                      ],
-                      ConnectOrb(
-                        isActive: vPNMan.isCoreActive,
-                        isToggling: vPNMan.isTogglingAll || _preparing,
-                        label: _orbLabel(context),
-                        onPressed: vPNMan.isTogglingAll || _preparing
-                            ? null
-                            : _handleToggle,
                       ),
-                      if (_quota.isNotEmpty) ...[
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(28, 0, 28, 12),
-                          child: Text(
-                            _quota,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 13, color: LetsColors.textSecondary),
-                          ),
-                        ),
-                      ],
-                      if (vPNMan.isCoreActive) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          _formatElapsed(_elapsed),
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: palette.muted,
-                          ),
-                        ),
-                      ],
-                    ],
-                  );
-                },
-              ),
+                    );
+                  },
+                );
+              },
             ),
           ),
           Material(
@@ -263,9 +296,9 @@ class _ConnectHomeState extends State<ConnectHome> {
               child: SizedBox(
                 height: 85,
                 child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Expanded(
-                      flex: 2,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10),
                         child: ListenableBuilder(
@@ -307,18 +340,19 @@ class _ConnectHomeState extends State<ConnectHome> {
                         ),
                       ),
                     ),
-                    Expanded(
-                      child: Material(
-                        color: LetsColors.accent,
-                        child: InkWell(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => const ProfileList(),
-                              ),
-                            );
-                          },
-                          child: Center(
+                    Material(
+                      color: LetsColors.accent,
+                      child: InkWell(
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const ProfileList(),
+                            ),
+                          );
+                        },
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [

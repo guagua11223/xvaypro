@@ -52,25 +52,52 @@ class PlatformSystemProxyUserWindows extends PlatformSystemProxyUser {
   Future<bool> enable(Map<String, Tuple2<String, int>> proxies) async {
     try {
       final shell = Shell();
+      final proxyServer = _proxyServer(proxies);
+      if (proxyServer == null) return false;
       await shell.run(
         'reg add "$_registryPath" /v ProxyEnable /t REG_DWORD /d 1 /f',
       );
-
-      for (var entry in proxies.entries) {
-        String protocol = entry.key;
-        if (protocol == "http") {
-          Tuple2<String, int> hostPort = entry.value;
-          String proxyAddress = '${hostPort.item1}:${hostPort.item2}';
-          await shell.run(
-            'reg add "$_registryPath" /v ProxyServer /t REG_SZ /d "$proxyAddress" /f',
-          );
-        }
-      }
+      await shell.run(
+        'reg add "$_registryPath" /v ProxyServer /t REG_SZ /d "$proxyServer" /f',
+      );
+      await _notifyProxyChanged();
     } catch (e) {
       logger.e("PlatformSystemProxyUserWindows.enable: $e");
       return false;
     }
     return true;
+  }
+
+  /// Chrome reads the WinINET proxy. SOCKS5 is the inbound that is actually listening.
+  String? _proxyServer(Map<String, Tuple2<String, int>> proxies) {
+    final socks = proxies['socks'];
+    if (socks != null) {
+      return 'socks=${socks.item1}:${socks.item2}';
+    }
+    final http = proxies['http'];
+    if (http != null) {
+      return '${http.item1}:${http.item2}';
+    }
+    return null;
+  }
+
+  Future<void> _notifyProxyChanged() async {
+    await Process.run('powershell', [
+      '-NoProfile',
+      '-Command',
+      r'''
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public class FeilianInet {
+  [DllImport("wininet.dll", SetLastError=true)]
+  public static extern bool InternetSetOption(IntPtr hInternet, int dwOption, IntPtr lpBuffer, int dwBufferLength);
+}
+"@
+[FeilianInet]::InternetSetOption([IntPtr]::Zero, 39, [IntPtr]::Zero, 0) | Out-Null
+[FeilianInet]::InternetSetOption([IntPtr]::Zero, 37, [IntPtr]::Zero, 0) | Out-Null
+''',
+    ]);
   }
 
   @override
@@ -80,6 +107,7 @@ class PlatformSystemProxyUserWindows extends PlatformSystemProxyUser {
       await shell.run(
         'reg add "$_registryPath" /v ProxyEnable /t REG_DWORD /d 0 /f',
       );
+      await _notifyProxyChanged();
     } catch (e) {
       logger.e("PlatformSystemProxyUserWindows.disable: $e");
       return false;

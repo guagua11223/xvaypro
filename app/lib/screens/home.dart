@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -74,7 +75,8 @@ class _HomePageState extends State<HomePage> with WindowListener, TrayListener {
       );
     }
 
-    final isWide = MediaQuery.sizeOf(context).width >= 900;
+    final isWide =
+        !RuntimePlatform.isWindows && MediaQuery.sizeOf(context).width >= 900;
 
     if (isWide) {
       return Scaffold(
@@ -103,7 +105,7 @@ class _HomePageState extends State<HomePage> with WindowListener, TrayListener {
       key: _scaffoldKey,
       backgroundColor: LetsColors.of(context).page,
       drawer: Drawer(
-        width: MediaQuery.sizeOf(context).width * 0.86,
+        width: math.min(360, MediaQuery.sizeOf(context).width * 0.86),
         backgroundColor: LetsColors.of(context).surface,
         child: HomeDrawerPanel(onNavigate: _openPage),
       ),
@@ -219,9 +221,9 @@ class _HomePageState extends State<HomePage> with WindowListener, TrayListener {
       if (RuntimePlatform.isWindows || RuntimePlatform.isMacOS) {
         var isDark = themeManager.isDark;
         Window.setEffect(
-          effect: RuntimePlatform.isLinux || RuntimePlatform.isMacOS
-              ? WindowEffect.disabled
-              : WindowEffect.mica,
+          effect: RuntimePlatform.isWindows
+              ? WindowEffect.solid
+              : WindowEffect.disabled,
           dark: isDark,
         );
       }
