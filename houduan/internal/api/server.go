@@ -59,6 +59,8 @@ func New(cfg config.Config, db *store.Store) *Server {
 
 		{http.MethodGet, "/api/user/profile", s.userProfile},
 		{http.MethodGet, "/api/user/security", s.userSecurity},
+		{http.MethodPost, "/api/user/invite/bind", s.userBindInvite},
+		{http.MethodPost, "/api/user/password/change", s.userChangePassword},
 		{http.MethodPost, "/api/user/email/bind", s.bindEmail},
 		{http.MethodGet, "/api/user/tickets", s.userTickets},
 		{http.MethodPost, "/api/user/tickets", s.userTickets},

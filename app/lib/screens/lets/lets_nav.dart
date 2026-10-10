@@ -10,6 +10,7 @@ enum LetsNav {
   settings,
   support,
   renew,
+  profile,
 }
 
 extension LetsNavX on LetsNav {
@@ -33,6 +34,8 @@ extension LetsNavX on LetsNav {
         return '在线客服';
       case LetsNav.renew:
         return '续费会员';
+      case LetsNav.profile:
+        return '个人中心';
     }
   }
 
@@ -56,6 +59,8 @@ extension LetsNavX on LetsNav {
         return Icons.headset_mic_outlined;
       case LetsNav.renew:
         return Icons.shopping_cart_outlined;
+      case LetsNav.profile:
+        return Icons.person_outline;
     }
   }
 

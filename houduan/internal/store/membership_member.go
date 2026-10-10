@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"xvay/houduan/internal/auth"
 	"xvay/houduan/internal/errs"
 )
 
@@ -508,6 +509,54 @@ func (s *Store) UnbindEmail(id int64) error {
 		return errs.New(404, "NOT_FOUND", "会员不存在")
 	}
 	return nil
+}
+
+// BindInvite links a member who has no parent yet to the invite code owner.
+func (s *Store) BindInvite(userID int64, invite string) (Member, error) {
+	invite = strings.TrimSpace(invite)
+	if invite == "" {
+		return Member{}, errs.New(400, "VALIDATION", "请填写邀请码")
+	}
+	self, ok, err := s.LoadMember(userID)
+	if err != nil {
+		return Member{}, err
+	}
+	if !ok {
+		return Member{}, errs.New(404, "NOT_FOUND", "会员不存在")
+	}
+	if self.ParentID > 0 {
+		return Member{}, errs.New(400, "VALIDATION", "已绑定推荐人，不能重复绑定")
+	}
+	parent, ok, err := s.FindByInvite(invite)
+	if err != nil {
+		return Member{}, err
+	}
+	if !ok || parent.MemberStatus == 1 {
+		return Member{}, errs.New(400, "VALIDATION", "邀请码不正确")
+	}
+	if parent.ID == userID {
+		return Member{}, errs.New(400, "VALIDATION", "不能填写自己的邀请码")
+	}
+	if err := s.linkMember(userID, self.Username, parent.ID); err != nil {
+		return Member{}, err
+	}
+	found, _, err := s.LoadMember(userID)
+	return found, err
+}
+
+func (s *Store) ChangePassword(userID int64, oldPassword, newPassword string) error {
+	user, ok, err := s.FindUserByID(userID)
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return errs.New(404, "NOT_FOUND", "会员不存在")
+	}
+	if !auth.VerifyPassword(oldPassword, user.PasswordHash) {
+		return errs.New(400, "VALIDATION", "原密码不正确")
+	}
+	_, err = s.UpdateUser(userID, UserPatch{Password: &newPassword})
+	return err
 }
 
 func (s *Store) SetParent(id, parentID int64) error {

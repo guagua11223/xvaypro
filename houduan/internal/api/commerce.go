@@ -247,6 +247,53 @@ func (s *Server) userSecurity(w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
+func (s *Server) userBindInvite(w http.ResponseWriter, r *http.Request) error {
+	user, err := s.requireUser(r)
+	if err != nil {
+		return err
+	}
+	body, err := readJSON(r)
+	if err != nil {
+		return err
+	}
+	inviteCode := strings.TrimSpace(store.AsString(body["inviteCode"]))
+	member, err := s.db.BindInvite(user.ID, inviteCode)
+	if err != nil {
+		return err
+	}
+	_ = s.db.AddLog("user", user.ID, "bind_invite", inviteCode, clientIP(r))
+	writeOK(w, http.StatusOK, s.memberJSON(member, true))
+	return nil
+}
+
+func (s *Server) userChangePassword(w http.ResponseWriter, r *http.Request) error {
+	user, err := s.requireUser(r)
+	if err != nil {
+		return err
+	}
+	body, err := readJSON(r)
+	if err != nil {
+		return err
+	}
+	oldPassword := store.AsString(body["oldPassword"])
+	if oldPassword == "" {
+		return badRequest("请填写原密码")
+	}
+	password, err := validate.ParsePassword(body["password"])
+	if err != nil {
+		return err
+	}
+	if oldPassword == password {
+		return badRequest("新密码不能与原密码相同")
+	}
+	if err := s.db.ChangePassword(user.ID, oldPassword, password); err != nil {
+		return err
+	}
+	_ = s.db.AddLog("user", user.ID, "change_password", "", clientIP(r))
+	writeOK(w, http.StatusOK, map[string]any{"changed": true})
+	return nil
+}
+
 func (s *Server) sendEmailCode(w http.ResponseWriter, r *http.Request) error {
 	body, err := readJSON(r)
 	if err != nil {

@@ -8,6 +8,7 @@ import 'lets_invite_page.dart';
 import 'lets_messages_page.dart';
 import 'lets_nav.dart';
 import 'lets_placeholder_page.dart';
+import 'lets_profile_page.dart';
 import 'lets_region_page.dart';
 import 'lets_renew_page.dart';
 import 'lets_session.dart';
@@ -36,7 +37,8 @@ class _LetsShellState extends State<LetsShell> {
     if (nav == LetsNav.invite ||
         nav == LetsNav.messages ||
         nav == LetsNav.support ||
-        nav == LetsNav.renew) {
+        nav == LetsNav.renew ||
+        nav == LetsNav.profile) {
       if (XvayAccount().isLoggedIn) {
         LetsSession.instance.refresh();
       }
@@ -63,6 +65,8 @@ class _LetsShellState extends State<LetsShell> {
         return const LetsSupportPage();
       case LetsNav.renew:
         return const LetsRenewPage();
+      case LetsNav.profile:
+        return const LetsProfilePage();
     }
   }
 
@@ -80,6 +84,7 @@ class _LetsShellState extends State<LetsShell> {
                   selected: _nav,
                   onSelect: _select,
                   onRenew: () => _select(LetsNav.renew),
+                  onOpenProfile: () => _select(LetsNav.profile),
                 ),
               ),
               Container(width: 1, color: const Color(0xFFD8DDE5)),

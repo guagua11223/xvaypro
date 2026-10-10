@@ -15,11 +15,13 @@ class LetsSidebar extends StatefulWidget {
     required this.selected,
     required this.onSelect,
     required this.onRenew,
+    this.onOpenProfile,
   });
 
   final LetsNav selected;
   final ValueChanged<LetsNav> onSelect;
   final VoidCallback onRenew;
+  final VoidCallback? onOpenProfile;
 
   @override
   State<LetsSidebar> createState() => _LetsSidebarState();
@@ -55,9 +57,16 @@ class _LetsSidebarState extends State<LetsSidebar> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _Header(session: session, onTapAccount: () {
-                if (!session.loggedIn) _openAuth(register: false);
-              }),
+              _Header(
+                session: session,
+                onTapAccount: () {
+                  if (!session.loggedIn) {
+                    _openAuth(register: false);
+                    return;
+                  }
+                  widget.onOpenProfile?.call();
+                },
+              ),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.symmetric(vertical: 8),
