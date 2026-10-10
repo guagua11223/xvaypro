@@ -83,6 +83,22 @@ func (s *Server) listMyOrders(w http.ResponseWriter, r *http.Request) error {
 	return s.writeOrders(w, user.ID, 0, 0)
 }
 
+func (s *Server) cancelMyOrder(w http.ResponseWriter, r *http.Request) error {
+	user, err := s.requireUser(r)
+	if err != nil {
+		return err
+	}
+	body, err := readJSON(r)
+	if err != nil {
+		return err
+	}
+	if err := s.db.CancelCommerceOrder(user.ID, store.AsInt64(body["orderId"])); err != nil {
+		return err
+	}
+	writeOK(w, http.StatusOK, map[string]any{"cancelled": true})
+	return nil
+}
+
 func (s *Server) userWallet(w http.ResponseWriter, r *http.Request) error {
 	user, err := s.requireUser(r)
 	if err != nil {

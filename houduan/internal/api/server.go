@@ -65,6 +65,7 @@ func New(cfg config.Config, db *store.Store) *Server {
 		{http.MethodGet, "/api/packages", s.listPackages},
 		{http.MethodPost, "/api/orders", s.createOrder},
 		{http.MethodGet, "/api/orders", s.listMyOrders},
+		{http.MethodPost, "/api/orders/cancel", s.cancelMyOrder},
 		{http.MethodGet, "/api/wallet", s.userWallet},
 		{http.MethodPost, "/api/wallet/withdraw", s.userWithdraw},
 		{http.MethodGet, "/api/invite", s.userInvite},

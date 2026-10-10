@@ -123,6 +123,31 @@ func (s *Store) CreateCommerceOrder(userID, packageID, now int64) (CommerceOrder
 	return order, err
 }
 
+func (s *Store) CancelCommerceOrder(userID, orderID int64) error {
+	order, ok, err := s.FindCommerceOrder(orderID)
+	if err != nil {
+		return err
+	}
+	if !ok || order.UserID != userID {
+		return errs.New(404, "NOT_FOUND", "订单不存在")
+	}
+	if order.PayStatus != 0 {
+		return errs.New(400, "VALIDATION", "只能删除待支付订单")
+	}
+	res, err := s.db.Exec(`UPDATE orders SET pay_status = 3 WHERE id = ? AND user_id = ? AND pay_status = 0`, orderID, userID)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return errs.New(400, "VALIDATION", "只能删除待支付订单")
+	}
+	return nil
+}
+
 func (s *Store) FindCommerceOrder(id int64) (CommerceOrder, bool, error) {
 	order, err := scanCommerceOrder(s.db.QueryRow(orderSelect+` WHERE id = ?`, id))
 	if err == sql.ErrNoRows {

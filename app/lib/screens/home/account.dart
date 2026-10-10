@@ -132,6 +132,39 @@ class _AccountScreenState extends State<AccountScreen> {
     }
   }
 
+  Future<void> _deleteOrder(Map<String, dynamic> item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('删除订单'),
+        content: Text('删除待支付订单 ${item['orderNo']}？删除后可以重新购买。'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('取消'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('删除'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      await _account.apiPost('/api/orders/cancel', {'orderId': item['id']});
+      if (mounted) setState(() => _message = '已删除待支付订单');
+      await _refresh();
+    } catch (error) {
+      if (mounted) {
+        setState(() => _message = '$error'.replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<void> _pay(Map<String, dynamic> item) async {
     setState(() => _busy = true);
     try {
@@ -732,21 +765,42 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               if (commerceOrderPending(item)) ...[
                 const SizedBox(height: 6),
-                SizedBox(
-                  height: 32,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: LetsColors.accent,
-                      foregroundColor: LetsColors.onAccent,
-                      elevation: 0,
-                      padding: const EdgeInsets.symmetric(horizontal: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      height: 32,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: LetsColors.accent,
+                          foregroundColor: LetsColors.onAccent,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _busy ? null : () => _pay(item),
+                        child: const Text('支付', style: TextStyle(fontSize: 13)),
                       ),
                     ),
-                    onPressed: _busy ? null : () => _pay(item),
-                    child: const Text('支付', style: TextStyle(fontSize: 13)),
-                  ),
+                    const SizedBox(width: 8),
+                    SizedBox(
+                      height: 32,
+                      child: OutlinedButton(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: palette.text,
+                          side: BorderSide(color: palette.line),
+                          padding: const EdgeInsets.symmetric(horizontal: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        onPressed: _busy ? null : () => _deleteOrder(item),
+                        child: const Text('删除', style: TextStyle(fontSize: 13)),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ],
